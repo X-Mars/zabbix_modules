@@ -1,0 +1,62 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-reports",
+    "name": "Zabbix Reports",
+    "version": "1.0",
+    "namespace": "ZabbixReports",
+    "description": "Generate daily, weekly, monthly reports for Zabbix",
+    "actions": {
+        "reports.daily": {
+            "class": "DailyReport",
+            "view": "reports.daily"
+        },
+        "reports.weekly": {
+            "class": "WeeklyReport",
+            "view": "reports.weekly"
+        },
+        "reports.monthly": {
+            "class": "MonthlyReport",
+            "view": "reports.monthly"
+        },
+        "reports.daily.export": {
+            "class": "DailyReportExport",
+            "layout": "layout.json"
+        },
+        "reports.debug": {
+            "class": "DailyReportDebug",
+            "layout": "layout.json"
+        },
+        "reports.scan": {
+            "class": "DailyReportItemScan",
+            "layout": "layout.json"
+        },
+        "reports.test": {
+            "class": "DailyReportSimpleTest",
+            "layout": "layout.json"
+        },
+        "reports.keytest": {
+            "class": "DailyReportKeyTest",
+            "layout": "layout.json"
+        },
+        "reports.weekly.export": {
+            "class": "WeeklyReportExport",
+            "layout": "layout.json"
+        },
+        "reports.monthly.export": {
+            "class": "MonthlyReportExport",
+            "layout": "layout.json"
+        },
+        "reports.daily.send": {
+            "class": "DailyReportSend",
+            "layout": "layout.json"
+        },
+        "reports.weekly.send": {
+            "class": "WeeklyReportSend",
+            "layout": "layout.json"
+        },
+        "reports.monthly.send": {
+            "class": "MonthlyReportSend",
+            "layout": "layout.json"
+        }
+    }
+}
