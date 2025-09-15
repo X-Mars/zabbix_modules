@@ -136,20 +136,18 @@ class Cmdb extends CController {
             try {
                 $nameSearchParams = [
                     'output' => ['hostid', 'host', 'name', 'status'],
-                    'selectGroups' => ['groupid', 'name'],  // 使用selectGroups而不是selectHostGroups
+                    'selectGroups' => ['groupid', 'name'],
                     'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                     'search' => [
-                        'host' => $search,
-                        'name' => $search
+                        'host' => '*' . $search . '*',
+                        'name' => '*' . $search . '*'
                     ],
                     'searchWildcardsEnabled' => true,
                     'searchByAny' => true,
                     'sortfield' => 'host',
                     'sortorder' => 'ASC',
                     'limit' => 100
-                ];
-                
-                if ($groupid > 0) {
+                ];                if ($groupid > 0) {
                     $nameSearchParams['groupids'] = [$groupid];
                 }
                 
@@ -169,8 +167,8 @@ class Cmdb extends CController {
                     $interfaces = API::HostInterface()->get([
                         'output' => ['hostid', 'ip', 'dns'],
                         'search' => [
-                            'ip' => $search,
-                            'dns' => $search
+                            'ip' => '*' . $search . '*',
+                            'dns' => '*' . $search . '*'
                         ],
                         'searchWildcardsEnabled' => true,
                         'searchByAny' => true
@@ -235,8 +233,8 @@ class Cmdb extends CController {
                 'host' => $host['host'],
                 'name' => $host['name'],
                 'status' => $host['status'],
-                'groups' => $host['hostgroups'],
-                'interfaces' => $host['interfaces'],
+                'groups' => isset($host['groups']) ? $host['groups'] : [],
+                'interfaces' => isset($host['interfaces']) ? $host['interfaces'] : [],
                 'cpu_total' => '-',
                 'cpu_usage' => '-',
                 'memory_total' => '-',

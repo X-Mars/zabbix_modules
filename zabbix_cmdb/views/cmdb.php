@@ -414,7 +414,10 @@ if (empty($data['hosts'])) {
         }
 
         // 获取主机分组
-        $groupNames = array_column($host['groups'], 'name');
+        $groupNames = [];
+        if (isset($host['groups']) && is_array($host['groups'])) {
+            $groupNames = array_column($host['groups'], 'name');
+        }
         
         // 简化内核版本显示
         $kernelVersion = $host['kernel_version'];
