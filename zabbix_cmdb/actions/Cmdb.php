@@ -83,7 +83,7 @@ class Cmdb extends CController {
             function() {
                 $hosts = API::Host()->get([
                     'output' => ['hostid'],
-                    'selectGroups' => ['groupid', 'name'],
+                    'selectHostGroups' => ['groupid', 'name'],
                     'limit' => 1000
                 ]);
                 
@@ -136,7 +136,7 @@ class Cmdb extends CController {
             try {
                 $nameSearchParams = [
                     'output' => ['hostid', 'host', 'name', 'status'],
-                    'selectGroups' => ['groupid', 'name'],
+                    'selectHostGroups' => ['groupid', 'name'],
                     'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                     'search' => [
                         'host' => '*' . $search . '*',
@@ -179,7 +179,7 @@ class Cmdb extends CController {
                         
                         $ipSearchParams = [
                             'output' => ['hostid', 'host', 'name', 'status'],
-                            'selectGroups' => ['groupid', 'name'],
+                            'selectHostGroups' => ['groupid', 'name'],
                             'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                             'hostids' => $hostIds,
                             'sortfield' => 'host',
@@ -206,7 +206,7 @@ class Cmdb extends CController {
             // 没有搜索条件时，获取所有主机
             $hostParams = [
                 'output' => ['hostid', 'host', 'name', 'status'],
-                'selectGroups' => ['groupid', 'name'],  // 使用selectGroups
+                'selectHostGroups' => ['groupid', 'name'],
                 'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                 'sortfield' => 'host',
                 'sortorder' => 'ASC',
@@ -233,7 +233,7 @@ class Cmdb extends CController {
                 'host' => $host['host'],
                 'name' => $host['name'],
                 'status' => $host['status'],
-                'groups' => isset($host['groups']) ? $host['groups'] : [],
+                'groups' => isset($host['groups']) ? $host['groups'] : (isset($host['hostgroups']) ? $host['hostgroups'] : []),
                 'interfaces' => isset($host['interfaces']) ? $host['interfaces'] : [],
                 'cpu_total' => '-',
                 'cpu_usage' => '-',
