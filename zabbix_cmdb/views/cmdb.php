@@ -307,7 +307,7 @@ $content = (new CDiv())
                                     ->addClass('form-field')
                                     ->addItem(new CLabel(LanguageManager::t('Select host group')))
                                     ->addItem(
-                                        new CTag('select', true, $groupOptions, 'groupid')
+                                        new CTag('select', true, $groupOptions, ['name' => 'groupid'])
                                     )
                             )
                             ->addItem(
@@ -549,34 +549,49 @@ $content->addItem($table);
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
 function clearFilters() {
-    // 直接跳转到清空状态的URL，这是最可靠的方法
-    window.location.href = "zabbix.php?action=cmdb";
-}
-
-// 添加调试信息（可选，用于排查问题）
-function debugClearFilters() {
-    console.log("清除按钮被点击");
-    var searchInput = document.querySelector("input[name=\'search\']");
-    var groupSelect = document.querySelector("select[name=\'groupid\']");
+    // 使用更简单可靠的选择器
+    var searchInput = document.querySelector("input[name=\"search\"]");
+    var groupSelect = document.querySelector("select[name=\"groupid\"]");
     var form = document.querySelector("form");
     
-    console.log("搜索输入框:", searchInput);
-    console.log("分组选择框:", groupSelect);
-    console.log("表单:", form);
+    console.log("Clear button clicked");
+    console.log("Search input:", searchInput);
+    console.log("Group select:", groupSelect);
+    console.log("Form:", form);
     
-    // 清空并提交
-    if (searchInput) searchInput.value = "";
-    if (groupSelect) groupSelect.value = "0";
+    // 清空搜索框
+    if (searchInput) {
+        searchInput.value = "";
+        console.log("Cleared search input");
+    }
+    
+    // 重置分组选择
+    if (groupSelect) {
+        groupSelect.value = "0";
+        console.log("Reset group select to 0");
+        // 触发change事件以确保更新
+        groupSelect.dispatchEvent(new Event("change"));
+    }
+    
+    // 提交表单
     if (form) {
+        console.log("Submitting form");
         form.submit();
     } else {
+        console.log("No form found, redirecting");
         window.location.href = "zabbix.php?action=cmdb";
     }
 }
 
 // 添加回车键支持
 document.addEventListener("DOMContentLoaded", function() {
-    var searchInput = document.querySelector("input[name=\'search\']") || document.querySelector("input[type=\'text\']");
+    var searchInput = document.querySelector("input[name=\"search\"]");
+    var groupSelect = document.querySelector("select[name=\"groupid\"]");
+    
+    console.log("Page loaded, elements found:");
+    console.log("Search input:", searchInput);
+    console.log("Group select:", groupSelect);
+    
     if (searchInput) {
         searchInput.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
@@ -585,6 +600,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (form) {
                     form.submit();
                 }
+            }
+        });
+    }
+    
+    if (groupSelect) {
+        groupSelect.addEventListener("change", function() {
+            var form = this.closest("form");
+            if (form) {
+                form.submit();
             }
         });
     }
