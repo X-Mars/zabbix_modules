@@ -265,7 +265,7 @@ $content = (new CDiv())
             ->addItem(
                 (new CForm())
                     ->setMethod('get')
-                    ->setAction('zabbix.php')
+                    ->setAction('zabbix.php?action=cmdb')
                     ->addItem(
                         (new CDiv())
                             ->addClass('search-form')
@@ -571,10 +571,12 @@ function clearFilters() {
         // 使用ID选择器，更可靠
         var searchInput = document.querySelector("input[name=\"search\"]");
         var groupSelect = document.getElementById("groupid-select");
+        var form = document.querySelector("form");
 
         console.log("Clear button clicked");
         console.log("Search input:", searchInput);
         console.log("Group select:", groupSelect);
+        console.log("Form:", form);
 
         // 清空搜索框
         if (searchInput) {
@@ -588,10 +590,18 @@ function clearFilters() {
             console.log("Reset group select to 0 (All groups)");
         }
 
-        // 不提交表单，只清空字段
-        console.log("Filters cleared without page navigation");
+        // 提交表单以刷新数据
+        if (form) {
+            console.log("Submitting form to refresh data");
+            form.submit();
+        } else {
+            console.log("No form found, redirecting");
+            window.location.href = "zabbix.php?action=cmdb";
+        }
     } catch (error) {
         console.error("Error in clearFilters:", error);
+        // 最后的备选方案
+        window.location.href = "zabbix.php?action=cmdb";
     }
 }
 
