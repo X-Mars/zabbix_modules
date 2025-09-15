@@ -40,76 +40,119 @@ class Cmdb extends CController {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
 
-        // 获取主机分组列表 - 移除已弃用的参数
+        // 获取主机分组列表 - 简化逻辑
         $hostGroups = [];
         try {
             $hostGroups = API::HostGroup()->get([
                 'output' => ['groupid', 'name'],
                 'sortfield' => 'name',
                 'sortorder' => 'ASC'
-                // 移除 real_hosts 参数，因为在新版本中已被弃用
             ]);
         } catch (Exception $e) {
-            // 如果权限不足，尝试获取用户可访问的分组
-            try {
-                $hostGroups = API::HostGroup()->get([
-                    'output' => ['groupid', 'name'],
-                    'sortfield' => 'name',
-                    'sortorder' => 'ASC'
-                ]);
-            } catch (Exception $e2) {
-                // 如果还是失败，使用空数组
-                $hostGroups = [];
-            }
+            // 如果获取失败，记录错误但不中断执行
+            error_log("Failed to get host groups: " . $e->getMessage());
+            $hostGroups = [];
         }
 
-        // 构建主机查询条件
-        $hostParams = [
-            'output' => ['hostid', 'host', 'name', 'status'],
-            'selectHostGroups' => ['groupid', 'name'],
-            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
-            'sortfield' => 'host',
-            'sortorder' => 'ASC',
-            'limit' => 100
-        ];
-
-        // 如果选择了特定的主机分组
-        if ($groupid > 0) {
-            $hostParams['groupids'] = [$groupid];
-        }
-
-        // 改进搜索功能 - 支持主机名、显示名称和IP地址的模糊搜索
+        // 获取主机列表 - 优化搜索逻辑
         if (!empty($search)) {
-            // 如果搜索词看起来像IP地址，也搜索接口
-            if (filter_var($search, FILTER_VALIDATE_IP) || preg_match('/^\d+\.\d+\.\d+/', $search)) {
-                // IP地址搜索 - 需要先获取匹配的接口，然后获取对应的主机
-                $interfaces = API::HostInterface()->get([
-                    'output' => ['hostid', 'ip', 'dns'],
+            // 搜索策略：支持主机名、显示名称和IP地址的模糊搜索
+            $allFoundHosts = [];
+            
+            // 1. 搜索主机名和显示名称
+            try {
+                $nameSearchParams = [
+                    'output' => ['hostid', 'host', 'name', 'status'],
+                    'selectHostGroups' => ['groupid', 'name'],
+                    'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                     'search' => [
-                        'ip' => $search,
-                        'dns' => $search
+                        'host' => '*' . $search . '*',
+                        'name' => '*' . $search . '*'
                     ],
                     'searchWildcardsEnabled' => true,
-                    'searchByAny' => true
-                ]);
-                
-                if (!empty($interfaces)) {
-                    $hostIds = array_unique(array_column($interfaces, 'hostid'));
-                    $hostParams['hostids'] = $hostIds;
-                }
-            } else {
-                // 主机名搜索
-                $hostParams['search'] = [
-                    'host' => $search,
-                    'name' => $search
+                    'searchByAny' => true,
+                    'sortfield' => 'host',
+                    'sortorder' => 'ASC',
+                    'limit' => 100
                 ];
-                $hostParams['searchWildcardsEnabled'] = true;
-                $hostParams['searchByAny'] = true;
+                
+                if ($groupid > 0) {
+                    $nameSearchParams['groupids'] = [$groupid];
+                }
+                
+                $nameHosts = API::Host()->get($nameSearchParams);
+                
+                foreach ($nameHosts as $host) {
+                    $allFoundHosts[$host['hostid']] = $host;
+                }
+            } catch (Exception $e) {
+                error_log("Name search failed: " . $e->getMessage());
+            }
+            
+            // 2. 如果搜索词包含数字，也尝试IP搜索
+            if (preg_match('/\d/', $search)) {
+                try {
+                    // 先搜索接口
+                    $interfaces = API::HostInterface()->get([
+                        'output' => ['hostid', 'ip', 'dns'],
+                        'search' => [
+                            'ip' => '*' . $search . '*',
+                            'dns' => '*' . $search . '*'
+                        ],
+                        'searchWildcardsEnabled' => true,
+                        'searchByAny' => true
+                    ]);
+                    
+                    if (!empty($interfaces)) {
+                        $hostIds = array_unique(array_column($interfaces, 'hostid'));
+                        
+                        $ipSearchParams = [
+                            'output' => ['hostid', 'host', 'name', 'status'],
+                            'selectHostGroups' => ['groupid', 'name'],
+                            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+                            'hostids' => $hostIds,
+                            'sortfield' => 'host',
+                            'sortorder' => 'ASC'
+                        ];
+                        
+                        if ($groupid > 0) {
+                            $ipSearchParams['groupids'] = [$groupid];
+                        }
+                        
+                        $ipHosts = API::Host()->get($ipSearchParams);
+                        
+                        foreach ($ipHosts as $host) {
+                            $allFoundHosts[$host['hostid']] = $host;
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("IP search failed: " . $e->getMessage());
+                }
+            }
+            
+            $hosts = array_values($allFoundHosts);
+        } else {
+            // 没有搜索条件时，获取所有主机
+            $hostParams = [
+                'output' => ['hostid', 'host', 'name', 'status'],
+                'selectHostGroups' => ['groupid', 'name'],
+                'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+                'sortfield' => 'host',
+                'sortorder' => 'ASC',
+                'limit' => 100
+            ];
+            
+            if ($groupid > 0) {
+                $hostParams['groupids'] = [$groupid];
+            }
+            
+            try {
+                $hosts = API::Host()->get($hostParams);
+            } catch (Exception $e) {
+                error_log("Host fetch failed: " . $e->getMessage());
+                $hosts = [];
             }
         }
-
-        // 获取主机列表
-        $hosts = API::Host()->get($hostParams);
 
         // 处理主机数据，获取CPU、内存信息和使用率
         $hostData = [];

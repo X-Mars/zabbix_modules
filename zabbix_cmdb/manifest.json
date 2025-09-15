@@ -11,6 +11,9 @@
         "cmdb": {
             "class": "Cmdb",
             "view": "cmdb"
+        },
+        "cmdb.debug": {
+            "class": "CmdbDebug"
         }
     }
 }
