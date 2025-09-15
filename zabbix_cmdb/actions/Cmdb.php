@@ -281,6 +281,9 @@ class Cmdb extends CController {
         // 添加调试信息 - 检查数据传递
         error_log("CMDB: Passing " . count($hostGroups) . " host groups to view");
         error_log("CMDB: Passing " . count($hostData) . " hosts to view");
+        if (!empty($hostGroups)) {
+            error_log("CMDB: First few groups: " . implode(', ', array_slice(array_column($hostGroups, 'name'), 0, 3)));
+        }
         
         $response = new CControllerResponseData([
             'title' => LanguageManager::t('CMDB'),

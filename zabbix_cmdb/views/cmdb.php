@@ -15,13 +15,8 @@ $groupOptions = '<option value="0">' . LanguageManager::t('All Groups') . '</opt
 error_log("CMDB View: Received " . count($data['host_groups']) . " host groups");
 if (!empty($data['host_groups'])) {
     error_log("CMDB View: First group example - ID: " . $data['host_groups'][0]['groupid'] . ", Name: " . $data['host_groups'][0]['name']);
-    
-    foreach ($data['host_groups'] as $group) {
-        $selected = ($group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
-        $groupOptions .= '<option value="' . htmlspecialchars($group['groupid']) . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
-    }
+    error_log("CMDB View: All group names: " . implode(', ', array_column($data['host_groups'], 'name')));
 } else {
-    $groupOptions .= '<option value="-1" disabled>No host groups available - check permissions</option>';
     error_log("CMDB View: No host groups received from controller");
 }
 
@@ -252,16 +247,6 @@ $page->addItem((new CTag('style', true, '
     background-color: #f8f9fa;
 }
 
-.debug-info {
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 20px;
-    font-family: monospace;
-    font-size: 12px;
-    color: #333;
-}
-
 .group-tag {
     background-color: #e7f3ff;
     color: #004085;
@@ -288,13 +273,6 @@ $page->addItem((new CTag('style', true, '
 // 创建主体内容
 $content = (new CDiv())
     ->addClass('cmdb-container')
-    ->addItem(
-        (new CDiv())
-            ->addClass('debug-info')
-            ->addItem("DEBUG: Received " . count($data['host_groups']) . " host groups from controller")
-            ->addItem(new CTag('br'))
-            ->addItem("Group names: " . (!empty($data['host_groups']) ? implode(', ', array_column($data['host_groups'], 'name')) : 'None'))
-    )
     ->addItem(
         (new CDiv())
             ->addClass('cmdb-search-form')
@@ -561,66 +539,76 @@ $content->addItem($table);
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
 function clearFilters() {
-    // 使用ID选择器，更可靠
-    var searchInput = document.querySelector("input[name=\"search\"]");
-    var groupSelect = document.getElementById("groupid-select");
-    var form = document.querySelector("form");
-    
-    console.log("Clear button clicked");
-    console.log("Search input:", searchInput);
-    console.log("Group select:", groupSelect);
-    console.log("Form:", form);
-    
-    // 清空搜索框
-    if (searchInput) {
-        searchInput.value = "";
-        console.log("Cleared search input");
-    }
-    
-    // 重置分组选择
-    if (groupSelect) {
-        groupSelect.value = "0";
-        console.log("Reset group select to 0");
-    }
-    
-    // 提交表单
-    if (form) {
-        console.log("Submitting form");
-        form.submit();
-    } else {
-        console.log("No form found, redirecting");
+    try {
+        // 使用ID选择器，更可靠
+        var searchInput = document.querySelector("input[name=\"search\"]");
+        var groupSelect = document.getElementById("groupid-select");
+        var form = document.querySelector("form");
+
+        console.log("Clear button clicked");
+        console.log("Search input:", searchInput);
+        console.log("Group select:", groupSelect);
+        console.log("Form:", form);
+
+        // 清空搜索框
+        if (searchInput) {
+            searchInput.value = "";
+            console.log("Cleared search input");
+        }
+
+        // 重置分组选择
+        if (groupSelect) {
+            groupSelect.value = "0";
+            console.log("Reset group select to 0");
+        }
+
+        // 提交表单
+        if (form) {
+            console.log("Submitting form");
+            form.submit();
+        } else {
+            console.log("No form found, redirecting");
+            window.location.href = "zabbix.php?action=cmdb";
+        }
+    } catch (error) {
+        console.error("Error in clearFilters:", error);
+        // 最后的备选方案
         window.location.href = "zabbix.php?action=cmdb";
     }
 }
 
-// 添加回车键支持
+// 添加回车键支持和分组选择变化支持
 document.addEventListener("DOMContentLoaded", function() {
-    var searchInput = document.querySelector("input[name=\"search\"]");
-    var groupSelect = document.getElementById("groupid-select");
-    
-    console.log("Page loaded, elements found:");
-    console.log("Search input:", searchInput);
-    console.log("Group select:", groupSelect);
-    
-    if (searchInput) {
-        searchInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
+    try {
+        var searchInput = document.querySelector("input[name=\"search\"]");
+        var groupSelect = document.getElementById("groupid-select");
+
+        console.log("Page loaded, elements found:");
+        console.log("Search input:", searchInput);
+        console.log("Group select:", groupSelect);
+
+        if (searchInput) {
+            searchInput.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    var form = this.closest("form");
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            });
+        }
+
+        if (groupSelect) {
+            groupSelect.addEventListener("change", function() {
                 var form = this.closest("form");
                 if (form) {
                     form.submit();
                 }
-            }
-        });
-    }
-    
-    if (groupSelect) {
-        groupSelect.addEventListener("change", function() {
-            var form = this.closest("form");
-            if (form) {
-                form.submit();
-            }
-        });
+            });
+        }
+    } catch (error) {
+        console.error("Error in DOMContentLoaded:", error);
     }
 });
 '));
