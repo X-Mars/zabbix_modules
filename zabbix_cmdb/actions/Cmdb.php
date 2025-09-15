@@ -114,6 +114,9 @@ class Cmdb extends CController {
                 $hostGroups = $strategy();
                 if (!empty($hostGroups)) {
                     error_log("CMDB: Successfully got host groups using strategy " . ($index + 1) . " (" . count($hostGroups) . " groups)");
+                    // 添加详细的分组信息到日志
+                    $groupNames = array_column($hostGroups, 'name');
+                    error_log("CMDB: Host group names: " . implode(', ', $groupNames));
                     break;
                 }
             } catch (Exception $e) {
@@ -278,6 +281,10 @@ class Cmdb extends CController {
             $hostData[] = $hostInfo;
         }
 
+        // 添加调试信息 - 检查数据传递
+        error_log("CMDB: Passing " . count($hostGroups) . " host groups to view");
+        error_log("CMDB: Passing " . count($hostData) . " hosts to view");
+        
         $response = new CControllerResponseData([
             'title' => LanguageManager::t('CMDB'),
             'host_groups' => $hostGroups,

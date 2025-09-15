@@ -8,16 +8,22 @@ use Modules\ZabbixCmdb\Lib\LanguageManager;
 $page = new CHtmlPage();
 $page->setTitle(LanguageManager::t('CMDB'));
 
-// 构建下拉框选项
-$groupOptions = '<option value="0">' . LanguageManager::t('All Groups') . '</option>';
+// 构建下拉框选项数组
+$groupOptions = [0 => LanguageManager::t('All Groups')];
+
+// 添加调试信息
+error_log("CMDB View: Received " . count($data['host_groups']) . " host groups");
+if (!empty($data['host_groups'])) {
+    error_log("CMDB View: First group example - ID: " . $data['host_groups'][0]['groupid'] . ", Name: " . $data['host_groups'][0]['name']);
+}
+
 if (!empty($data['host_groups'])) {
     foreach ($data['host_groups'] as $group) {
-        $selected = ($group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
-        $groupOptions .= '<option value="' . $group['groupid'] . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
+        $groupOptions[$group['groupid']] = $group['name'];
     }
 } else {
-    // 调试信息：如果没有主机分组数据，添加一个调试选项
-    $groupOptions .= '<option value="-1" disabled>No host groups available - check permissions</option>';
+    $groupOptions[-1] = 'No host groups available - check permissions';
+    error_log("CMDB View: No host groups received from controller");
 }
 
 // 添加与Zabbix主题一致的CSS
@@ -302,9 +308,7 @@ $content = (new CDiv())
                                     ->addClass('form-field')
                                     ->addItem(new CLabel(LanguageManager::t('Select host group')))
                                     ->addItem(
-                                        (new CTag('select', true))
-                                            ->setAttribute('name', 'groupid')
-                                            ->addItem($groupOptions)
+                                        (new CComboBox('groupid', $data['selected_groupid'], null, $groupOptions))
                                     )
                             )
                             ->addItem(
