@@ -8,33 +8,7 @@ use Modules\ZabbixCmdb\Lib\LanguageManager;
 $page = new CHtmlPage();
 $page->setTitle(LanguageManager::t('CMDB'));
 
-// 构建下拉框选项 - 回到HTML字符串方式（最兼容）
-$groupOptions = '<option value="0">' . LanguageManager::t('All Groups') . '</option>';
-
-// 添加调试信息
-error_log("CMDB View: Received " . count($data['host_groups']) . " host groups");
-if (!empty($data['host_groups'])) {
-    error_log("CMDB View: First group example - ID: " . $data['host_groups'][0]['groupid'] . ", Name: " . $data['host_groups'][0]['name']);
-    error_log("CMDB View: All group names: " . implode(', ', array_column($data['host_groups'], 'name')));
-} else {
-    error_log("CMDB View: No host groups received from controller");
-}
-
-// 添加调试信息到页面（临时）
-$debugInfo = "<!-- DEBUG INFO: " . count($data['host_groups']) . " groups received -->";
-$content = new CDiv();
-$content->addItem(new CTag('div', true, $debugInfo, ['style' => 'display: none;']));
-
-// 将控制器传来的主机分组追加为下拉选项
-if (!empty($data['host_groups'])) {
-    foreach ($data['host_groups'] as $group) {
-        $selected = (isset($data['selected_groupid']) && $group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
-        $groupOptions .= '<option value="' . htmlspecialchars($group['groupid']) . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
-    }
-} else {
-    // 如果没有分组，给出可见提示（只读）
-    $groupOptions .= '<option value="-1" disabled>' . LanguageManager::t('No host groups available - check permissions') . '</option>';
-}
+// 构建下拉框选项 - 使用CTag直接生成select元素
 
 // 添加与Zabbix主题一致的CSS
 $page->addItem((new CTag('style', true, '
@@ -308,9 +282,30 @@ $content = (new CDiv())
                                 (new CDiv())
                                     ->addClass('form-field')
                                     ->addItem(new CLabel(LanguageManager::t('Select host group')))
-                                    ->addItem(new CTag('div', true,
-                                        '<select name="groupid" id="groupid-select">' . $groupOptions . '</select>'
-                                    ))
+                                    ->addItem((function() use ($data) {
+                                        $select = new CTag('select', true);
+                                        $select->setAttribute('name', 'groupid');
+                                        $select->setAttribute('id', 'groupid-select');
+
+                                        // 添加"所有分组"选项
+                                        $optAll = new CTag('option', true, LanguageManager::t('All Groups'));
+                                        $optAll->setAttribute('value', '0');
+                                        $select->addItem($optAll);
+
+                                        // 添加实际的主机组
+                                        if (!empty($data['host_groups'])) {
+                                            foreach ($data['host_groups'] as $group) {
+                                                $opt = new CTag('option', true, $group['name']);
+                                                $opt->setAttribute('value', $group['groupid']);
+                                                if (isset($data['selected_groupid']) && $data['selected_groupid'] == $group['groupid']) {
+                                                    $opt->setAttribute('selected', 'selected');
+                                                }
+                                                $select->addItem($opt);
+                                            }
+                                        }
+
+                                        return $select;
+                                    })())
                             )
                             ->addItem(
                                 (new CTag('button', true, LanguageManager::t('Search')))
