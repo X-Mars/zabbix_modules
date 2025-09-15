@@ -274,6 +274,24 @@ class Cmdb extends CController {
                 $hostInfo['kernel_version'] = ItemFinder::extractKernelInfo($kernelResult['value']);
             }
 
+            // 获取系统名称
+            $systemNameResult = ItemFinder::findSystemName($host['hostid']);
+            if ($systemNameResult && $systemNameResult['value'] !== null) {
+                $hostInfo['system_name'] = $systemNameResult['value'];
+            }
+
+            // 获取操作系统
+            $osResult = ItemFinder::findOperatingSystem($host['hostid']);
+            if ($osResult && $osResult['value'] !== null) {
+                $hostInfo['operating_system'] = $osResult['value'];
+            }
+
+            // 获取操作系统架构
+            $archResult = ItemFinder::findOsArchitecture($host['hostid']);
+            if ($archResult && $archResult['value'] !== null) {
+                $hostInfo['os_architecture'] = $archResult['value'];
+            }
+
             $hostData[] = $hostInfo;
         }
 

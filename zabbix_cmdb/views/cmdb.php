@@ -357,13 +357,15 @@ $table->addClass('hosts-table');
 // 添加表头
 $header = [
     LanguageManager::t('Host Name'),
+    LanguageManager::t('System Name'),
     LanguageManager::t('IP Address'),
+    LanguageManager::t('Architecture'),
     LanguageManager::t('Interface Type'),
     LanguageManager::t('CPU Total'),
     LanguageManager::t('CPU Usage'),
     LanguageManager::t('Memory Total'),
     LanguageManager::t('Memory Usage'),
-    LanguageManager::t('Kernel Version'),
+    LanguageManager::t('Operating System'),
     LanguageManager::t('Host Group')
 ];
 $table->setHeader($header);
@@ -373,7 +375,7 @@ if (empty($data['hosts'])) {
     $table->addRow([
         (new CCol(LanguageManager::t('No hosts found')))
             ->addClass('no-data')
-            ->setAttribute('colspan', 9)
+            ->setAttribute('colspan', 11)
     ]);
 } else {
     // 添加主机数据行
@@ -418,12 +420,6 @@ if (empty($data['hosts'])) {
         if (isset($host['groups']) && is_array($host['groups'])) {
             $groupNames = array_column($host['groups'], 'name');
         }
-        
-        // 简化内核版本显示
-        $kernelVersion = $host['kernel_version'];
-        if ($kernelVersion !== '-' && strlen($kernelVersion) > 30) {
-            $kernelVersion = substr($kernelVersion, 0, 30) . '...';
-        }
 
         // 主机名和状态
         $hostNameCol = new CCol();
@@ -440,10 +436,30 @@ if (empty($data['hosts'])) {
                 )
         );
 
+        // 系统名称
+        $systemNameCol = new CCol();
+        if (isset($host['system_name']) && $host['system_name'] !== null) {
+            $systemNameCol->addItem(
+                (new CSpan(htmlspecialchars($host['system_name'])))->setAttribute('style', 'font-family: monospace; font-size: 13px;')
+            );
+        } else {
+            $systemNameCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+        }
+
         // IP地址
         $ipCol = new CCol(
             (new CSpan(htmlspecialchars($mainIp)))->addClass('code-display')
         );
+
+        // 架构
+        $archCol = new CCol();
+        if (isset($host['os_architecture']) && $host['os_architecture'] !== null) {
+            $archCol->addItem(
+                (new CSpan(htmlspecialchars($host['os_architecture'])))->setAttribute('style', 'font-family: monospace; font-size: 13px;')
+            );
+        } else {
+            $archCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+        }
 
         // 接口类型
         $interfaceCol = new CCol(
@@ -506,16 +522,19 @@ if (empty($data['hosts'])) {
             $memoryUsageCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
-        // 内核版本
-        $kernelCol = new CCol();
-        if ($kernelVersion !== '-') {
-            $kernelCol->addItem(
-                (new CSpan(htmlspecialchars($kernelVersion)))
-                    ->addClass('kernel-display')
-                    ->setAttribute('title', htmlspecialchars($host['kernel_version']))
+        // 操作系统
+        $osCol = new CCol();
+        if (isset($host['operating_system']) && $host['operating_system'] !== null) {
+            $osValue = $host['operating_system'];
+            if (strlen($osValue) > 25) {
+                $osValue = substr($osValue, 0, 22) . '...';
+            }
+            $osCol->addItem(
+                (new CSpan(htmlspecialchars($osValue)))
+                    ->setAttribute('title', htmlspecialchars($host['operating_system']))
             );
         } else {
-            $kernelCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+            $osCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 主机分组
@@ -529,13 +548,15 @@ if (empty($data['hosts'])) {
 
         $table->addRow([
             $hostNameCol,
+            $systemNameCol,
             $ipCol,
+            $archCol,
             $interfaceCol,
             $cpuCol,
             $cpuUsageCol,
             $memoryCol,
             $memoryUsageCol,
-            $kernelCol,
+            $osCol,
             $groupCol
         ]);
     }

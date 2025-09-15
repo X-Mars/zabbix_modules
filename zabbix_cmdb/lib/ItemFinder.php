@@ -81,22 +81,69 @@ class ItemFinder {
         return self::findItemByPatterns($hostid, $patterns);
     }
 
-    /**
+        /**
      * 查找内核版本监控项
      */
     public static function findKernelVersion($hostid) {
         $patterns = [
             // 优先使用精确的key
-            ['filter' => ['key_' => 'kernel.version']],
             ['filter' => ['key_' => 'system.uname']],
-            ['filter' => ['key_' => 'system.sw.os']],
-            ['filter' => ['key_' => 'system.sw.os[full]']],
+            ['filter' => ['key_' => 'system.sw.os[uname]']],
             // 按名称搜索作为备选
+            ['search' => ['name' => 'System uname'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'Kernel version'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'system.uname'], 'searchWildcardsEnabled' => true]
+        ];
+        
+        return self::findItemByPatterns($hostid, $patterns);
+    }
+    
+    /**
+     * 查找系统名称监控项
+     */
+    public static function findSystemName($hostid) {
+        $patterns = [
+            // 优先使用精确的key
+            ['filter' => ['key_' => 'system.hostname']],
+            ['filter' => ['key_' => 'system.sw.os[hostname]']],
+            // 按名称搜索作为备选
+            ['search' => ['name' => 'System name'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Hostname'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'system.hostname'], 'searchWildcardsEnabled' => true]
+        ];
+        
+        return self::findItemByPatterns($hostid, $patterns);
+    }
+    
+    /**
+     * 查找操作系统监控项
+     */
+    public static function findOperatingSystem($hostid) {
+        $patterns = [
+            // 优先使用精确的key
+            ['filter' => ['key_' => 'system.sw.os']],
+            ['filter' => ['key_' => 'system.sw.os[name]']],
+            // 按名称搜索作为备选
             ['search' => ['name' => 'Operating system'], 'searchWildcardsEnabled' => true],
-            ['search' => ['name' => 'System information'], 'searchWildcardsEnabled' => true],
-            ['search' => ['key_' => 'kernel'], 'searchWildcardsEnabled' => true],
-            ['search' => ['key_' => 'uname'], 'searchWildcardsEnabled' => true]
+            ['search' => ['name' => 'OS name'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'system.sw.os'], 'searchWildcardsEnabled' => true]
+        ];
+        
+        return self::findItemByPatterns($hostid, $patterns);
+    }
+    
+    /**
+     * 查找操作系统架构监控项
+     */
+    public static function findOsArchitecture($hostid) {
+        $patterns = [
+            // 优先使用精确的key
+            ['filter' => ['key_' => 'system.sw.arch']],
+            ['filter' => ['key_' => 'system.hw.arch']],
+            // 按名称搜索作为备选
+            ['search' => ['name' => 'Operating system architecture'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'System architecture'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'system.sw.arch'], 'searchWildcardsEnabled' => true]
         ];
         
         return self::findItemByPatterns($hostid, $patterns);
