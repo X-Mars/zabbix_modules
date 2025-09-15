@@ -13,7 +13,7 @@ use Modules\ZabbixCmdb\Lib\ItemFinder;
 class CmdbDebug extends CController {
     
     public function init() {
-        $this->disableSIDValidation();
+        // 移除 disableSIDValidation() 调用，因为在某些版本中不存在
     }
     
     protected function checkInput() {
@@ -27,26 +27,80 @@ class CmdbDebug extends CController {
     protected function doAction() {
         echo "<h1>CMDB调试信息</h1>";
         
-        // 1. 测试主机分组获取
+        // 1. 测试主机分组获取 - 多种方法
         echo "<h2>1. 主机分组获取测试</h2>";
-        $hostGroups = [];
+        
+        // 方法1：标准API调用
+        echo "<h3>方法1：标准hostgroup.get</h3>";
         try {
-            $hostGroups = API::HostGroup()->get([
+            $hostGroups1 = API::HostGroup()->get([
                 'output' => ['groupid', 'name'],
                 'sortfield' => 'name',
                 'sortorder' => 'ASC'
             ]);
-            echo "<p style='color: green;'>✓ 成功获取到 " . count($hostGroups) . " 个主机分组</p>";
-            echo "<ul>";
-            foreach (array_slice($hostGroups, 0, 10) as $group) {
+            echo "<p style='color: green;'>✓ 成功获取到 " . count($hostGroups1) . " 个主机分组</p>";
+            foreach (array_slice($hostGroups1, 0, 5) as $group) {
                 echo "<li>{$group['name']} (ID: {$group['groupid']})</li>";
             }
-            if (count($hostGroups) > 10) {
-                echo "<li>... 还有 " . (count($hostGroups) - 10) . " 个分组</li>";
-            }
-            echo "</ul>";
         } catch (Exception $e) {
-            echo "<p style='color: red;'>✗ 获取主机分组失败: " . $e->getMessage() . "</p>";
+            echo "<p style='color: red;'>✗ 标准方法失败: " . $e->getMessage() . "</p>";
+        }
+        
+        // 方法2：只获取包含主机的分组
+        echo "<h3>方法2：with_hosts=true</h3>";
+        try {
+            $hostGroups2 = API::HostGroup()->get([
+                'output' => ['groupid', 'name'],
+                'with_hosts' => true,
+                'sortfield' => 'name',
+                'sortorder' => 'ASC'
+            ]);
+            echo "<p style='color: green;'>✓ 成功获取到 " . count($hostGroups2) . " 个包含主机的分组</p>";
+            foreach (array_slice($hostGroups2, 0, 5) as $group) {
+                echo "<li>{$group['name']} (ID: {$group['groupid']})</li>";
+            }
+        } catch (Exception $e) {
+            echo "<p style='color: red;'>✗ with_hosts方法失败: " . $e->getMessage() . "</p>";
+        }
+        
+        // 方法3：通过主机获取分组
+        echo "<h3>方法3：通过主机获取分组</h3>";
+        try {
+            $hosts = API::Host()->get([
+                'output' => ['hostid'],
+                'selectGroups' => ['groupid', 'name'],
+                'limit' => 100
+            ]);
+            
+            $groupsMap = [];
+            foreach ($hosts as $host) {
+                foreach ($host['groups'] as $group) {
+                    $groupsMap[$group['groupid']] = $group;
+                }
+            }
+            
+            $hostGroups3 = array_values($groupsMap);
+            echo "<p style='color: green;'>✓ 通过 " . count($hosts) . " 个主机获取到 " . count($hostGroups3) . " 个分组</p>";
+            foreach (array_slice($hostGroups3, 0, 5) as $group) {
+                echo "<li>{$group['name']} (ID: {$group['groupid']})</li>";
+            }
+        } catch (Exception $e) {
+            echo "<p style='color: red;'>✗ 通过主机获取失败: " . $e->getMessage() . "</p>";
+        }
+        
+        // 方法4：测试不同的输出参数
+        echo "<h3>方法4：extend输出</h3>";
+        try {
+            $hostGroups4 = API::HostGroup()->get([
+                'output' => 'extend',
+                'limit' => 5
+            ]);
+            echo "<p style='color: green;'>✓ extend输出获取到 " . count($hostGroups4) . " 个分组</p>";
+            foreach ($hostGroups4 as $group) {
+                echo "<li>{$group['name']} (ID: {$group['groupid']}) - Internal: {$group['internal']}</li>";
+            }
+        } catch (Exception $e) {
+            echo "<p style='color: red;'>✗ extend输出失败: " . $e->getMessage() . "</p>";
         }
         
         // 2. 测试主机获取

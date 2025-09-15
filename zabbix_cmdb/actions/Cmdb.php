@@ -40,21 +40,94 @@ class Cmdb extends CController {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
 
-        // 获取主机分组列表 - 简化逻辑
+        // 获取主机分组列表 - 基于Zabbix 7.0 API文档的最佳实践
         $hostGroups = [];
-        try {
-            $hostGroups = API::HostGroup()->get([
-                'output' => ['groupid', 'name'],
-                'sortfield' => 'name',
-                'sortorder' => 'ASC'
-            ]);
-        } catch (Exception $e) {
-            // 如果获取失败，记录错误但不中断执行
-            error_log("Failed to get host groups: " . $e->getMessage());
-            $hostGroups = [];
+        
+        // 尝试多种策略获取主机分组，确保兼容性
+        $strategies = [
+            // 策略1：获取包含主机的分组（推荐，性能更好）
+            function() {
+                return API::HostGroup()->get([
+                    'output' => ['groupid', 'name'],
+                    'with_hosts' => true,
+                    'sortfield' => 'name',
+                    'sortorder' => 'ASC'
+                ]);
+            },
+            
+            // 策略2：标准获取所有分组
+            function() {
+                return API::HostGroup()->get([
+                    'output' => ['groupid', 'name'],
+                    'sortfield' => 'name',
+                    'sortorder' => 'ASC'
+                ]);
+            },
+            
+            // 策略3：使用extend输出（某些版本可能需要）
+            function() {
+                $groups = API::HostGroup()->get([
+                    'output' => 'extend',
+                    'sortfield' => 'name',
+                    'sortorder' => 'ASC'
+                ]);
+                return array_map(function($group) {
+                    return [
+                        'groupid' => $group['groupid'],
+                        'name' => $group['name']
+                    ];
+                }, $groups);
+            },
+            
+            // 策略4：通过主机反向获取分组（最后的兼容性选项）
+            function() {
+                $hosts = API::Host()->get([
+                    'output' => ['hostid'],
+                    'selectGroups' => ['groupid', 'name'],
+                    'limit' => 1000
+                ]);
+                
+                $groupsMap = [];
+                foreach ($hosts as $host) {
+                    if (isset($host['groups'])) {
+                        foreach ($host['groups'] as $group) {
+                            $groupsMap[$group['groupid']] = [
+                                'groupid' => $group['groupid'],
+                                'name' => $group['name']
+                            ];
+                        }
+                    }
+                }
+                
+                $groups = array_values($groupsMap);
+                usort($groups, function($a, $b) {
+                    return strcasecmp($a['name'], $b['name']);
+                });
+                
+                return $groups;
+            }
+        ];
+        
+        // 依次尝试每种策略
+        foreach ($strategies as $index => $strategy) {
+            try {
+                $hostGroups = $strategy();
+                if (!empty($hostGroups)) {
+                    error_log("CMDB: Successfully got host groups using strategy " . ($index + 1) . " (" . count($hostGroups) . " groups)");
+                    break;
+                }
+            } catch (Exception $e) {
+                error_log("CMDB: Strategy " . ($index + 1) . " failed: " . $e->getMessage());
+                continue;
+            }
+        }
+        
+        // 如果所有策略都失败了，记录错误但不中断执行
+        if (empty($hostGroups)) {
+            error_log("CMDB: All host group retrieval strategies failed");
         }
 
-        // 获取主机列表 - 优化搜索逻辑
+        // 获取主机列表 - 根据Zabbix 7.0 API文档优化
         if (!empty($search)) {
             // 搜索策略：支持主机名、显示名称和IP地址的模糊搜索
             $allFoundHosts = [];
@@ -63,11 +136,11 @@ class Cmdb extends CController {
             try {
                 $nameSearchParams = [
                     'output' => ['hostid', 'host', 'name', 'status'],
-                    'selectHostGroups' => ['groupid', 'name'],
+                    'selectGroups' => ['groupid', 'name'],  // 使用selectGroups而不是selectHostGroups
                     'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                     'search' => [
-                        'host' => '*' . $search . '*',
-                        'name' => '*' . $search . '*'
+                        'host' => $search,
+                        'name' => $search
                     ],
                     'searchWildcardsEnabled' => true,
                     'searchByAny' => true,
@@ -96,8 +169,8 @@ class Cmdb extends CController {
                     $interfaces = API::HostInterface()->get([
                         'output' => ['hostid', 'ip', 'dns'],
                         'search' => [
-                            'ip' => '*' . $search . '*',
-                            'dns' => '*' . $search . '*'
+                            'ip' => $search,
+                            'dns' => $search
                         ],
                         'searchWildcardsEnabled' => true,
                         'searchByAny' => true
@@ -108,7 +181,7 @@ class Cmdb extends CController {
                         
                         $ipSearchParams = [
                             'output' => ['hostid', 'host', 'name', 'status'],
-                            'selectHostGroups' => ['groupid', 'name'],
+                            'selectGroups' => ['groupid', 'name'],
                             'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                             'hostids' => $hostIds,
                             'sortfield' => 'host',
@@ -135,7 +208,7 @@ class Cmdb extends CController {
             // 没有搜索条件时，获取所有主机
             $hostParams = [
                 'output' => ['hostid', 'host', 'name', 'status'],
-                'selectHostGroups' => ['groupid', 'name'],
+                'selectGroups' => ['groupid', 'name'],  // 使用selectGroups
                 'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                 'sortfield' => 'host',
                 'sortorder' => 'ASC',

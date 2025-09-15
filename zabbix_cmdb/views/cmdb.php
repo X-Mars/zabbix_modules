@@ -10,9 +10,14 @@ $page->setTitle(LanguageManager::t('CMDB'));
 
 // 构建下拉框选项
 $groupOptions = '<option value="0">' . LanguageManager::t('All Groups') . '</option>';
-foreach ($data['host_groups'] as $group) {
-    $selected = ($group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
-    $groupOptions .= '<option value="' . $group['groupid'] . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
+if (!empty($data['host_groups'])) {
+    foreach ($data['host_groups'] as $group) {
+        $selected = ($group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
+        $groupOptions .= '<option value="' . $group['groupid'] . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
+    }
+} else {
+    // 调试信息：如果没有主机分组数据，添加一个调试选项
+    $groupOptions .= '<option value="-1" disabled>No host groups available - check permissions</option>';
 }
 
 // 添加与Zabbix主题一致的CSS
