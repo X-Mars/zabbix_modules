@@ -571,12 +571,10 @@ function clearFilters() {
         // 使用ID选择器，更可靠
         var searchInput = document.querySelector("input[name=\"search\"]");
         var groupSelect = document.getElementById("groupid-select");
-        var form = document.querySelector("form");
 
         console.log("Clear button clicked");
         console.log("Search input:", searchInput);
         console.log("Group select:", groupSelect);
-        console.log("Form:", form);
 
         // 清空搜索框
         if (searchInput) {
@@ -584,24 +582,16 @@ function clearFilters() {
             console.log("Cleared search input");
         }
 
-        // 重置分组选择
+        // 重置分组选择到所有分组
         if (groupSelect) {
             groupSelect.value = "0";
-            console.log("Reset group select to 0");
+            console.log("Reset group select to 0 (All groups)");
         }
 
-        // 提交表单
-        if (form) {
-            console.log("Submitting form");
-            form.submit();
-        } else {
-            console.log("No form found, redirecting");
-            window.location.href = "zabbix.php?action=cmdb";
-        }
+        // 不提交表单，只清空字段
+        console.log("Filters cleared without page navigation");
     } catch (error) {
         console.error("Error in clearFilters:", error);
-        // 最后的备选方案
-        window.location.href = "zabbix.php?action=cmdb";
     }
 }
 
