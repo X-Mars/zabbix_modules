@@ -113,7 +113,6 @@ class Cmdb extends CController {
             try {
                 $hostGroups = $strategy();
                 if (!empty($hostGroups)) {
-                    error_log("CMDB: Successfully got host groups using strategy " . ($index + 1) . " (" . count($hostGroups) . " groups)");
                     break;
                 }
             } catch (Exception $e) {
