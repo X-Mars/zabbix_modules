@@ -40,14 +40,14 @@ class Cmdb extends CController {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
 
-        // 获取主机分组列表 - 添加更多权限兼容性
+        // 获取主机分组列表 - 移除已弃用的参数
         $hostGroups = [];
         try {
             $hostGroups = API::HostGroup()->get([
                 'output' => ['groupid', 'name'],
                 'sortfield' => 'name',
-                'sortorder' => 'ASC',
-                'real_hosts' => true  // 只显示有真实主机的分组
+                'sortorder' => 'ASC'
+                // 移除 real_hosts 参数，因为在新版本中已被弃用
             ]);
         } catch (Exception $e) {
             // 如果权限不足，尝试获取用户可访问的分组
