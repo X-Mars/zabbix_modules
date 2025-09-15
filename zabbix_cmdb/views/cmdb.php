@@ -25,6 +25,10 @@ if (!empty($data['host_groups'])) {
     error_log("CMDB View: No host groups received from controller");
 }
 
+// 添加调试信息到页面（临时）
+$debugInfo = "<!-- DEBUG INFO: " . count($data['host_groups']) . " groups received -->";
+$content->addItem(new CTag('div', true, $debugInfo, ['style' => 'display: none;']));
+
 // 添加与Zabbix主题一致的CSS
 $page->addItem((new CTag('style', true, '
 .cmdb-container {
@@ -248,13 +252,14 @@ $page->addItem((new CTag('style', true, '
     background-color: #f8f9fa;
 }
 
-.code-display {
-    background-color: #f8f9fa;
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+.debug-info {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-family: monospace;
     font-size: 12px;
-    border: 1px solid #e9ecef;
+    color: #333;
 }
 
 .group-tag {
@@ -285,6 +290,13 @@ $content = (new CDiv())
     ->addClass('cmdb-container')
     ->addItem(
         (new CDiv())
+            ->addClass('debug-info')
+            ->addItem("DEBUG: Received " . count($data['host_groups']) . " host groups from controller")
+            ->addItem(new CTag('br'))
+            ->addItem("Group names: " . (!empty($data['host_groups']) ? implode(', ', array_column($data['host_groups'], 'name')) : 'None'))
+    )
+    ->addItem(
+        (new CDiv())
             ->addClass('cmdb-search-form')
             ->addItem(
                 (new CForm())
@@ -306,9 +318,9 @@ $content = (new CDiv())
                                 (new CDiv())
                                     ->addClass('form-field')
                                     ->addItem(new CLabel(LanguageManager::t('Select host group')))
-                                    ->addItem(
-                                        new CTag('select', true, $groupOptions, ['name' => 'groupid'])
-                                    )
+                                    ->addItem(new CTag('div', true,
+                                        '<select name="groupid" id="groupid-select">' . $groupOptions . '</select>'
+                                    ))
                             )
                             ->addItem(
                                 (new CTag('button', true, LanguageManager::t('Search')))
@@ -549,9 +561,9 @@ $content->addItem($table);
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
 function clearFilters() {
-    // 使用更简单可靠的选择器
+    // 使用ID选择器，更可靠
     var searchInput = document.querySelector("input[name=\"search\"]");
-    var groupSelect = document.querySelector("select[name=\"groupid\"]");
+    var groupSelect = document.getElementById("groupid-select");
     var form = document.querySelector("form");
     
     console.log("Clear button clicked");
@@ -569,8 +581,6 @@ function clearFilters() {
     if (groupSelect) {
         groupSelect.value = "0";
         console.log("Reset group select to 0");
-        // 触发change事件以确保更新
-        groupSelect.dispatchEvent(new Event("change"));
     }
     
     // 提交表单
@@ -586,7 +596,7 @@ function clearFilters() {
 // 添加回车键支持
 document.addEventListener("DOMContentLoaded", function() {
     var searchInput = document.querySelector("input[name=\"search\"]");
-    var groupSelect = document.querySelector("select[name=\"groupid\"]");
+    var groupSelect = document.getElementById("groupid-select");
     
     console.log("Page loaded, elements found:");
     console.log("Search input:", searchInput);
