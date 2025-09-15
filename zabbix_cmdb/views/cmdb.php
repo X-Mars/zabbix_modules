@@ -25,6 +25,17 @@ $debugInfo = "<!-- DEBUG INFO: " . count($data['host_groups']) . " groups receiv
 $content = new CDiv();
 $content->addItem(new CTag('div', true, $debugInfo, ['style' => 'display: none;']));
 
+// 将控制器传来的主机分组追加为下拉选项
+if (!empty($data['host_groups'])) {
+    foreach ($data['host_groups'] as $group) {
+        $selected = (isset($data['selected_groupid']) && $group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
+        $groupOptions .= '<option value="' . htmlspecialchars($group['groupid']) . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
+    }
+} else {
+    // 如果没有分组，给出可见提示（只读）
+    $groupOptions .= '<option value="-1" disabled>' . LanguageManager::t('No host groups available - check permissions') . '</option>';
+}
+
 // 添加与Zabbix主题一致的CSS
 $page->addItem((new CTag('style', true, '
 .cmdb-container {
