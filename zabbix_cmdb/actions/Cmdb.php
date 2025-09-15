@@ -81,7 +81,8 @@ class Cmdb extends CController {
                 'groups' => $host['hostgroups'],
                 'interfaces' => $host['interfaces'],
                 'cpu_total' => '-',
-                'memory_total' => '-'
+                'memory_total' => '-',
+                'kernel_version' => '-'
             ];
 
             // 获取CPU总量
@@ -131,6 +132,29 @@ class Cmdb extends CController {
                     } else {
                         $hostInfo['memory_total'] = round($memoryValue / 1024, 2) . ' KB';
                     }
+                }
+            }
+
+            // 获取内核版本
+            $kernelItems = array_filter($host['items'], function($item) {
+                return strpos($item['key_'], 'kernel.version') !== false ||
+                       strpos($item['key_'], 'system.uname') !== false ||
+                       strpos($item['key_'], 'system.sw.os') !== false;
+            });
+
+            if (!empty($kernelItems)) {
+                $kernelItem = reset($kernelItems);
+                $kernelHistory = API::History()->get([
+                    'output' => ['value'],
+                    'itemids' => [$kernelItem['itemid']],
+                    'sortfield' => 'clock',
+                    'sortorder' => 'DESC',
+                    'limit' => 1,
+                    'history' => 1  // 字符串类型的历史数据
+                ]);
+
+                if (!empty($kernelHistory)) {
+                    $hostInfo['kernel_version'] = $kernelHistory[0]['value'];
                 }
             }
 

@@ -18,9 +18,13 @@
   - 接口方式（Agent、SNMP、IPMI、JMX）
   - CPU总量
   - 内存总量
+  - 内核版本
   - 主机分组
+  - 主机状态（活跃/禁用）
 - **国际化支持**：支持中英文界面
 - **响应式设计**：适配不同屏幕尺寸
+- **现代化界面**：采用渐变色彩和动画效果的现代化设计
+- **统计信息**：显示主机总数、分组总数和活跃主机数统计
 
 ## 安装步骤
 
@@ -115,9 +119,13 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
   - Interface type (Agent, SNMP, IPMI, JMX)
   - CPU total
   - Memory total
+  - Kernel version
   - Host groups
+  - Host status (Active/Disabled)
 - **Internationalization**: Support for Chinese and English interfaces
 - **Responsive Design**: Adapts to different screen sizes
+- **Modern Interface**: Modern design with gradient colors and animation effects
+- **Statistics**: Display statistics for total hosts, total groups, and active hosts
 
 ## Installation
 
