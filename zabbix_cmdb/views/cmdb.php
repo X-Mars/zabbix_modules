@@ -22,6 +22,7 @@ if (!empty($data['host_groups'])) {
 
 // 添加调试信息到页面（临时）
 $debugInfo = "<!-- DEBUG INFO: " . count($data['host_groups']) . " groups received -->";
+$content = new CDiv();
 $content->addItem(new CTag('div', true, $debugInfo, ['style' => 'display: none;']));
 
 // 添加与Zabbix主题一致的CSS
