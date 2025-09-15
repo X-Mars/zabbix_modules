@@ -41,6 +41,47 @@ class ItemFinder {
     }
 
     /**
+     * 查找CPU使用率监控项
+     */
+    public static function findCpuUsage($hostid) {
+        $patterns = [
+            // 优先使用精确的key
+            ['filter' => ['key_' => 'system.cpu.util[,avg1]']],
+            ['filter' => ['key_' => 'system.cpu.util[]']],
+            ['filter' => ['key_' => 'system.cpu.util']],
+            ['filter' => ['key_' => 'system.cpu.load[avg1]']],
+            // 按名称搜索作为备选
+            ['search' => ['name' => 'CPU utilization'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'CPU usage'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Processor load'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'cpu.util'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'cpu.load'], 'searchWildcardsEnabled' => true]
+        ];
+        
+        return self::findItemByPatterns($hostid, $patterns);
+    }
+
+    /**
+     * 查找内存使用率监控项
+     */
+    public static function findMemoryUsage($hostid) {
+        $patterns = [
+            // 优先使用精确的key
+            ['filter' => ['key_' => 'vm.memory.util[]']],
+            ['filter' => ['key_' => 'vm.memory.util']],
+            ['filter' => ['key_' => 'vm.memory.pused']],
+            // 按名称搜索作为备选
+            ['search' => ['name' => 'Memory utilization'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Memory usage'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Used memory'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'memory.util'], 'searchWildcardsEnabled' => true],
+            ['search' => ['key_' => 'memory.pused'], 'searchWildcardsEnabled' => true]
+        ];
+        
+        return self::findItemByPatterns($hostid, $patterns);
+    }
+
+    /**
      * 查找内核版本监控项
      */
     public static function findKernelVersion($hostid) {

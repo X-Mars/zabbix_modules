@@ -40,12 +40,28 @@ class Cmdb extends CController {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
 
-        // 获取主机分组列表
-        $hostGroups = API::HostGroup()->get([
-            'output' => ['groupid', 'name'],
-            'sortfield' => 'name',
-            'sortorder' => 'ASC'
-        ]);
+        // 获取主机分组列表 - 添加更多权限兼容性
+        $hostGroups = [];
+        try {
+            $hostGroups = API::HostGroup()->get([
+                'output' => ['groupid', 'name'],
+                'sortfield' => 'name',
+                'sortorder' => 'ASC',
+                'real_hosts' => true  // 只显示有真实主机的分组
+            ]);
+        } catch (Exception $e) {
+            // 如果权限不足，尝试获取用户可访问的分组
+            try {
+                $hostGroups = API::HostGroup()->get([
+                    'output' => ['groupid', 'name'],
+                    'sortfield' => 'name',
+                    'sortorder' => 'ASC'
+                ]);
+            } catch (Exception $e2) {
+                // 如果还是失败，使用空数组
+                $hostGroups = [];
+            }
+        }
 
         // 构建主机查询条件
         $hostParams = [
@@ -62,20 +78,40 @@ class Cmdb extends CController {
             $hostParams['groupids'] = [$groupid];
         }
 
-        // 如果有搜索条件
+        // 改进搜索功能 - 支持主机名、显示名称和IP地址的模糊搜索
         if (!empty($search)) {
-            $hostParams['search'] = [
-                'host' => $search,
-                'name' => $search
-            ];
-            $hostParams['searchWildcardsEnabled'] = true;
-            $hostParams['searchByAny'] = true; // 允许在host或name中任一匹配
+            // 如果搜索词看起来像IP地址，也搜索接口
+            if (filter_var($search, FILTER_VALIDATE_IP) || preg_match('/^\d+\.\d+\.\d+/', $search)) {
+                // IP地址搜索 - 需要先获取匹配的接口，然后获取对应的主机
+                $interfaces = API::HostInterface()->get([
+                    'output' => ['hostid', 'ip', 'dns'],
+                    'search' => [
+                        'ip' => $search,
+                        'dns' => $search
+                    ],
+                    'searchWildcardsEnabled' => true,
+                    'searchByAny' => true
+                ]);
+                
+                if (!empty($interfaces)) {
+                    $hostIds = array_unique(array_column($interfaces, 'hostid'));
+                    $hostParams['hostids'] = $hostIds;
+                }
+            } else {
+                // 主机名搜索
+                $hostParams['search'] = [
+                    'host' => $search,
+                    'name' => $search
+                ];
+                $hostParams['searchWildcardsEnabled'] = true;
+                $hostParams['searchByAny'] = true;
+            }
         }
 
         // 获取主机列表
         $hosts = API::Host()->get($hostParams);
 
-        // 处理主机数据，获取CPU和内存信息
+        // 处理主机数据，获取CPU、内存信息和使用率
         $hostData = [];
         foreach ($hosts as $host) {
             $hostInfo = [
@@ -86,7 +122,9 @@ class Cmdb extends CController {
                 'groups' => $host['hostgroups'],
                 'interfaces' => $host['interfaces'],
                 'cpu_total' => '-',
+                'cpu_usage' => '-',
                 'memory_total' => '-',
+                'memory_usage' => '-',
                 'kernel_version' => '-'
             ];
 
@@ -96,8 +134,23 @@ class Cmdb extends CController {
                 $hostInfo['cpu_total'] = $cpuResult['value'];
             }
 
+            // 获取CPU使用率
+            $cpuUsageResult = ItemFinder::findCpuUsage($host['hostid']);
+            if ($cpuUsageResult && $cpuUsageResult['value'] !== null) {
+                $hostInfo['cpu_usage'] = round(floatval($cpuUsageResult['value']), 2) . '%';
+            }
+
             // 获取内存总量
             $memoryResult = ItemFinder::findMemoryTotal($host['hostid']);
+            if ($memoryResult && $memoryResult['value'] !== null) {
+                $hostInfo['memory_total'] = ItemFinder::formatMemorySize($memoryResult['value']);
+            }
+
+            // 获取内存使用率
+            $memoryUsageResult = ItemFinder::findMemoryUsage($host['hostid']);
+            if ($memoryUsageResult && $memoryUsageResult['value'] !== null) {
+                $hostInfo['memory_usage'] = round(floatval($memoryUsageResult['value']), 2) . '%';
+            }
             if ($memoryResult && $memoryResult['value'] !== null) {
                 $hostInfo['memory_total'] = ItemFinder::formatMemorySize($memoryResult['value']);
             }

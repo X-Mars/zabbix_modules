@@ -22,7 +22,9 @@ class LanguageManager {
             'IP Address' => 'IP地址',
             'Interface Type' => '接口方式',
             'CPU Total' => 'CPU总量',
+            'CPU Usage' => 'CPU使用率',
             'Memory Total' => '内存总量',
+            'Memory Usage' => '内存使用率',
             'Host Group' => '主机分组',
             'Kernel Version' => '内核版本',
             'Agent' => 'Agent',
@@ -32,7 +34,10 @@ class LanguageManager {
             'No hosts found' => '未找到主机',
             'Loading...' => '加载中...',
             'Search' => '搜索',
-            'Clear' => '清除'
+            'Clear' => '清除',
+            'Total Hosts' => '主机总数',
+            'Host Groups' => '主机分组',
+            'Active Hosts' => '启用主机'
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -45,7 +50,9 @@ class LanguageManager {
             'IP Address' => 'IP Address',
             'Interface Type' => 'Interface Type',
             'CPU Total' => 'CPU Total',
+            'CPU Usage' => 'CPU Usage',
             'Memory Total' => 'Memory Total',
+            'Memory Usage' => 'Memory Usage',
             'Host Group' => 'Host Group',
             'Kernel Version' => 'Kernel Version',
             'Agent' => 'Agent',
@@ -55,7 +62,10 @@ class LanguageManager {
             'No hosts found' => 'No hosts found',
             'Loading...' => 'Loading...',
             'Search' => 'Search',
-            'Clear' => 'Clear'
+            'Clear' => 'Clear',
+            'Total Hosts' => 'Total Hosts',
+            'Host Groups' => 'Host Groups',
+            'Active Hosts' => 'Active Hosts'
         ]
     ];
 

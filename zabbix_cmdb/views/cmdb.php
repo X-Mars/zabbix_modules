@@ -355,7 +355,9 @@ $header = [
     LanguageManager::t('IP Address'),
     LanguageManager::t('Interface Type'),
     LanguageManager::t('CPU Total'),
+    LanguageManager::t('CPU Usage'),
     LanguageManager::t('Memory Total'),
+    LanguageManager::t('Memory Usage'),
     LanguageManager::t('Kernel Version'),
     LanguageManager::t('Host Group')
 ];
@@ -366,7 +368,7 @@ if (empty($data['hosts'])) {
     $table->addRow([
         (new CCol(LanguageManager::t('No hosts found')))
             ->addClass('no-data')
-            ->setAttribute('colspan', 7)
+            ->setAttribute('colspan', 9)
     ]);
 } else {
     // 添加主机数据行
@@ -452,6 +454,23 @@ if (empty($data['hosts'])) {
             $cpuCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
+        // CPU使用率
+        $cpuUsageCol = new CCol();
+        if ($host['cpu_usage'] !== '-') {
+            $usageValue = floatval(str_replace('%', '', $host['cpu_usage']));
+            $usageColor = '#28a745'; // 绿色
+            if ($usageValue > 80) {
+                $usageColor = '#dc3545'; // 红色
+            } elseif ($usageValue > 60) {
+                $usageColor = '#ffc107'; // 黄色
+            }
+            $cpuUsageCol->addItem(
+                (new CSpan(htmlspecialchars($host['cpu_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+            );
+        } else {
+            $cpuUsageCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+        }
+
         // 内存总量
         $memoryCol = new CCol();
         if ($host['memory_total'] !== '-') {
@@ -460,6 +479,23 @@ if (empty($data['hosts'])) {
             );
         } else {
             $memoryCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+        }
+
+        // 内存使用率
+        $memoryUsageCol = new CCol();
+        if ($host['memory_usage'] !== '-') {
+            $usageValue = floatval(str_replace('%', '', $host['memory_usage']));
+            $usageColor = '#28a745'; // 绿色
+            if ($usageValue > 80) {
+                $usageColor = '#dc3545'; // 红色
+            } elseif ($usageValue > 60) {
+                $usageColor = '#ffc107'; // 黄色
+            }
+            $memoryUsageCol->addItem(
+                (new CSpan(htmlspecialchars($host['memory_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+            );
+        } else {
+            $memoryUsageCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 内核版本
@@ -488,7 +524,9 @@ if (empty($data['hosts'])) {
             $ipCol,
             $interfaceCol,
             $cpuCol,
+            $cpuUsageCol,
             $memoryCol,
+            $memoryUsageCol,
             $kernelCol,
             $groupCol
         ]);
@@ -500,10 +538,46 @@ $content->addItem($table);
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
 function clearFilters() {
-    document.querySelector("input[name=\'search\']").value = "";
-    document.querySelector("select[name=\'groupid\']").value = "0";
-    document.querySelector("form").submit();
+    // 直接跳转到清空状态的URL，这是最可靠的方法
+    window.location.href = "zabbix.php?action=cmdb";
 }
+
+// 添加调试信息（可选，用于排查问题）
+function debugClearFilters() {
+    console.log("清除按钮被点击");
+    var searchInput = document.querySelector("input[name=\'search\']");
+    var groupSelect = document.querySelector("select[name=\'groupid\']");
+    var form = document.querySelector("form");
+    
+    console.log("搜索输入框:", searchInput);
+    console.log("分组选择框:", groupSelect);
+    console.log("表单:", form);
+    
+    // 清空并提交
+    if (searchInput) searchInput.value = "";
+    if (groupSelect) groupSelect.value = "0";
+    if (form) {
+        form.submit();
+    } else {
+        window.location.href = "zabbix.php?action=cmdb";
+    }
+}
+
+// 添加回车键支持
+document.addEventListener("DOMContentLoaded", function() {
+    var searchInput = document.querySelector("input[name=\'search\']") || document.querySelector("input[type=\'text\']");
+    if (searchInput) {
+        searchInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                var form = this.closest("form");
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    }
+});
 '));
 
 $page->addItem($content);
