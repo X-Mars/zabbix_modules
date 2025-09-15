@@ -121,7 +121,6 @@ $page->addItem((new CTag('style', true, '
     font-size: 12px;
     font-weight: bold;
     text-transform: uppercase;
-    margin-right: 5px;
 }
 .interface-agent {
     background-color: #28a745;
@@ -139,19 +138,16 @@ $page->addItem((new CTag('style', true, '
     background-color: #6f42c1;
     color: white;
 }
-.status-enabled {
-    color: #28a745;
-    font-weight: bold;
-}
-.status-disabled {
-    color: #dc3545;
-    font-weight: bold;
-}
 .no-data {
     text-align: center;
     padding: 40px;
     color: #6c757d;
     font-style: italic;
+}
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #007bff;
 }
 ')));
 
@@ -208,15 +204,14 @@ $table = (new CTableInfo())
         LanguageManager::t('Interface Type'),
         LanguageManager::t('CPU Total'),
         LanguageManager::t('Memory Total'),
-        LanguageManager::t('Host Group'),
-        LanguageManager::t('Status')
+        LanguageManager::t('Host Group')
     ]);
 
 if (empty($data['hosts'])) {
     $table->addRow(
         (new CCol(LanguageManager::t('No hosts found')))
             ->addClass('no-data')
-            ->setColSpan(7)
+            ->setColSpan(6)
     );
 } else {
     foreach ($data['hosts'] as $host) {
@@ -258,10 +253,6 @@ if (empty($data['hosts'])) {
         // 获取主机分组
         $groupNames = array_column($host['groups'], 'name');
 
-        // 主机状态
-        $statusText = $host['status'] == 0 ? LanguageManager::t('Enabled') : LanguageManager::t('Disabled');
-        $statusClass = $host['status'] == 0 ? 'status-enabled' : 'status-disabled';
-
         $table->addRow([
             (new CLink($host['name'], 'zabbix.php?action=host.view&hostid=' . $host['hostid']))
                 ->addClass('host-link'),
@@ -269,8 +260,7 @@ if (empty($data['hosts'])) {
             !empty($interfaceTypes) ? $interfaceTypes : '-',
             $host['cpu_total'],
             $host['memory_total'],
-            implode(', ', $groupNames),
-            (new CSpan($statusText))->addClass($statusClass)
+            implode(', ', $groupNames)
         ]);
     }
 }

@@ -9,7 +9,7 @@
     "description": "Configuration Management Database for Zabbix",
     "actions": {
         "cmdb": {
-            "class": "Actions\\Cmdb",
+            "class": "Cmdb",
             "view": "cmdb"
         }
     }

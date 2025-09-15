@@ -31,10 +31,7 @@ class LanguageManager {
             'No hosts found' => '未找到主机',
             'Loading...' => '加载中...',
             'Search' => '搜索',
-            'Clear' => '清除',
-            'Status' => '状态',
-            'Enabled' => '已启用',
-            'Disabled' => '已禁用'
+            'Clear' => '清除'
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -56,10 +53,7 @@ class LanguageManager {
             'No hosts found' => 'No hosts found',
             'Loading...' => 'Loading...',
             'Search' => 'Search',
-            'Clear' => 'Clear',
-            'Status' => 'Status',
-            'Enabled' => 'Enabled',
-            'Disabled' => 'Disabled'
+            'Clear' => 'Clear'
         ]
     ];
 

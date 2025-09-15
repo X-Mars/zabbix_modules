@@ -1,10 +1,18 @@
-<?php declare(strict_types = 0);
+<?php
 
 namespace Modules\ZabbixCmdb\Actions;
 
 use CController,
     CControllerResponseData,
-    API;
+    API,
+    CTableInfo,
+    CCol,
+    CRow,
+    CLink,
+    CComboBox,
+    CTextBox,
+    CButton,
+    CDiv;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
@@ -46,31 +54,29 @@ class Cmdb extends CController {
         ]);
 
         // 构建主机查询条件
-        $hostParams = [
-            'output' => ['hostid', 'host', 'name', 'status'],
-            'selectGroups' => ['groupid', 'name'],
-            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
-            'selectItems' => ['itemid', 'name', 'key_', 'value_type', 'lastvalue', 'units'],
-            'sortfield' => 'host',
-            'sortorder' => 'ASC',
-            'limit' => 100
-        ];
-
-        // 搜索条件
+        $hostFilter = [];
         if (!empty($search)) {
-            $hostParams['search'] = [
+            $hostFilter['search'] = [
                 'host' => $search,
                 'name' => $search
             ];
         }
 
-        // 分组筛选
         if ($groupid > 0) {
-            $hostParams['groupids'] = [$groupid];
+            $hostFilter['groupids'] = [$groupid];
         }
 
         // 获取主机列表
-        $hosts = API::Host()->get($hostParams);
+        $hosts = API::Host()->get([
+            'output' => ['hostid', 'host', 'name', 'status'],
+            'selectGroups' => ['groupid', 'name'],
+            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+            'selectItems' => ['itemid', 'name', 'key_', 'value_type'],
+            'filter' => $hostFilter,
+            'sortfield' => 'host',
+            'sortorder' => 'ASC',
+            'limit' => 100
+        ]);
 
         // 处理主机数据，获取CPU和内存信息
         $hostData = [];
@@ -86,32 +92,53 @@ class Cmdb extends CController {
                 'memory_total' => '-'
             ];
 
-            // 查找CPU相关监控项
-            foreach ($host['items'] as $item) {
-                // CPU总数
-                if (stripos($item['key_'], 'system.cpu.num') !== false) {
-                    $hostInfo['cpu_total'] = !empty($item['lastvalue']) ? $item['lastvalue'] : '-';
-                    break;
+            // 获取CPU总量
+            $cpuItems = array_filter($host['items'], function($item) {
+                return strpos($item['key_'], 'system.cpu.num') !== false ||
+                       strpos($item['key_'], 'proc.num') !== false;
+            });
+
+            if (!empty($cpuItems)) {
+                $cpuItem = reset($cpuItems);
+                $cpuHistory = API::History()->get([
+                    'output' => ['value'],
+                    'itemids' => [$cpuItem['itemid']],
+                    'sortfield' => 'clock',
+                    'sortorder' => 'DESC',
+                    'limit' => 1
+                ]);
+
+                if (!empty($cpuHistory)) {
+                    $hostInfo['cpu_total'] = $cpuHistory[0]['value'];
                 }
             }
 
-            // 查找内存相关监控项
-            foreach ($host['items'] as $item) {
-                // 内存总量
-                if (stripos($item['key_'], 'vm.memory.size[total]') !== false || 
-                    stripos($item['key_'], 'system.memory.total') !== false) {
-                    if (!empty($item['lastvalue'])) {
-                        $memoryValue = $item['lastvalue'];
-                        // 转换为合适的单位显示
-                        if ($memoryValue > 1024 * 1024 * 1024) {
-                            $hostInfo['memory_total'] = round($memoryValue / (1024 * 1024 * 1024), 2) . ' GB';
-                        } elseif ($memoryValue > 1024 * 1024) {
-                            $hostInfo['memory_total'] = round($memoryValue / (1024 * 1024), 2) . ' MB';
-                        } else {
-                            $hostInfo['memory_total'] = round($memoryValue / 1024, 2) . ' KB';
-                        }
+            // 获取内存总量
+            $memoryItems = array_filter($host['items'], function($item) {
+                return strpos($item['key_'], 'vm.memory.size[total]') !== false ||
+                       strpos($item['key_'], 'memory.total') !== false;
+            });
+
+            if (!empty($memoryItems)) {
+                $memoryItem = reset($memoryItems);
+                $memoryHistory = API::History()->get([
+                    'output' => ['value'],
+                    'itemids' => [$memoryItem['itemid']],
+                    'sortfield' => 'clock',
+                    'sortorder' => 'DESC',
+                    'limit' => 1
+                ]);
+
+                if (!empty($memoryHistory)) {
+                    $memoryValue = $memoryHistory[0]['value'];
+                    // 转换为合适的单位显示
+                    if ($memoryValue > 1024 * 1024 * 1024) {
+                        $hostInfo['memory_total'] = round($memoryValue / (1024 * 1024 * 1024), 2) . ' GB';
+                    } elseif ($memoryValue > 1024 * 1024) {
+                        $hostInfo['memory_total'] = round($memoryValue / (1024 * 1024), 2) . ' MB';
+                    } else {
+                        $hostInfo['memory_total'] = round($memoryValue / 1024, 2) . ' KB';
                     }
-                    break;
                 }
             }
 
