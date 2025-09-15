@@ -4,15 +4,7 @@ namespace Modules\ZabbixCmdb\Actions;
 
 use CController,
     CControllerResponseData,
-    API,
-    CTableInfo,
-    CCol,
-    CRow,
-    CLink,
-    CComboBox,
-    CTextBox,
-    CButton,
-    CDiv;
+    API;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
@@ -69,7 +61,7 @@ class Cmdb extends CController {
         // 获取主机列表
         $hosts = API::Host()->get([
             'output' => ['hostid', 'host', 'name', 'status'],
-            'selectGroups' => ['groupid', 'name'],
+            'selectHostGroups' => ['groupid', 'name'],
             'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
             'selectItems' => ['itemid', 'name', 'key_', 'value_type'],
             'filter' => $hostFilter,
@@ -86,7 +78,7 @@ class Cmdb extends CController {
                 'host' => $host['host'],
                 'name' => $host['name'],
                 'status' => $host['status'],
-                'groups' => $host['groups'],
+                'groups' => $host['hostgroups'],
                 'interfaces' => $host['interfaces'],
                 'cpu_total' => '-',
                 'memory_total' => '-'

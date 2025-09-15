@@ -4,12 +4,22 @@
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 
-// 创建页面
-$page = new CHtmlPage();
-$page->setTitle(LanguageManager::t('CMDB'));
+// 创建页面标题
+$pageTitle = LanguageManager::t('CMDB');
 
-// 添加自定义CSS
-$page->addItem((new CTag('style', true, '
+// 构建下拉框选项
+$groupOptions = '<option value="0">' . LanguageManager::t('All Groups') . '</option>';
+foreach ($data['host_groups'] as $group) {
+    $selected = ($group['groupid'] == $data['selected_groupid']) ? ' selected' : '';
+    $groupOptions .= '<option value="' . $group['groupid'] . '"' . $selected . '>' . htmlspecialchars($group['name']) . '</option>';
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title><?= $pageTitle ?></title>
+    <style>
 .cmdb-container {
     padding: 20px;
     max-width: 1400px;
@@ -121,6 +131,7 @@ $page->addItem((new CTag('style', true, '
     font-size: 12px;
     font-weight: bold;
     text-transform: uppercase;
+    margin-right: 5px;
 }
 .interface-agent {
     background-color: #28a745;
@@ -144,146 +155,111 @@ $page->addItem((new CTag('style', true, '
     color: #6c757d;
     font-style: italic;
 }
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #007bff;
-}
-')));
+    </style>
+</head>
+<body>
 
-// 创建搜索表单
-$form = (new CDiv())
-    ->addClass('cmdb-header')
-    ->addItem(
-        (new CForm())
-            ->setMethod('get')
-            ->setAction('zabbix.php')
-            ->addItem(
-                (new CDiv())
-                    ->addClass('search-form')
-                    ->addItem(
-                        (new CDiv())
-                            ->addClass('form-field')
-                            ->addItem(new CLabel(LanguageManager::t('Search by hostname or IP')))
-                            ->addItem(
-                                (new CTextBox('search', $data['search']))
-                                    ->setAttribute('placeholder', LanguageManager::t('Search hosts...'))
-                            )
-                    )
-                    ->addItem(
-                        (new CDiv())
-                            ->addClass('form-field')
-                            ->addItem(new CLabel(LanguageManager::t('Select host group')))
-                            ->addItem(
-                                (new CComboBox('groupid', $data['selected_groupid']))
-                                    ->addItem(0, LanguageManager::t('All Groups'))
-                                    ->addItems(array_column($data['host_groups'], 'name', 'groupid'))
-                            )
-                    )
-                    ->addItem(
-                        (new CButton('filter', LanguageManager::t('Search')))
-                            ->addClass('btn-search')
-                            ->setType('submit')
-                    )
-                    ->addItem(
-                        (new CButton('clear', LanguageManager::t('Clear')))
-                            ->addClass('btn-clear')
-                            ->setType('button')
-                            ->setAttribute('onclick', 'clearFilters()')
-                    )
-            )
-            ->addItem((new CInput('hidden', 'action', 'cmdb')))
-    );
+<div class="cmdb-container">
+    <h1><?= LanguageManager::t('Configuration Management Database') ?></h1>
 
-// 创建主机表格
-$table = (new CTableInfo())
-    ->addClass('hosts-table')
-    ->setHeader([
-        LanguageManager::t('Host Name'),
-        LanguageManager::t('IP Address'),
-        LanguageManager::t('Interface Type'),
-        LanguageManager::t('CPU Total'),
-        LanguageManager::t('Memory Total'),
-        LanguageManager::t('Host Group')
-    ]);
+    <div class="cmdb-header">
+        <form method="get" action="zabbix.php">
+            <input type="hidden" name="action" value="cmdb">
+            <div class="search-form">
+                <div class="form-field">
+                    <label><?= LanguageManager::t('Search by hostname or IP') ?></label>
+                    <input type="text" name="search" value="<?= htmlspecialchars($data['search']) ?>" placeholder="<?= LanguageManager::t('Search hosts...') ?>">
+                </div>
+                <div class="form-field">
+                    <label><?= LanguageManager::t('Select host group') ?></label>
+                    <select name="groupid">
+                        <?= $groupOptions ?>
+                    </select>
+                </div>
+                <button type="submit" class="btn-search"><?= LanguageManager::t('Search') ?></button>
+                <button type="button" class="btn-clear" onclick="clearFilters()"><?= LanguageManager::t('Clear') ?></button>
+            </div>
+        </form>
+    </div>
 
-if (empty($data['hosts'])) {
-    $table->addRow(
-        (new CCol(LanguageManager::t('No hosts found')))
-            ->addClass('no-data')
-            ->setColSpan(6)
-    );
-} else {
-    foreach ($data['hosts'] as $host) {
-        // 获取主要IP地址
-        $mainIp = '';
-        $interfaceTypes = [];
-        foreach ($host['interfaces'] as $interface) {
-            if ($interface['main'] == 1) {
-                $mainIp = !empty($interface['ip']) ? $interface['ip'] : $interface['dns'];
-            }
+    <table class="hosts-table">
+        <thead>
+            <tr>
+                <th><?= LanguageManager::t('Host Name') ?></th>
+                <th><?= LanguageManager::t('IP Address') ?></th>
+                <th><?= LanguageManager::t('Interface Type') ?></th>
+                <th><?= LanguageManager::t('CPU Total') ?></th>
+                <th><?= LanguageManager::t('Memory Total') ?></th>
+                <th><?= LanguageManager::t('Host Group') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($data['hosts'])): ?>
+                <tr>
+                    <td colspan="6" class="no-data"><?= LanguageManager::t('No hosts found') ?></td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($data['hosts'] as $host): ?>
+                    <?php
+                    // 获取主要IP地址
+                    $mainIp = '';
+                    $interfaceTypes = [];
+                    foreach ($host['interfaces'] as $interface) {
+                        if ($interface['main'] == 1) {
+                            $mainIp = !empty($interface['ip']) ? $interface['ip'] : $interface['dns'];
+                        }
 
-            // 收集接口类型
-            $typeClass = '';
-            $typeText = '';
-            switch ($interface['type']) {
-                case 1:
-                    $typeClass = 'interface-agent';
-                    $typeText = LanguageManager::t('Agent');
-                    break;
-                case 2:
-                    $typeClass = 'interface-snmp';
-                    $typeText = LanguageManager::t('SNMP');
-                    break;
-                case 3:
-                    $typeClass = 'interface-ipmi';
-                    $typeText = LanguageManager::t('IPMI');
-                    break;
-                case 4:
-                    $typeClass = 'interface-jmx';
-                    $typeText = LanguageManager::t('JMX');
-                    break;
-            }
+                        // 收集接口类型
+                        $typeClass = '';
+                        $typeText = '';
+                        switch ($interface['type']) {
+                            case 1:
+                                $typeClass = 'interface-agent';
+                                $typeText = LanguageManager::t('Agent');
+                                break;
+                            case 2:
+                                $typeClass = 'interface-snmp';
+                                $typeText = LanguageManager::t('SNMP');
+                                break;
+                            case 3:
+                                $typeClass = 'interface-ipmi';
+                                $typeText = LanguageManager::t('IPMI');
+                                break;
+                            case 4:
+                                $typeClass = 'interface-jmx';
+                                $typeText = LanguageManager::t('JMX');
+                                break;
+                        }
 
-            if (!empty($typeText)) {
-                $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
-            }
-        }
+                        if (!empty($typeText)) {
+                            $interfaceTypes[] = '<span class="interface-type ' . $typeClass . '">' . $typeText . '</span>';
+                        }
+                    }
 
-        // 获取主机分组
-        $groupNames = array_column($host['groups'], 'name');
+                    // 获取主机分组
+                    $groupNames = array_column($host['groups'], 'name');
+                    ?>
+                    <tr>
+                        <td><a href="zabbix.php?action=host.view&hostid=<?= $host['hostid'] ?>" class="host-link"><?= htmlspecialchars($host['name']) ?></a></td>
+                        <td><?= htmlspecialchars($mainIp) ?></td>
+                        <td><?= !empty($interfaceTypes) ? implode('', $interfaceTypes) : '-' ?></td>
+                        <td><?= htmlspecialchars($host['cpu_total']) ?></td>
+                        <td><?= htmlspecialchars($host['memory_total']) ?></td>
+                        <td><?= htmlspecialchars(implode(', ', $groupNames)) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
 
-        $table->addRow([
-            (new CLink($host['name'], 'zabbix.php?action=host.view&hostid=' . $host['hostid']))
-                ->addClass('host-link'),
-            $mainIp,
-            !empty($interfaceTypes) ? $interfaceTypes : '-',
-            $host['cpu_total'],
-            $host['memory_total'],
-            implode(', ', $groupNames)
-        ]);
-    }
-}
-
-// 添加JavaScript
-$page->addItem((new CTag('script', true, '
+<script>
 function clearFilters() {
-    document.querySelector(\'input[name="search"]\').value = "";
-    document.querySelector(\'select[name="groupid"]\').value = "0";
-    document.querySelector(\'form\').submit();
+    document.querySelector('input[name="search"]').value = "";
+    document.querySelector('select[name="groupid"]').value = "0";
+    document.querySelector('form').submit();
 }
-')));
+</script>
 
-// 构建页面内容
-$page->addItem(
-    (new CDiv())
-        ->addClass('cmdb-container')
-        ->addItem(
-            (new CDiv())
-                ->addItem(new CTag('h1', true, LanguageManager::t('Configuration Management Database')))
-        )
-        ->addItem($form)
-        ->addItem($table)
-);
-
-echo $page->show();
+</body>
+</html>
