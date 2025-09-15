@@ -11,9 +11,9 @@ class Module extends CModule {
 
     public function init(): void {
         APP::Component()->get('menu.main')
-            ->findOrAdd(_('Inventory'))
+            ->findOrAdd(_('Data collection'))
             ->getSubmenu()
-            ->add(
+            ->insertAfter(_('Hosts'),
                 (new CMenuItem(_('CMDB')))->setAction('cmdb')
             );
     }

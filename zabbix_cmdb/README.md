@@ -4,9 +4,7 @@
 
 ## 描述
 
-这是一个Zabbix 7.0的前端模块，用于配置管理数据库（CMDB），提供主机信息的集中查看和管理功能。模块在Zabbix Web的资产记录菜单下新增CMDB菜单，支持主机搜索和分组筛选。
-
-## 项目截图
+这是一个Zabbix 7.0的前端模块，用于配置管理数据库（CMDB），提供主机信息的集中查看和管理功能。模块在Zabbix Web的数据采集菜单下新增CMDB菜单，支持主机搜索和分组筛选。
 
 ## 功能特性
 
@@ -19,6 +17,7 @@
   - CPU总量
   - 内存总量
   - 主机分组
+  - 主机状态
 - **国际化支持**：支持中英文界面
 - **响应式设计**：适配不同屏幕尺寸
 
@@ -36,14 +35,14 @@
 
 4. 找到 "Zabbix CMDB" 模块，点击 "Disabled" 链接启用模块。
 
-5. 刷新页面，模块将在 **Inventory** 菜单下显示为 "CMDB" 子菜单。
+5. 刷新页面，模块将在 **Data collection** 菜单下显示为 "CMDB" 子菜单。
 
 ## 使用方法
 
 ### 访问CMDB
 
 1. 登录Zabbix Web界面。
-2. 导航到 **Inventory → CMDB**。
+2. 导航到 **Data collection → CMDB**。
 
 ### 搜索主机
 
@@ -57,6 +56,7 @@
 - 表格中显示所有符合条件的主机信息。
 - 点击主机名链接可跳转到该主机的详细页面。
 - 接口方式用彩色标签显示，便于识别。
+- 主机状态用不同颜色显示（绿色=启用，红色=禁用）。
 
 ## 配置
 
@@ -67,12 +67,12 @@
 ### 数据来源
 
 - 主机信息来自Zabbix的host表。
-- CPU和内存信息来自相关的监控项历史数据。
+- CPU和内存信息来自相关的监控项最新值。
 - 接口信息来自host_interface表。
 
 ## 注意事项
 
-- **性能考虑**：对于大型环境，建议适当限制查询结果数量。
+- **性能考虑**：默认限制查询结果为100条，适用于大型环境。
 - **数据准确性**：显示的信息基于Zabbix数据库的当前状态。
 - **兼容性**：仅在Zabbix 7.0上测试。
 - **监控项依赖**：CPU和内存信息的显示依赖于相应的监控项配置。
@@ -103,7 +103,7 @@
 
 ## Description
 
-This is a frontend module for Zabbix 7.0 that provides Configuration Management Database (CMDB) functionality, offering centralized viewing and management of host information. The module adds a CMDB menu under the Inventory section of Zabbix Web, supporting host search and group filtering.
+This is a frontend module for Zabbix 7.0 that provides Configuration Management Database (CMDB) functionality, offering centralized viewing and management of host information. The module adds a CMDB menu under the Data collection section of Zabbix Web, supporting host search and group filtering.
 
 ## Features
 
@@ -116,6 +116,7 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
   - CPU total
   - Memory total
   - Host groups
+  - Host status
 - **Internationalization**: Support for Chinese and English interfaces
 - **Responsive Design**: Adapts to different screen sizes
 
@@ -130,14 +131,14 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
 2. In Zabbix Web UI, go to Administration → General → Modules.
 3. Click Scan directory.
 4. Find "Zabbix CMDB" and enable it.
-5. The module will appear under the Inventory menu as "CMDB".
+5. The module will appear under the Data collection menu as "CMDB".
 
 ## Usage
 
 ### Access CMDB
 
 1. Log in to Zabbix Web UI.
-2. Navigate to Inventory → CMDB.
+2. Navigate to Data collection → CMDB.
 
 ### Search Hosts
 
@@ -151,6 +152,7 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
 - The table displays all hosts matching the criteria.
 - Click on hostname links to jump to the host's detail page.
 - Interface types are displayed with colored labels for easy identification.
+- Host status is displayed in different colors (green=enabled, red=disabled).
 
 ## Configuration
 
@@ -161,12 +163,12 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
 ### Data Sources
 
 - Host information comes from Zabbix's host table.
-- CPU and memory information comes from related item history data.
+- CPU and memory information comes from related item latest values.
 - Interface information comes from the host_interface table.
 
 ## Notes
 
-- **Performance Considerations**: For large environments, consider limiting query result quantities appropriately.
+- **Performance Considerations**: Default limit of 100 query results, suitable for large environments.
 - **Data Accuracy**: Displayed information is based on the current state of the Zabbix database.
 - **Compatibility**: Tested only on Zabbix 7.0.
 - **Item Dependencies**: Display of CPU and memory information depends on corresponding item configuration.
