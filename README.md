@@ -26,7 +26,25 @@
 
 **作者**：火星小刘  
 **版本**：1.0.0  
-**兼容性**：Zabbix 7.0、php 8.0
+**兼容性**：Zabbix 7.0
+
+### 2. Zabbix CMDB
+
+**简介**：用于配置管理数据库（CMDB）的Zabbix 7.0前端模块，提供主机信息的集中查看和管理功能。
+
+**功能特性**：
+
+- 支持通过主机名或IP地址进行搜索
+- 支持按主机分组进行筛选
+- 显示主机名、IP地址、接口方式、CPU总量、内存总量、主机分组等信息
+- 支持中英文界面国际化
+- 响应式设计，适配不同屏幕尺寸
+
+**文档链接**：[zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
+
+**作者**：火星小刘  
+**版本**：1.0.0  
+**兼容性**：Zabbix 7.0
 
 ---
 
@@ -53,6 +71,24 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 - Email push reports (HTML format)
 
 **Documentation**: [zabbix_reports/README.md](./zabbix_reports/README.md)
+
+**Author**: 火星小刘  
+**Version**: 1.0.0  
+**Compatibility**: Zabbix 7.0
+
+### 2. Zabbix CMDB
+
+**Description**: A frontend module for Zabbix 7.0 that provides Configuration Management Database (CMDB) functionality, offering centralized viewing and management of host information.
+
+**Features**:
+
+- Support searching by hostname or IP address
+- Support filtering by host groups
+- Display host name, IP address, interface type, CPU total, memory total, host groups
+- Support for Chinese and English interfaces
+- Responsive design that adapts to different screen sizes
+
+**Documentation**: [zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
 **Author**: 火星小刘  
 **Version**: 1.0.0  
