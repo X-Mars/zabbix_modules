@@ -13,6 +13,7 @@
 **简介**：用于生成每日、周、月报表的Zabbix 7.0 前端模块，支持报表预览、PDF导出和邮件推送功能。
 
 **功能特性**：
+
 - 支持每日、周、月报表生成
 - 报警数量和状态统计
 - 显示报警最多的主机（前10名）
@@ -42,6 +43,7 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 **Description**: A frontend module for Zabbix 7.0 that generates daily, weekly, and monthly reports. It supports report preview, PDF export, and email push functionality.
 
 **Features**:
+
 - Support for daily, weekly, and monthly report generation
 - Problem count and status statistics
 - Display top problem hosts (Top 10)
