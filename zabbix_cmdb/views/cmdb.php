@@ -303,15 +303,16 @@ $content = (new CDiv())
                                     )
                             )
                             ->addItem(
-                                (new CButton('filter', LanguageManager::t('Search')))
+                                (new CTag('button', true, LanguageManager::t('Search')))
+                                    ->setAttribute('type', 'submit')
+                                    ->setAttribute('name', 'filter')
                                     ->addClass('btn btn-primary')
-                                    ->setType('submit')
                             )
                             ->addItem(
-                                (new CButton('clear', LanguageManager::t('Clear')))
-                                    ->addClass('btn btn-secondary')
-                                    ->setType('button')
+                                (new CTag('button', true, LanguageManager::t('Clear')))
+                                    ->setAttribute('type', 'button')
                                     ->setAttribute('onclick', 'clearFilters()')
+                                    ->addClass('btn btn-secondary')
                             )
                     )
                     ->addItem((new CInput('hidden', 'action', 'cmdb')))
@@ -431,7 +432,7 @@ if (empty($data['hosts'])) {
 
         // 接口类型
         $interfaceCol = new CCol(
-            !empty($interfaceTypes) ? $interfaceTypes : new CSpan('-', false, 'color: #6c757d;')
+            !empty($interfaceTypes) ? $interfaceTypes : (new CSpan('-'))->setAttribute('style', 'color: #6c757d;')
         );
 
         // CPU总量
