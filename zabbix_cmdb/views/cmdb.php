@@ -416,14 +416,19 @@ if (empty($data['hosts'])) {
         }
 
         // 主机名和状态
-        $hostNameCol = new CCol([
+        $hostNameCol = new CCol();
+        $hostNameCol->addItem(
             (new CLink(htmlspecialchars($host['name']), 'zabbix.php?action=host.view&hostid=' . $host['hostid']))
-                ->addClass('host-link'),
-            new CBr(),
-            (new CSpan($host['status'] == 0 ? '● Active' : '● Disabled'))
-                ->addClass($host['status'] == 0 ? 'status-enabled' : 'status-disabled')
-                ->setAttribute('style', 'font-size: 12px;')
-        ]);
+                ->addClass('host-link')
+        );
+        $hostNameCol->addItem(
+            (new CDiv())
+                ->addItem(
+                    (new CSpan($host['status'] == 0 ? '● Active' : '● Disabled'))
+                        ->addClass($host['status'] == 0 ? 'status-enabled' : 'status-disabled')
+                        ->setAttribute('style', 'font-size: 12px;')
+                )
+        );
 
         // IP地址
         $ipCol = new CCol(
