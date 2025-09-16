@@ -2,7 +2,9 @@
 
 // 引入语言管理器
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
+use Modules\ZabbixCmdb\Lib\ItemFinder;
 
 /**
  * 获取主机状态显示元素
@@ -394,6 +396,18 @@ if (!empty($data['hosts'])) {
     $content->addItem(
         (new CDiv())
             ->addClass('stats-container')
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
+                    ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
+            )
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
+                    ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
+            )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')

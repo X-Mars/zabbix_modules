@@ -226,6 +226,8 @@ class Cmdb extends CController {
 
         // 处理主机数据，获取CPU、内存信息和使用率
         $hostData = [];
+        $totalCpu = 0;
+        $totalMemory = 0;
         foreach ($hosts as $host) {
             $hostInfo = [
                 'hostid' => $host['hostid'],
@@ -251,6 +253,7 @@ class Cmdb extends CController {
             $cpuResult = ItemFinder::findCpuCount($host['hostid']);
             if ($cpuResult && $cpuResult['value'] !== null) {
                 $hostInfo['cpu_total'] = $cpuResult['value'];
+                $totalCpu += intval($cpuResult['value']);
             }
 
             // 获取CPU使用率
@@ -263,6 +266,7 @@ class Cmdb extends CController {
             $memoryResult = ItemFinder::findMemoryTotal($host['hostid']);
             if ($memoryResult && $memoryResult['value'] !== null) {
                 $hostInfo['memory_total'] = ItemFinder::formatMemorySize($memoryResult['value']);
+                $totalMemory += intval($memoryResult['value']);
             }
 
             // 获取内存使用率
@@ -313,7 +317,9 @@ class Cmdb extends CController {
             'host_groups' => $hostGroups,
             'hosts' => $hostData,
             'search' => $search,
-            'selected_groupid' => $groupid
+            'selected_groupid' => $groupid,
+            'total_cpu' => $totalCpu,
+            'total_memory' => $totalMemory
         ]);
 
         $this->setResponse($response);
