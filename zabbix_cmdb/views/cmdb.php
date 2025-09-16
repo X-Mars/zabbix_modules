@@ -373,15 +373,13 @@ if (empty($data['hosts'])) {
         // 获取主要IP地址
         $mainIp = '';
         $interfaceTypes = [];
-        foreach ($host['interfaces'] as $interface) {
-            if ($interface['main'] == 1) {
-                $mainIp = !empty($interface['ip']) ? $interface['ip'] : $interface['dns'];
-            }
-
-            // 收集接口类型
+        // 使用可用的接口类型，而不是配置的所有接口
+        $availableTypes = isset($host['available_interface_types']) ? $host['available_interface_types'] : [];
+        
+        foreach ($availableTypes as $interfaceType) {
             $typeClass = '';
             $typeText = '';
-            switch ($interface['type']) {
+            switch ($interfaceType) {
                 case 1:
                     $typeClass = 'interface-agent';
                     $typeText = LanguageManager::t('Agent');
@@ -402,6 +400,40 @@ if (empty($data['hosts'])) {
 
             if (!empty($typeText)) {
                 $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
+            }
+        }
+
+        // 如果没有可用接口，但有配置的接口，显示配置的接口（向后兼容）
+        if (empty($interfaceTypes) && isset($host['interfaces']) && is_array($host['interfaces'])) {
+            foreach ($host['interfaces'] as $interface) {
+                if ($interface['main'] == 1) {
+                    $mainIp = !empty($interface['ip']) ? $interface['ip'] : $interface['dns'];
+                }
+
+                $typeClass = '';
+                $typeText = '';
+                switch ($interface['type']) {
+                    case 1:
+                        $typeClass = 'interface-agent';
+                        $typeText = LanguageManager::t('Agent');
+                        break;
+                    case 2:
+                        $typeClass = 'interface-snmp';
+                        $typeText = LanguageManager::t('SNMP');
+                        break;
+                    case 3:
+                        $typeClass = 'interface-ipmi';
+                        $typeText = LanguageManager::t('IPMI');
+                        break;
+                    case 4:
+                        $typeClass = 'interface-jmx';
+                        $typeText = LanguageManager::t('JMX');
+                        break;
+                }
+
+                if (!empty($typeText)) {
+                    $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
+                }
             }
         }
 

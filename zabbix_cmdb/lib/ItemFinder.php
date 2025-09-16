@@ -257,4 +257,101 @@ class ItemFinder {
         
         return $fullString;
     }
+
+    /**
+     * 检查主机支持的接口类型（基于实际使用的监控项）
+     * 返回可用的接口类型数组
+     */
+    public static function getAvailableInterfaceTypes($hostid) {
+        $availableTypes = [];
+        
+        try {
+            // 获取主机的所有监控项
+            $items = API::Item()->get([
+                'hostids' => [$hostid],
+                'output' => ['itemid', 'type', 'interfaceid'],
+                'filter' => [
+                    'status' => 0  // 只检查启用的监控项
+                ]
+            ]);
+            
+            // 统计每种接口类型的监控项数量
+            $interfaceUsage = [];
+            foreach ($items as $item) {
+                $interfaceType = self::getInterfaceTypeFromItemType($item['type']);
+                if ($interfaceType !== null) {
+                    if (!isset($interfaceUsage[$interfaceType])) {
+                        $interfaceUsage[$interfaceType] = 0;
+                    }
+                    $interfaceUsage[$interfaceType]++;
+                }
+            }
+            
+            // 如果某种接口类型有监控项在使用，则认为该接口可用
+            foreach ($interfaceUsage as $type => $count) {
+                if ($count > 0) {
+                    $availableTypes[] = $type;
+                }
+            }
+            
+        } catch (Exception $e) {
+            error_log("Failed to check interface availability for host {$hostid}: " . $e->getMessage());
+            // 如果API调用失败，返回空数组
+            return [];
+        }
+        
+        return $availableTypes;
+    }
+    
+    /**
+     * 根据监控项类型确定对应的接口类型
+     */
+    private static function getInterfaceTypeFromItemType($itemType) {
+        // Zabbix监控项类型常量
+        switch ($itemType) {
+            case 0: // ITEM_TYPE_ZABBIX
+                return 1; // INTERFACE_TYPE_AGENT
+            case 1: // ITEM_TYPE_SNMPV1
+            case 2: // ITEM_TYPE_TRAPPER
+            case 3: // ITEM_TYPE_SIMPLE
+            case 4: // ITEM_TYPE_SNMPV2C
+            case 5: // ITEM_TYPE_INTERNAL
+            case 6: // ITEM_TYPE_SNMPV3
+            case 7: // ITEM_TYPE_ZABBIX_ACTIVE
+            case 8: // ITEM_TYPE_AGGREGATE
+            case 9: // ITEM_TYPE_HTTPTEST
+            case 10: // ITEM_TYPE_EXTERNAL
+            case 11: // ITEM_TYPE_DB_MONITOR
+            case 12: // ITEM_TYPE_IPMI
+            case 13: // ITEM_TYPE_SSH
+            case 14: // ITEM_TYPE_TELNET
+            case 15: // ITEM_TYPE_CALCULATED
+            case 16: // ITEM_TYPE_JMX
+            case 17: // ITEM_TYPE_SNMPTRAP
+            case 18: // ITEM_TYPE_DEPENDENT
+            case 19: // ITEM_TYPE_HTTPAGENT
+            case 20: // ITEM_TYPE_SNMP
+                // 需要根据具体的item type来判断
+                return self::mapItemTypeToInterfaceType($itemType);
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * 将监控项类型映射到接口类型
+     */
+    private static function mapItemTypeToInterfaceType($itemType) {
+        $mapping = [
+            0 => 1,   // ZABBIX -> AGENT
+            1 => 2,   // SNMPV1 -> SNMP
+            4 => 2,   // SNMPV2C -> SNMP
+            6 => 2,   // SNMPV3 -> SNMP
+            12 => 3,  // IPMI -> IPMI
+            16 => 4,  // JMX -> JMX
+            20 => 2,  // SNMP -> SNMP
+        ];
+        
+        return isset($mapping[$itemType]) ? $mapping[$itemType] : null;
+    }
 }
