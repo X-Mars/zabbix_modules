@@ -21,7 +21,7 @@ function getHostStatusDisplay($host) {
         $statusText = '● Maintenance';
         $statusClass = 'status-maintenance';
     }
-    // 否则显示可用性状态
+    // 否则显示接口可用性状态
     else {
         $statusText = '● ' . $statusInfo['text'];
         $statusClass = $statusInfo['class'];

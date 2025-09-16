@@ -259,43 +259,51 @@ class ItemFinder {
     }
 
     /**
-     * 检查主机的实际可用性状态
+     * 获取主机接口可用性状态（基于Zabbix原生接口可用性）
      * 返回状态信息数组
      */
-    public static function getHostAvailabilityStatus($hostid) {
+    public static function getHostAvailabilityStatus($hostid, $interfaces = []) {
         try {
-            // 获取主机的监控项状态
-            $items = API::Item()->get([
-                'hostids' => [$hostid],
-                'output' => ['itemid', 'status', 'state', 'error'],
-                'filter' => [
-                    'status' => 0  // 只检查启用的监控项
-                ],
-                'limit' => 10  // 只检查前10个监控项来判断可用性
-            ]);
+            // 如果没有传入接口信息，从API获取
+            if (empty($interfaces)) {
+                $interfaces = API::HostInterface()->get([
+                    'hostids' => [$hostid],
+                    'output' => ['interfaceid', 'type', 'main', 'available', 'error']
+                ]);
+            }
 
-            $totalItems = count($items);
-            $activeItems = 0;
-            $errorItems = 0;
+            if (empty($interfaces)) {
+                return ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
+            }
 
-            foreach ($items as $item) {
-                if ($item['status'] == 0) { // 监控项启用
-                    $activeItems++;
-                    if (!empty($item['error']) || $item['state'] != 0) { // 有错误或不支持
-                        $errorItems++;
-                    }
+            // 查找主接口的可用性状态
+            $mainInterface = null;
+            foreach ($interfaces as $interface) {
+                if ($interface['main'] == 1) {
+                    $mainInterface = $interface;
+                    break;
                 }
             }
 
-            // 判断可用性
-            if ($totalItems == 0) {
+            // 如果没有主接口，使用第一个接口
+            if (!$mainInterface && !empty($interfaces)) {
+                $mainInterface = $interfaces[0];
+            }
+
+            if (!$mainInterface) {
                 return ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
-            } elseif ($errorItems == 0 && $activeItems > 0) {
-                return ['status' => 'available', 'text' => 'Available', 'class' => 'status-available'];
-            } elseif ($errorItems > 0) {
-                return ['status' => 'unavailable', 'text' => 'Unavailable', 'class' => 'status-unavailable'];
-            } else {
-                return ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
+            }
+
+            // 根据Zabbix接口可用性状态返回对应的显示
+            // available: 0=未知, 1=可用, 2=不可用
+            switch ($mainInterface['available']) {
+                case '1':
+                    return ['status' => 'available', 'text' => 'Available', 'class' => 'status-available'];
+                case '2':
+                    return ['status' => 'unavailable', 'text' => 'Unavailable', 'class' => 'status-unavailable'];
+                case '0':
+                default:
+                    return ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
             }
 
         } catch (Exception $e) {

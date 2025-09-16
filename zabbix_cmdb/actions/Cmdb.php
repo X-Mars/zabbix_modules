@@ -136,7 +136,7 @@ class Cmdb extends CController {
                 $nameSearchParams = [
                     'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                     'selectHostGroups' => ['groupid', 'name'],
-                    'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+                    'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main', 'available', 'error'],
                     'search' => [
                         'host' => '*' . $search . '*',
                         'name' => '*' . $search . '*'
@@ -179,7 +179,7 @@ class Cmdb extends CController {
                         $ipSearchParams = [
                             'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                             'selectHostGroups' => ['groupid', 'name'],
-                            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+                            'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main', 'available', 'error'],
                             'hostids' => $hostIds,
                             'sortfield' => 'host',
                             'sortorder' => 'ASC'
@@ -206,7 +206,7 @@ class Cmdb extends CController {
             $hostParams = [
                 'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                 'selectHostGroups' => ['groupid', 'name'],
-                'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
+                'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main', 'available', 'error'],
                 'sortfield' => 'host',
                 'sortorder' => 'ASC',
                 'limit' => 100
@@ -244,7 +244,7 @@ class Cmdb extends CController {
             ];
 
             // 获取主机的实际可用性状态
-            $availability = ItemFinder::getHostAvailabilityStatus($host['hostid']);
+            $availability = ItemFinder::getHostAvailabilityStatus($host['hostid'], $host['interfaces']);
             $hostInfo['availability'] = $availability;
 
             // 获取CPU总量
