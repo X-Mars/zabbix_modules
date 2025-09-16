@@ -193,14 +193,20 @@ $page->addItem((new CTag('style', true, '
     border: 1px solid #dee2e6;
     border-radius: 4px;
     padding: 15px;
-    text-align: center;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .stat-icon {
     font-size: 2rem;
-    display: block;
-    margin-bottom: 10px;
+    flex-shrink: 0;
+    margin-right: 15px;
+}
+
+.stat-content {
+    text-align: right;
+    flex: 1;
 }
 
 .stat-number {
@@ -208,6 +214,7 @@ $page->addItem((new CTag('style', true, '
     font-weight: 600;
     color: #495057;
     margin-bottom: 5px;
+    display: block;
 }
 
 .stat-label {
@@ -435,36 +442,56 @@ if (!empty($data['hosts'])) {
                 (new CDiv())
                     ->addClass('stat-card')
                     ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
-                    ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
-                    ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
+                    )
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
                     ->addItem((new CSpan('💾'))->addClass('stat-icon'))
-                    ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
-                    ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
+                    )
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
                     ->addItem((new CSpan('🏠'))->addClass('stat-icon'))
-                    ->addItem((new CDiv(count($data['hosts'])))->addClass('stat-number'))
-                    ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(count($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
+                    )
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
                     ->addItem((new CSpan('📁'))->addClass('stat-icon'))
-                    ->addItem((new CDiv(count($data['host_groups'])))->addClass('stat-number'))
-                    ->addItem((new CDiv(LanguageManager::t('Host Groups')))->addClass('stat-label'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(count($data['host_groups'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Host Groups')))->addClass('stat-label'))
+                    )
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
                     ->addItem((new CSpan('✅'))->addClass('stat-icon'))
-                    ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
-                    ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
+                    )
             )
     );
 }
@@ -475,17 +502,17 @@ $table->addClass('hosts-table');
 
 // 添加表头
 $header = [
-    '🏷️ ' . LanguageManager::t('Host Name'),
-    '💻 ' . LanguageManager::t('System Name'),
-    '🌐 ' . LanguageManager::t('IP Address'),
-    '⚙️ ' . LanguageManager::t('Architecture'),
-    '🔗 ' . LanguageManager::t('Interface Type'),
-    '🖥️ ' . LanguageManager::t('CPU Total'),
-    '📊 ' . LanguageManager::t('CPU Usage'),
-    '💾 ' . LanguageManager::t('Memory Total'),
-    '📈 ' . LanguageManager::t('Memory Usage'),
-    '🖥️ ' . LanguageManager::t('Operating System'),
-    '📁 ' . LanguageManager::t('Host Group')
+    LanguageManager::t('Host Name'),
+    LanguageManager::t('System Name'),
+    LanguageManager::t('IP Address'),
+    LanguageManager::t('Architecture'),
+    LanguageManager::t('Interface Type'),
+    LanguageManager::t('CPU Total'),
+    LanguageManager::t('CPU Usage'),
+    LanguageManager::t('Memory Total'),
+    LanguageManager::t('Memory Usage'),
+    LanguageManager::t('Operating System'),
+    LanguageManager::t('Host Group')
 ];
 $table->setHeader($header);
 
