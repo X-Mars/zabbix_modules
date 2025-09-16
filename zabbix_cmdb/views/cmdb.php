@@ -307,19 +307,8 @@ $content = (new CDiv())
                                         return $select;
                                     })())
                             )
-                            ->addItem(
-                                (new CTag('button', true, LanguageManager::t('Search')))
-                                    ->setAttribute('type', 'submit')
-                                    ->setAttribute('name', 'filter')
-                                    ->addClass('btn btn-primary')
-                            )
-                            ->addItem(
-                                (new CTag('button', true, LanguageManager::t('Clear')))
-                                    ->setAttribute('type', 'button')
-                                    ->setAttribute('onclick', 'clearFilters()')
-                                    ->addClass('btn btn-secondary')
-                            )
                     )
+                    ->addItem((new CInput('hidden', 'action', 'cmdb')))
             )
     );
 
@@ -565,46 +554,7 @@ $content->addItem($table);
 
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
-function clearFilters() {
-    try {
-        // 使用ID选择器，更可靠
-        var searchInput = document.querySelector("input[name=\"search\"]");
-        var groupSelect = document.getElementById("groupid-select");
-        var form = document.querySelector("form");
-
-        console.log("Clear button clicked");
-        console.log("Search input:", searchInput);
-        console.log("Group select:", groupSelect);
-        console.log("Form:", form);
-
-        // 清空搜索框
-        if (searchInput) {
-            searchInput.value = "";
-            console.log("Cleared search input");
-        }
-
-        // 重置分组选择到所有分组
-        if (groupSelect) {
-            groupSelect.value = "0";
-            console.log("Reset group select to 0 (All groups)");
-        }
-
-        // 提交表单以刷新数据
-        if (form) {
-            console.log("Submitting form to refresh data");
-            form.submit();
-        } else {
-            console.log("No form found, redirecting");
-            window.location.href = "zabbix.php?action=cmdb";
-        }
-    } catch (error) {
-        console.error("Error in clearFilters:", error);
-        // 最后的备选方案
-        window.location.href = "zabbix.php?action=cmdb";
-    }
-}
-
-// 添加回车键支持和分组选择变化支持
+// 添加自动搜索功能
 document.addEventListener("DOMContentLoaded", function() {
     try {
         var searchInput = document.querySelector("input[name=\"search\"]");
@@ -614,10 +564,26 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("Search input:", searchInput);
         console.log("Group select:", groupSelect);
 
+        // 为搜索输入框添加输入事件监听器
         if (searchInput) {
+            // 使用防抖函数，避免频繁提交
+            var searchTimeout;
+            searchInput.addEventListener("input", function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    var form = searchInput.closest("form");
+                    if (form) {
+                        console.log("Auto-submitting form due to search input change");
+                        form.submit();
+                    }
+                }, 500); // 500ms延迟，避免过于频繁的提交
+            });
+
+            // 保留回车键支持
             searchInput.addEventListener("keypress", function(event) {
                 if (event.key === "Enter") {
                     event.preventDefault();
+                    clearTimeout(searchTimeout); // 清除定时器，立即提交
                     var form = this.closest("form");
                     if (form) {
                         form.submit();
@@ -626,10 +592,12 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
 
+        // 为分组选择添加变化事件监听器
         if (groupSelect) {
             groupSelect.addEventListener("change", function() {
                 var form = this.closest("form");
                 if (form) {
+                    console.log("Auto-submitting form due to group selection change");
                     form.submit();
                 }
             });
