@@ -263,7 +263,7 @@ $page->addItem((new CTag('style', true, '
     overflow: hidden;
     min-height: 20px;
     line-height: 1.4;
-    max-height: 4.2em; /* 3行 * 1.4 line-height */
+    max-height: 55px; /* 3行文字高度 */
     position: relative;
 }
 
@@ -599,7 +599,7 @@ if (empty($data['hosts'])) {
         $systemNameCol = new CCol();
         if (isset($host['system_name']) && $host['system_name'] !== null) {
             $systemNameCol->addItem(
-                (new CSpan(htmlspecialchars($host['system_name'])))->setAttribute('style', 'font-family: monospace; font-size: 13px;')
+                (new CSpan(htmlspecialchars($host['system_name'])))->setAttribute('style', 'font-family: monospace; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
             );
         } else {
             $systemNameCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
@@ -607,23 +607,30 @@ if (empty($data['hosts'])) {
 
         // IP地址
         $ipCol = new CCol(
-            (new CSpan(htmlspecialchars($mainIp)))->addClass('code-display')
+            (new CSpan(htmlspecialchars($mainIp)))->addClass('code-display')->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
         );
 
         // 架构
         $archCol = new CCol();
         if (isset($host['os_architecture']) && $host['os_architecture'] !== null) {
             $archCol->addItem(
-                (new CSpan(htmlspecialchars($host['os_architecture'])))->setAttribute('style', 'font-family: monospace; font-size: 13px;')
+                (new CSpan(htmlspecialchars($host['os_architecture'])))->setAttribute('style', 'font-family: monospace; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
             );
         } else {
             $archCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 接口类型
-        $interfaceCol = new CCol(
-            !empty($interfaceTypes) ? $interfaceTypes : (new CSpan('-'))->setAttribute('style', 'color: #6c757d;')
-        );
+        $interfaceCol = new CCol();
+        if (!empty($interfaceTypes)) {
+            $interfaceContainer = (new CDiv())->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;');
+            foreach ($interfaceTypes as $interfaceType) {
+                $interfaceContainer->addItem($interfaceType);
+            }
+            $interfaceCol->addItem($interfaceContainer);
+        } else {
+            $interfaceCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+        }
 
         // CPU总量
         $cpuCol = new CCol();
@@ -714,6 +721,7 @@ if (empty($data['hosts'])) {
             
             $osCol->addItem(
                 (new CSpan(htmlspecialchars($osName)))
+                    ->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
                     ->setAttribute('title', htmlspecialchars($osName))
             );
         } else {
@@ -722,12 +730,14 @@ if (empty($data['hosts'])) {
 
         // 主机分组
         $groupCol = new CCol();
+        $groupContainer = (new CDiv())->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;');
         foreach ($groupNames as $groupName) {
-            $groupCol->addItem(
+            $groupContainer->addItem(
                 (new CSpan(htmlspecialchars($groupName)))->addClass('group-tag')
             );
-            $groupCol->addItem(' ');
+            $groupContainer->addItem(' ');
         }
+        $groupCol->addItem($groupContainer);
 
         $table->addRow([
             $hostNameCol,
