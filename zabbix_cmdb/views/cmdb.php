@@ -260,9 +260,21 @@ $page->addItem((new CTag('style', true, '
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
-    overflow: visible;
+    overflow: hidden;
     min-height: 20px;
     line-height: 1.4;
+    max-height: 4.2em; /* 3行 * 1.4 line-height */
+    position: relative;
+}
+
+.hosts-table tbody td:hover {
+    overflow: visible;
+    max-height: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    white-space: normal;
+    border-radius: 4px;
 }
 
 .hosts-table tbody tr:hover {
