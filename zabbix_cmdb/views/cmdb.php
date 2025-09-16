@@ -615,12 +615,8 @@ if (empty($data['hosts'])) {
         // 操作系统
         $osCol = new CCol();
         if (isset($host['operating_system']) && $host['operating_system'] !== null) {
-            $osValue = $host['operating_system'];
-            if (strlen($osValue) > 25) {
-                $osValue = substr($osValue, 0, 22) . '...';
-            }
             $osCol->addItem(
-                (new CSpan(htmlspecialchars($osValue)))
+                (new CSpan(htmlspecialchars($host['operating_system'])))
                     ->setAttribute('title', htmlspecialchars($host['operating_system']))
             );
         } else {
