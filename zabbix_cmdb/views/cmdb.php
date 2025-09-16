@@ -493,7 +493,7 @@ if (empty($data['hosts'])) {
         $hostNameCol->addItem(
             (new CDiv())
                 ->addItem(
-                    $this->getHostStatusDisplay($host)
+                    getHostStatusDisplay($host)
                 )
         );
 
