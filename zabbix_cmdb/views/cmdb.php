@@ -409,7 +409,7 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
-                    ->addItem((new CDiv($this->countActiveHosts($data['hosts'])))->addClass('stat-number'))
+                    ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
             )
     );
