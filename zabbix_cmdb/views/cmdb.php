@@ -203,7 +203,6 @@ $page->addItem((new CTag('style', true, '
     background-color: #fff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    overflow: hidden;
     table-layout: fixed;
 }
 
@@ -219,6 +218,7 @@ $page->addItem((new CTag('style', true, '
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
+    overflow: visible;
 }
 
 .hosts-table tbody td {
@@ -230,6 +230,7 @@ $page->addItem((new CTag('style', true, '
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
+    overflow: visible;
 }
 
 .hosts-table tbody tr:hover {
