@@ -204,6 +204,7 @@ $page->addItem((new CTag('style', true, '
     border: 1px solid #dee2e6;
     border-radius: 4px;
     overflow: hidden;
+    table-layout: fixed;
 }
 
 .hosts-table thead th {
@@ -215,7 +216,8 @@ $page->addItem((new CTag('style', true, '
     font-size: 13px;
     border-bottom: 1px solid #dee2e6;
     max-width: 300px;
-    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
     white-space: normal;
 }
 
@@ -225,7 +227,8 @@ $page->addItem((new CTag('style', true, '
     font-size: 13px;
     vertical-align: middle;
     max-width: 300px;
-    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
     white-space: normal;
 }
 
