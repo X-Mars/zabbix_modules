@@ -234,17 +234,12 @@ class Cmdb extends CController {
                 'status' => $host['status'],
                 'groups' => isset($host['groups']) ? $host['groups'] : (isset($host['hostgroups']) ? $host['hostgroups'] : []),
                 'interfaces' => isset($host['interfaces']) ? $host['interfaces'] : [],
-                'available_interface_types' => [],
                 'cpu_total' => '-',
                 'cpu_usage' => '-',
                 'memory_total' => '-',
                 'memory_usage' => '-',
                 'kernel_version' => '-'
             ];
-
-            // 获取可用的接口类型（基于实际使用的监控项）
-            $availableTypes = ItemFinder::getAvailableInterfaceTypes($host['hostid']);
-            $hostInfo['available_interface_types'] = $availableTypes;
 
             // 获取CPU总量
             $cpuResult = ItemFinder::findCpuCount($host['hostid']);
