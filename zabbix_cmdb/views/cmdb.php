@@ -276,6 +276,7 @@ $content = (new CDiv())
                                     ->addItem(
                                         (new CTextBox('search', $data['search']))
                                             ->setAttribute('placeholder', LanguageManager::t('Search hosts...'))
+                                            ->setAttribute('oninput', 'handleSearchInput(this)')
                                     )
                             )
                             ->addItem(
@@ -286,6 +287,7 @@ $content = (new CDiv())
                                         $select = new CTag('select', true);
                                         $select->setAttribute('name', 'groupid');
                                         $select->setAttribute('id', 'groupid-select');
+                                        $select->setAttribute('onchange', 'handleGroupChange(this)');
 
                                         // 添加"所有分组"选项
                                         $optAll = new CTag('option', true, LanguageManager::t('All Groups'));
@@ -555,55 +557,54 @@ $content->addItem($table);
 // 添加JavaScript
 $content->addItem(new CTag('script', true, '
 // 添加自动搜索功能
+// 全局变量用于防抖
+var searchTimeout;
+
+function handleSearchInput(input) {
+    console.log("handleSearchInput called, value:", input.value);
+    clearTimeout(searchTimeout);
+    var form = input.closest("form");
+    console.log("Found form:", form);
+
+    searchTimeout = setTimeout(function() {
+        console.log("Submitting form after search input timeout");
+        if (form) {
+            form.submit();
+        } else {
+            console.error("No form found for search input");
+        }
+    }, 500);
+}
+
+function handleGroupChange(select) {
+    console.log("handleGroupChange called, value:", select.value);
+    var form = select.closest("form");
+    console.log("Found form:", form);
+
+    if (form) {
+        console.log("Submitting form due to group change");
+        form.submit();
+    } else {
+        console.error("No form found for group select");
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
-    try {
-        var searchInput = document.querySelector("input[name=\"search\"]");
-        var groupSelect = document.getElementById("groupid-select");
+    console.log("DOM loaded, additional setup if needed");
 
-        console.log("Page loaded, elements found:");
-        console.log("Search input:", searchInput);
-        console.log("Group select:", groupSelect);
+    // 可以在这里添加额外的初始化逻辑
+    var searchInput = document.querySelector("input[name=\"search\"]");
+    var groupSelect = document.getElementById("groupid-select");
 
-        // 为搜索输入框添加输入事件监听器
-        if (searchInput) {
-            // 使用防抖函数，避免频繁提交
-            var searchTimeout;
-            searchInput.addEventListener("input", function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(function() {
-                    var form = searchInput.closest("form");
-                    if (form) {
-                        console.log("Auto-submitting form due to search input change");
-                        form.submit();
-                    }
-                }, 500); // 500ms延迟，避免过于频繁的提交
-            });
+    console.log("Elements check:");
+    console.log("- Search input:", searchInput);
+    console.log("- Group select:", groupSelect);
 
-            // 保留回车键支持
-            searchInput.addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    clearTimeout(searchTimeout); // 清除定时器，立即提交
-                    var form = this.closest("form");
-                    if (form) {
-                        form.submit();
-                    }
-                }
-            });
-        }
-
-        // 为分组选择添加变化事件监听器
-        if (groupSelect) {
-            groupSelect.addEventListener("change", function() {
-                var form = this.closest("form");
-                if (form) {
-                    console.log("Auto-submitting form due to group selection change");
-                    form.submit();
-                }
-            });
-        }
-    } catch (error) {
-        console.error("Error in DOMContentLoaded:", error);
+    if (searchInput) {
+        console.log("Search input has oninput:", searchInput.hasAttribute("oninput"));
+    }
+    if (groupSelect) {
+        console.log("Group select has onchange:", groupSelect.hasAttribute("onchange"));
     }
 });
 '));
