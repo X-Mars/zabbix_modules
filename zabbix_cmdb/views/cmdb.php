@@ -561,51 +561,28 @@ $content->addItem(new CTag('script', true, '
 var searchTimeout;
 
 function handleSearchInput(input) {
-    console.log("handleSearchInput called, value:", input.value);
     clearTimeout(searchTimeout);
     var form = input.closest("form");
-    console.log("Found form:", form);
 
     searchTimeout = setTimeout(function() {
-        console.log("Submitting form after search input timeout");
         if (form) {
             form.submit();
-        } else {
-            console.error("No form found for search input");
         }
     }, 500);
 }
 
 function handleGroupChange(select) {
-    console.log("handleGroupChange called, value:", select.value);
     var form = select.closest("form");
-    console.log("Found form:", form);
 
     if (form) {
-        console.log("Submitting form due to group change");
         form.submit();
-    } else {
-        console.error("No form found for group select");
     }
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("DOM loaded, additional setup if needed");
-
     // 可以在这里添加额外的初始化逻辑
     var searchInput = document.querySelector("input[name=\"search\"]");
     var groupSelect = document.getElementById("groupid-select");
-
-    console.log("Elements check:");
-    console.log("- Search input:", searchInput);
-    console.log("- Group select:", groupSelect);
-
-    if (searchInput) {
-        console.log("Search input has oninput:", searchInput.hasAttribute("oninput"));
-    }
-    if (groupSelect) {
-        console.log("Group select has onchange:", groupSelect.hasAttribute("onchange"));
-    }
 });
 '));
 
