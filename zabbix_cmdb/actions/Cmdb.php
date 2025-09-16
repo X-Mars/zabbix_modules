@@ -20,7 +20,10 @@ class Cmdb extends CController {
     protected function checkInput(): bool {
         $fields = [
             'search' => 'string',
-            'groupid' => 'int32'
+            'groupid' => 'int32',
+            'sort' => 'string',
+            'sortorder' => 'in ASC,DESC',
+            'interface_type' => 'int32'
         ];
 
         $ret = $this->validateInput($fields);
@@ -39,6 +42,9 @@ class Cmdb extends CController {
     protected function doAction(): void {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
+        $sort = $this->getInput('sort', 'cpu_total');
+        $sortorder = $this->getInput('sortorder', 'DESC');
+        $interface_type = $this->getInput('interface_type', 0);
 
         // 获取主机分组列表 - 基于Zabbix 7.0 API文档的最佳实践
         $hostGroups = [];
@@ -229,6 +235,20 @@ class Cmdb extends CController {
         $totalCpu = 0;
         $totalMemory = 0;
         foreach ($hosts as $host) {
+            // 根据接口类型过滤
+            if ($interface_type > 0) {
+                $hasMatchingInterface = false;
+                foreach ($host['interfaces'] as $interface) {
+                    if ($interface['type'] == $interface_type) {
+                        $hasMatchingInterface = true;
+                        break;
+                    }
+                }
+                if (!$hasMatchingInterface) {
+                    continue;
+                }
+            }
+
             $hostInfo = [
                 'hostid' => $host['hostid'],
                 'host' => $host['host'],
@@ -305,6 +325,34 @@ class Cmdb extends CController {
             $hostData[] = $hostInfo;
         }
         
+        // 根据排序参数对数据进行排序
+        if (!empty($hostData)) {
+            usort($hostData, function($a, $b) use ($sort, $sortorder) {
+                $valueA = $a[$sort] ?? '';
+                $valueB = $b[$sort] ?? '';
+
+                // 对于数值字段，确保正确比较
+                if (in_array($sort, ['cpu_total', 'cpu_usage', 'memory_total', 'memory_usage'])) {
+                    if ($sort === 'cpu_usage' || $sort === 'memory_usage') {
+                        $valueA = $valueA !== '-' ? floatval(str_replace('%', '', $valueA)) : 0;
+                        $valueB = $valueB !== '-' ? floatval(str_replace('%', '', $valueB)) : 0;
+                    } else {
+                        $valueA = is_numeric($valueA) ? floatval($valueA) : 0;
+                        $valueB = is_numeric($valueB) ? floatval($valueB) : 0;
+                    }
+                } else {
+                    $valueA = (string)$valueA;
+                    $valueB = (string)$valueB;
+                }
+
+                if ($sortorder === 'DESC') {
+                    return $valueB <=> $valueA;
+                } else {
+                    return $valueA <=> $valueB;
+                }
+            });
+        }
+        
         $response = new CControllerResponseData([
             'title' => LanguageManager::t('CMDB'),
             'host_groups' => $hostGroups,
@@ -312,7 +360,10 @@ class Cmdb extends CController {
             'search' => $search,
             'selected_groupid' => $groupid,
             'total_cpu' => $totalCpu,
-            'total_memory' => $totalMemory
+            'total_memory' => $totalMemory,
+            'sort' => $sort,
+            'sortorder' => $sortorder,
+            'selected_interface_type' => $interface_type
         ]);
 
         $this->setResponse($response);
