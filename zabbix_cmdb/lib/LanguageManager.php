@@ -8,7 +8,7 @@ class LanguageManager {
      */
     private const LANG_DEFAULT = 'default';
     private const ZBX_DEFAULT_LANG = 'en_US';
-
+    
     private static $currentLanguage = null;
     private static $translations = [
         'zh_CN' => [
@@ -76,59 +76,95 @@ class LanguageManager {
     ];
 
     /**
-     * 检测当前用户的语言设置
+     * 检测当前语言（对齐 Zabbix 源码逻辑）
+     * 优先级：
+     * 1) 用户语言（users.lang），如果为 'default' 则继承系统默认
+     * 2) 系统默认语言（settings.default_lang），读取失败则回退到 ZBX 默认
+     * 3) Zabbix 默认语言（en_US）
      */
     public static function detectLanguage() {
         if (self::$currentLanguage !== null) {
             return self::$currentLanguage;
         }
-
-        // 方式1：优先使用 Zabbix 官方封装 CSettingsHelper
-        if (class_exists('CSettingsHelper') || class_exists('\\CSettingsHelper')) {
-            if (method_exists('CSettingsHelper', 'get')) {
-                $val = \CSettingsHelper::get('default_lang');
-                if (!empty($val)) {
-                    return self::$currentLanguage = self::ensureSupportedOrFallback($val);
-                }
+        
+        // 1) 用户语言
+        $userLang = self::getUserLanguageFromZabbix();
+        if (!empty($userLang)) {
+            $mapped = self::mapZabbixLangToOurs($userLang);
+            // 'default' 表示继承系统默认
+            if ($mapped === self::LANG_DEFAULT) {
+                $sys = self::getSystemDefaultLanguage();
+                self::$currentLanguage = self::ensureSupportedOrFallback($sys);
+                return self::$currentLanguage;
             }
+            self::$currentLanguage = self::ensureSupportedOrFallback($mapped);
+            return self::$currentLanguage;
         }
 
-        // 方式2：尝试从用户Session中获取语言设置
-        $userLang = self::getUserLanguageFromSession();
-        if ($userLang) {
-            return self::$currentLanguage = self::ensureSupportedOrFallback($userLang);
+        // 2) 系统默认语言
+        $sys = self::getSystemDefaultLanguage();
+        if (!empty($sys)) {
+            self::$currentLanguage = self::ensureSupportedOrFallback($sys);
+            return self::$currentLanguage;
         }
 
-        // 方式3：尝试从API获取用户语言设置
-        $apiLang = self::getUserLanguageFromAPI();
-        if ($apiLang) {
-            return self::$currentLanguage = self::ensureSupportedOrFallback($apiLang);
-        }
-
-        // 方式4：尝试从数据库直接获取
-        $dbLang = self::getUserLanguageFromDatabase();
-        if ($dbLang) {
-            return self::$currentLanguage = self::ensureSupportedOrFallback($dbLang);
-        }
-
-        // 方式5：读取系统默认语言
-        $systemLang = self::getSystemDefaultLanguage();
-        return self::$currentLanguage = self::ensureSupportedOrFallback($systemLang);
+        // 3) Zabbix 默认语言
+        self::$currentLanguage = self::ensureSupportedOrFallback(self::ZBX_DEFAULT_LANG);
+        return self::$currentLanguage;
     }
 
     /**
-     * 尝试从Session中获取用户语言设置
+     * 尝试从Zabbix系统中获取当前用户的语言设置
      */
-    private static function getUserLanguageFromSession() {
+    private static function getUserLanguageFromZabbix() {
+        // 方法0: 优先使用 Zabbix 官方封装 CWebUser
         try {
-            if (isset($_SESSION['lang'])) {
-                return $_SESSION['lang'];
+            if (class_exists('CWebUser') || class_exists('\\CWebUser')) {
+                // 静态 get 方法（较新版本）
+                if (method_exists('CWebUser', 'get')) {
+                    $lang = \CWebUser::get('lang');
+                    if (!empty($lang)) {
+                        return $lang;
+                    }
+                }
+                // 旧版本静态数据容器
+                if (isset(\CWebUser::$data) && is_array(\CWebUser::$data) && isset(\CWebUser::$data['lang']) && !empty(\CWebUser::$data['lang'])) {
+                    return \CWebUser::$data['lang'];
+                }
             }
-        } catch (Throwable $e) {
-            // Session不可用
+        } catch (\Throwable $e) {
+            // 忽略并继续其他方式
         }
 
-        return null;
+        // 方法1: 尝试通过全局变量获取CWebUser信息
+        try {
+            // 检查$GLOBALS中是否有CWebUser相关信息
+            if (isset($GLOBALS['USER_DETAILS']) && isset($GLOBALS['USER_DETAILS']['lang'])) {
+                return $GLOBALS['USER_DETAILS']['lang'];
+            }
+        } catch (Throwable $e) {
+            // 继续其他方法
+        }
+        
+        // 方法2: 尝试从全局变量中获取（安装流程/页面初始化缓存）
+        try {
+            if (isset($GLOBALS['ZBX_LOCALES']) && isset($GLOBALS['ZBX_LOCALES']['selected'])) {
+                return $GLOBALS['ZBX_LOCALES']['selected'];
+            }
+        } catch (Throwable $e) {
+            // 继续其他方法
+        }
+        
+        // 方法3: 从Session中获取（Zabbix 前端会在登录后设置）
+        if (isset($_SESSION['zbx_lang']) && !empty($_SESSION['zbx_lang'])) {
+            return $_SESSION['zbx_lang'];
+        }
+        if (isset($_SESSION['lang']) && !empty($_SESSION['lang'])) {
+            return $_SESSION['lang'];
+        }
+
+        // 方法4: 尝试直接访问数据库获取用户语言设置
+        return self::getUserLanguageFromDatabase();
     }
 
     /**
@@ -360,10 +396,25 @@ class LanguageManager {
     }
 
     /**
+     * 获取带参数的翻译文本
+     */
+    public static function tf($key, ...$args) {
+        $translation = self::t($key);
+        return sprintf($translation, ...$args);
+    }
+
+    /**
      * 获取当前语言
      */
     public static function getCurrentLanguage() {
         return self::detectLanguage();
+    }
+
+    /**
+     * 重置语言缓存（主要用于测试）
+     */
+    public static function resetLanguage() {
+        self::$currentLanguage = null;
     }
 
     /**
@@ -372,11 +423,87 @@ class LanguageManager {
     public static function getLanguageDetectionInfo() {
         return [
             'detected' => self::detectLanguage(),
-            'session_lang' => self::getUserLanguageFromSession(),
-            'api_lang' => self::getUserLanguageFromAPI(),
+            'zabbix_user_lang' => self::getUserLanguageFromZabbix(),
             'db_lang' => self::getUserLanguageFromDatabase(),
             'system_lang' => self::getSystemDefaultLanguage(),
             'supported_locales' => array_keys(self::$translations)
         ];
+    }
+
+    /**
+     * 检查当前是否为中文语言
+     */
+    public static function isChinese() {
+        return self::detectLanguage() === 'zh_CN';
+    }
+
+    /**
+     * 格式化日期时间（根据语言）
+     */
+    public static function formatDateTime($timestamp, $format = null) {
+        if ($format === null) {
+            $format = self::isChinese() ? 'Y年m月d日 H:i:s' : 'Y-m-d H:i:s';
+        }
+
+        return date($format, $timestamp);
+    }
+
+    /**
+     * 格式化日期（根据语言）
+     */
+    public static function formatDate($timestamp, $format = null) {
+        if ($format === null) {
+            $format = self::isChinese() ? 'Y年m月d日' : 'Y-m-d';
+        }
+
+        return date($format, $timestamp);
+    }
+
+    /**
+     * 格式化周期（根据语言）
+     */
+    public static function formatPeriod($type, $dateString) {
+        // 将日期字符串转换为时间戳
+        if (is_string($dateString)) {
+            $timestamp = strtotime($dateString);
+        } else {
+            $timestamp = $dateString;
+        }
+
+        if ($timestamp === false) {
+            return $dateString; // 如果转换失败，返回原字符串
+        }
+
+        if (self::isChinese()) {
+            switch ($type) {
+                case 'day':
+                case 'daily':
+                    return date('Y年m月d日', $timestamp);
+                case 'week':
+                case 'weekly':
+                    $year = date('Y', $timestamp);
+                    $week = date('W', $timestamp);
+                    return $year . '年第' . $week . '周';
+                case 'month':
+                case 'monthly':
+                    return date('Y年m月', $timestamp);
+                default:
+                    return date('Y-m-d', $timestamp);
+            }
+        } else {
+            switch ($type) {
+                case 'day':
+                case 'daily':
+                    return date('Y-m-d', $timestamp);
+                case 'week':
+                case 'weekly':
+                    return date('Y', $timestamp) . ' Week ' . date('W', $timestamp);
+                case 'month':
+                case 'monthly':
+                    return date('Y-m', $timestamp);
+                default:
+                    return date('Y-m-d', $timestamp);
+            }
+        }
     }
 }
