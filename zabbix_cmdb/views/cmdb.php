@@ -463,7 +463,7 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
-                    ->addItem((new CSpan('🏠'))->addClass('stat-icon'))
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
                     ->addItem(
                         (new CDiv())
                             ->addClass('stat-content')
@@ -474,7 +474,7 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
-                    ->addItem((new CSpan('📁'))->addClass('stat-icon'))
+                    ->addItem((new CSpan('🗂️'))->addClass('stat-icon'))
                     ->addItem(
                         (new CDiv())
                             ->addClass('stat-content')
@@ -485,7 +485,7 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
-                    ->addItem((new CSpan('✅'))->addClass('stat-icon'))
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
                     ->addItem(
                         (new CDiv())
                             ->addClass('stat-content')
@@ -562,7 +562,7 @@ if (empty($data['hosts'])) {
             }
 
             if (!empty($typeText)) {
-                $interfaceTypes[] = (new CSpan($typeIcon . ' ' . $typeText))->addClass('interface-type ' . $typeClass);
+                $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
             }
         }        // 获取主机分组
         $groupNames = [];
@@ -701,7 +701,7 @@ if (empty($data['hosts'])) {
             }
             
             $osCol->addItem(
-                (new CSpan($osIcon . ' ' . htmlspecialchars($osName)))
+                (new CSpan(htmlspecialchars($osName)))
                     ->setAttribute('title', htmlspecialchars($osName))
             );
         } else {
