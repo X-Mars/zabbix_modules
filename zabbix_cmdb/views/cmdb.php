@@ -214,6 +214,9 @@ $page->addItem((new CTag('style', true, '
     text-align: left;
     font-size: 13px;
     border-bottom: 1px solid #dee2e6;
+    max-width: 300px;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .hosts-table tbody td {
@@ -221,6 +224,9 @@ $page->addItem((new CTag('style', true, '
     border-bottom: 1px solid #dee2e6;
     font-size: 13px;
     vertical-align: middle;
+    max-width: 300px;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .hosts-table tbody tr:hover {
