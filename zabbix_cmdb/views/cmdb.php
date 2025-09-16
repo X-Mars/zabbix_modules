@@ -320,7 +320,6 @@ $content = (new CDiv())
                                     ->addClass('btn btn-secondary')
                             )
                     )
-                    ->addItem((new CInput('hidden', 'action', 'cmdb')))
             )
     );
 
