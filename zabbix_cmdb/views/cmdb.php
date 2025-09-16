@@ -15,17 +15,30 @@ function getHostStatusDisplay($host) {
     
     // 如果主机被禁用，显示Disabled
     if ($host['status'] == 1) {
-        $statusText = '● Disabled';
+        $statusText = '🚫 Disabled';
         $statusClass = 'status-disabled';
     } 
     // 如果主机在维护中，显示Maintenance
     elseif (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
-        $statusText = '● Maintenance';
+        $statusText = '🔧 Maintenance';
         $statusClass = 'status-maintenance';
     }
     // 否则显示接口可用性状态
     else {
-        $statusText = '● ' . $statusInfo['text'];
+        $icon = '';
+        switch ($statusInfo['status']) {
+            case 'available':
+                $icon = '🟢';
+                break;
+            case 'unavailable':
+                $icon = '🔴';
+                break;
+            case 'unknown':
+            default:
+                $icon = '🟡';
+                break;
+        }
+        $statusText = $icon . ' ' . $statusInfo['text'];
         $statusClass = $statusInfo['class'];
     }
     
@@ -63,7 +76,7 @@ function countActiveHosts($hosts) {
 
 // 使用Zabbix原生的页面结构
 $page = new CHtmlPage();
-$page->setTitle(LanguageManager::t('CMDB'));
+$page->setTitle('🗂️ ' . LanguageManager::t('CMDB'));
 
 // 构建下拉框选项 - 使用CTag直接生成select元素
 
@@ -181,6 +194,13 @@ $page->addItem((new CTag('style', true, '
     border-radius: 4px;
     padding: 15px;
     text-align: center;
+    position: relative;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
 }
 
 .stat-number {
@@ -364,7 +384,7 @@ $content = (new CDiv())
                             ->addItem(
                                 (new CDiv())
                                     ->addClass('form-field')
-                                    ->addItem(new CLabel(LanguageManager::t('Search by hostname or IP')))
+                                    ->addItem(new CLabel('🔍 ' . LanguageManager::t('Search by hostname or IP')))
                                     ->addItem(
                                         (new CTextBox('search', $data['search']))
                                             ->setAttribute('placeholder', LanguageManager::t('Search hosts...'))
@@ -374,7 +394,7 @@ $content = (new CDiv())
                             ->addItem(
                                 (new CDiv())
                                     ->addClass('form-field')
-                                    ->addItem(new CLabel(LanguageManager::t('Select host group')))
+                                    ->addItem(new CLabel('📂 ' . LanguageManager::t('Select host group')))
                                     ->addItem((function() use ($data) {
                                         $select = new CTag('select', true);
                                         $select->setAttribute('name', 'groupid');
@@ -414,30 +434,35 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
                     ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
+                    ->addItem((new CSpan('💾'))->addClass('stat-icon'))
                     ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
+                    ->addItem((new CSpan('🏠'))->addClass('stat-icon'))
                     ->addItem((new CDiv(count($data['hosts'])))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
+                    ->addItem((new CSpan('📁'))->addClass('stat-icon'))
                     ->addItem((new CDiv(count($data['host_groups'])))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Host Groups')))->addClass('stat-label'))
             )
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
+                    ->addItem((new CSpan('✅'))->addClass('stat-icon'))
                     ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
             )
@@ -450,17 +475,17 @@ $table->addClass('hosts-table');
 
 // 添加表头
 $header = [
-    LanguageManager::t('Host Name'),
-    LanguageManager::t('System Name'),
-    LanguageManager::t('IP Address'),
-    LanguageManager::t('Architecture'),
-    LanguageManager::t('Interface Type'),
-    LanguageManager::t('CPU Total'),
-    LanguageManager::t('CPU Usage'),
-    LanguageManager::t('Memory Total'),
-    LanguageManager::t('Memory Usage'),
-    LanguageManager::t('Operating System'),
-    LanguageManager::t('Host Group')
+    '🏷️ ' . LanguageManager::t('Host Name'),
+    '💻 ' . LanguageManager::t('System Name'),
+    '🌐 ' . LanguageManager::t('IP Address'),
+    '⚙️ ' . LanguageManager::t('Architecture'),
+    '🔗 ' . LanguageManager::t('Interface Type'),
+    '🖥️ ' . LanguageManager::t('CPU Total'),
+    '📊 ' . LanguageManager::t('CPU Usage'),
+    '💾 ' . LanguageManager::t('Memory Total'),
+    '📈 ' . LanguageManager::t('Memory Usage'),
+    '🖥️ ' . LanguageManager::t('Operating System'),
+    '📁 ' . LanguageManager::t('Host Group')
 ];
 $table->setHeader($header);
 
@@ -485,27 +510,32 @@ if (empty($data['hosts'])) {
             // 收集接口类型
             $typeClass = '';
             $typeText = '';
+            $typeIcon = '';
             switch ($interface['type']) {
                 case 1:
                     $typeClass = 'interface-agent';
+                    $typeIcon = '🤖';
                     $typeText = LanguageManager::t('Agent');
                     break;
                 case 2:
                     $typeClass = 'interface-snmp';
+                    $typeIcon = '📡';
                     $typeText = LanguageManager::t('SNMP');
                     break;
                 case 3:
                     $typeClass = 'interface-ipmi';
+                    $typeIcon = '🔧';
                     $typeText = LanguageManager::t('IPMI');
                     break;
                 case 4:
                     $typeClass = 'interface-jmx';
+                    $typeIcon = '☕';
                     $typeText = LanguageManager::t('JMX');
                     break;
             }
 
             if (!empty($typeText)) {
-                $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
+                $interfaceTypes[] = (new CSpan($typeIcon . ' ' . $typeText))->addClass('interface-type ' . $typeClass);
             }
         }        // 获取主机分组
         $groupNames = [];
@@ -573,16 +603,19 @@ if (empty($data['hosts'])) {
         if ($host['cpu_usage'] !== '-') {
             $usageValue = floatval(str_replace('%', '', $host['cpu_usage']));
             $usageColor = '#28a745'; // 绿色
+            $usageIcon = '🟢'; // 正常
             if ($usageValue > 80) {
                 $usageColor = '#dc3545'; // 红色
+                $usageIcon = '🔴'; // 高负载
             } elseif ($usageValue > 60) {
                 $usageColor = '#ffc107'; // 黄色
+                $usageIcon = '🟡'; // 中等负载
             }
             $cpuUsageCol->addItem(
-                (new CSpan(htmlspecialchars($host['cpu_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+                (new CSpan($usageIcon . ' ' . htmlspecialchars($host['cpu_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
             );
         } else {
-            $cpuUsageCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+            $cpuUsageCol->addItem((new CSpan('⚪ -'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 内存总量
@@ -600,27 +633,52 @@ if (empty($data['hosts'])) {
         if ($host['memory_usage'] !== '-') {
             $usageValue = floatval(str_replace('%', '', $host['memory_usage']));
             $usageColor = '#28a745'; // 绿色
+            $usageIcon = '🟢'; // 正常
             if ($usageValue > 80) {
                 $usageColor = '#dc3545'; // 红色
+                $usageIcon = '🔴'; // 高负载
             } elseif ($usageValue > 60) {
                 $usageColor = '#ffc107'; // 黄色
+                $usageIcon = '🟡'; // 中等负载
             }
             $memoryUsageCol->addItem(
-                (new CSpan(htmlspecialchars($host['memory_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+                (new CSpan($usageIcon . ' ' . htmlspecialchars($host['memory_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
             );
         } else {
-            $memoryUsageCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+            $memoryUsageCol->addItem((new CSpan('⚪ -'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 操作系统
         $osCol = new CCol();
         if (isset($host['operating_system']) && $host['operating_system'] !== null) {
+            $osName = $host['operating_system'];
+            $osIcon = '💻'; // 默认图标
+            
+            // 根据操作系统类型设置图标
+            if (stripos($osName, 'windows') !== false) {
+                $osIcon = '🪟';
+            } elseif (stripos($osName, 'linux') !== false) {
+                $osIcon = '🐧';
+            } elseif (stripos($osName, 'ubuntu') !== false) {
+                $osIcon = '🟠';
+            } elseif (stripos($osName, 'centos') !== false || stripos($osName, 'red hat') !== false) {
+                $osIcon = '🔴';
+            } elseif (stripos($osName, 'debian') !== false) {
+                $osIcon = '🔵';
+            } elseif (stripos($osName, 'mac') !== false || stripos($osName, 'darwin') !== false) {
+                $osIcon = '🍎';
+            } elseif (stripos($osName, 'freebsd') !== false) {
+                $osIcon = '👿';
+            } elseif (stripos($osName, 'solaris') !== false) {
+                $osIcon = '☀️';
+            }
+            
             $osCol->addItem(
-                (new CSpan(htmlspecialchars($host['operating_system'])))
-                    ->setAttribute('title', htmlspecialchars($host['operating_system']))
+                (new CSpan($osIcon . ' ' . htmlspecialchars($osName)))
+                    ->setAttribute('title', htmlspecialchars($osName))
             );
         } else {
-            $osCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
+            $osCol->addItem((new CSpan('❓ -'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // 主机分组
