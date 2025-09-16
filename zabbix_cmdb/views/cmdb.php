@@ -204,6 +204,7 @@ $page->addItem((new CTag('style', true, '
     border: 1px solid #dee2e6;
     border-radius: 4px;
     table-layout: fixed;
+    overflow: visible;
 }
 
 .hosts-table thead th {
@@ -219,18 +220,22 @@ $page->addItem((new CTag('style', true, '
     overflow-wrap: break-word;
     white-space: normal;
     overflow: visible;
+    min-height: 20px;
+    line-height: 1.4;
 }
 
 .hosts-table tbody td {
     padding: 12px 8px;
     border-bottom: 1px solid #dee2e6;
     font-size: 13px;
-    vertical-align: middle;
+    vertical-align: top;
     max-width: 300px;
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
     overflow: visible;
+    min-height: 20px;
+    line-height: 1.4;
 }
 
 .hosts-table tbody tr:hover {
