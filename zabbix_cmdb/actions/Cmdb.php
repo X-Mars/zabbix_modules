@@ -134,7 +134,7 @@ class Cmdb extends CController {
             // 1. 搜索主机名和显示名称
             try {
                 $nameSearchParams = [
-                    'output' => ['hostid', 'host', 'name', 'status'],
+                    'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                     'selectHostGroups' => ['groupid', 'name'],
                     'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                     'search' => [
@@ -177,7 +177,7 @@ class Cmdb extends CController {
                         $hostIds = array_unique(array_column($interfaces, 'hostid'));
                         
                         $ipSearchParams = [
-                            'output' => ['hostid', 'host', 'name', 'status'],
+                            'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                             'selectHostGroups' => ['groupid', 'name'],
                             'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                             'hostids' => $hostIds,
@@ -204,7 +204,7 @@ class Cmdb extends CController {
         } else {
             // 没有搜索条件时，获取所有主机
             $hostParams = [
-                'output' => ['hostid', 'host', 'name', 'status'],
+                'output' => ['hostid', 'host', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
                 'selectHostGroups' => ['groupid', 'name'],
                 'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main'],
                 'sortfield' => 'host',
@@ -232,6 +232,8 @@ class Cmdb extends CController {
                 'host' => $host['host'],
                 'name' => $host['name'],
                 'status' => $host['status'],
+                'maintenance_status' => isset($host['maintenance_status']) ? $host['maintenance_status'] : 0,
+                'maintenance_type' => isset($host['maintenance_type']) ? $host['maintenance_type'] : 0,
                 'groups' => isset($host['groups']) ? $host['groups'] : (isset($host['hostgroups']) ? $host['hostgroups'] : []),
                 'interfaces' => isset($host['interfaces']) ? $host['interfaces'] : [],
                 'cpu_total' => '-',
@@ -240,6 +242,10 @@ class Cmdb extends CController {
                 'memory_usage' => '-',
                 'kernel_version' => '-'
             ];
+
+            // 获取主机的实际可用性状态
+            $availability = ItemFinder::getHostAvailabilityStatus($host['hostid']);
+            $hostInfo['availability'] = $availability;
 
             // 获取CPU总量
             $cpuResult = ItemFinder::findCpuCount($host['hostid']);

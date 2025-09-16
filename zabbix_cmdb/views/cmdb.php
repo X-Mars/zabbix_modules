@@ -4,6 +4,61 @@
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 
+/**
+ * 获取主机状态显示元素
+ */
+function getHostStatusDisplay($host) {
+    // 获取主机状态信息
+    $statusInfo = isset($host['availability']) ? $host['availability'] : ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
+    
+    // 如果主机被禁用，显示Disabled
+    if ($host['status'] == 1) {
+        $statusText = '● Disabled';
+        $statusClass = 'status-disabled';
+    } 
+    // 如果主机在维护中，显示Maintenance
+    elseif (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
+        $statusText = '● Maintenance';
+        $statusClass = 'status-maintenance';
+    }
+    // 否则显示可用性状态
+    else {
+        $statusText = '● ' . $statusInfo['text'];
+        $statusClass = $statusInfo['class'];
+    }
+    
+    return (new CSpan($statusText))
+        ->addClass($statusClass)
+        ->setAttribute('style', 'font-size: 12px;');
+}
+
+/**
+ * 计算活跃主机数量（基于实际可用性状态）
+ */
+function countActiveHosts($hosts) {
+    $activeCount = 0;
+    
+    foreach ($hosts as $host) {
+        // 如果主机被禁用，跳过
+        if ($host['status'] == 1) {
+            continue;
+        }
+        
+        // 如果主机在维护中，跳过
+        if (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
+            continue;
+        }
+        
+        // 检查可用性状态
+        $availability = isset($host['availability']) ? $host['availability'] : ['status' => 'unknown'];
+        if ($availability['status'] === 'available') {
+            $activeCount++;
+        }
+    }
+    
+    return $activeCount;
+}
+
 // 使用Zabbix原生的页面结构
 $page = new CHtmlPage();
 $page->setTitle(LanguageManager::t('CMDB'));
@@ -225,6 +280,26 @@ $page->addItem((new CTag('style', true, '
     font-weight: 600;
 }
 
+.status-available {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-unavailable {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-maintenance {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.status-unknown {
+    color: #6c757d;
+    font-weight: 600;
+}
+
 .no-data {
     text-align: center;
     padding: 40px 20px;
@@ -334,7 +409,7 @@ if (!empty($data['hosts'])) {
             ->addItem(
                 (new CDiv())
                     ->addClass('stat-card')
-                    ->addItem((new CDiv(count(array_filter($data['hosts'], function($h) { return $h['status'] == 0; }))))->addClass('stat-number'))
+                    ->addItem((new CDiv($this->countActiveHosts($data['hosts'])))->addClass('stat-number'))
                     ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
             )
     );
@@ -418,9 +493,7 @@ if (empty($data['hosts'])) {
         $hostNameCol->addItem(
             (new CDiv())
                 ->addItem(
-                    (new CSpan($host['status'] == 0 ? '● Active' : '● Disabled'))
-                        ->addClass($host['status'] == 0 ? 'status-enabled' : 'status-disabled')
-                        ->setAttribute('style', 'font-size: 12px;')
+                    $this->getHostStatusDisplay($host)
                 )
         );
 
