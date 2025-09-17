@@ -40,7 +40,22 @@ class LanguageManager {
             'Clear' => '清除',
             'Total Hosts' => '主机总数',
             'Host Groups' => '主机分组',
-            'Active Hosts' => '启用主机'
+            'Host List' => '主机列表',
+            'Search host groups...' => '搜索主机分组...',
+            'Enter group name' => '输入分组名称',
+            'Group Name' => '分组名称',
+            'Host Count' => '主机数量',
+            'Active Hosts' => '启用主机',
+            'Search by group name' => '按分组名称搜索',
+            'Search groups...' => '搜索分组...',
+            'Status' => '状态',
+            'No groups found' => '未找到分组',
+            'Empty Group' => '空分组',
+            'Active Group' => '活跃分组',
+            'Basic Group' => '基础分组',
+            'hosts' => '个主机',
+            'cores' => '核',
+            'Invalid input parameters.' => '无效的输入参数。'
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -71,7 +86,22 @@ class LanguageManager {
             'Clear' => 'Clear',
             'Total Hosts' => 'Total Hosts',
             'Host Groups' => 'Host Groups',
-            'Active Hosts' => 'Active Hosts'
+            'Host List' => 'Host List',
+            'Search host groups...' => 'Search host groups...',
+            'Enter group name' => 'Enter group name',
+            'Group Name' => 'Group Name',
+            'Host Count' => 'Host Count',
+            'Active Hosts' => 'Active Hosts',
+            'Search by group name' => 'Search by group name',
+            'Search groups...' => 'Search groups...',
+            'Status' => 'Status',
+            'No groups found' => 'No groups found',
+            'Empty Group' => 'Empty Group',
+            'Active Group' => 'Active Group',
+            'Basic Group' => 'Basic Group',
+            'hosts' => 'hosts',
+            'cores' => 'cores',
+            'Invalid input parameters.' => 'Invalid input parameters.'
         ]
     ];
 

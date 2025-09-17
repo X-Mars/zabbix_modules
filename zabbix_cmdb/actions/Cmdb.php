@@ -304,10 +304,6 @@ class Cmdb extends CController {
 
             $hostData[] = $hostInfo;
         }
-
-        if (!empty($hostGroups)) {
-            error_log("CMDB: First few groups: " . implode(', ', array_slice(array_column($hostGroups, 'name'), 0, 3)));
-        }
         
         $response = new CControllerResponseData([
             'title' => LanguageManager::t('CMDB'),

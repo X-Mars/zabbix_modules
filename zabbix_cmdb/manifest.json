@@ -12,6 +12,10 @@
             "class": "Cmdb",
             "view": "cmdb"
         },
+        "cmdb.groups": {
+            "class": "CmdbGroups",
+            "view": "cmdb.groups"
+        },
         "cmdb.debug": {
             "class": "CmdbDebug"
         }

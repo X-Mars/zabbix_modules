@@ -14,7 +14,12 @@ class Module extends CModule {
             ->findOrAdd(_('Inventory'))
             ->getSubmenu()
             ->add(
-                (new CMenuItem(_('CMDB')))->setAction('cmdb')
+                (new CMenuItem(_('CMDB')))->setSubMenu(
+                    new CMenu([
+                        (new CMenuItem(_('Host List')))->setAction('cmdb'),
+                        (new CMenuItem(_('Host Groups')))->setAction('cmdb.groups')
+                    ])
+                )
             );
     }
 }
