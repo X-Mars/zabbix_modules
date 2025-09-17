@@ -46,6 +46,48 @@
 **版本**：1.0.0  
 **兼容性**：Zabbix 7.0
 
+## 安装说明 / Installation
+
+### 使用Git克隆安装所有模块
+
+如果您想一次性安装所有模块，可以使用Git克隆整个项目：
+
+1. **克隆项目到Zabbix模块目录**：
+
+   ```bash
+   cd /usr/share/zabbix/modules/
+   git clone https://github.com/X-Mars/zabbix_modules.git .
+   ```
+
+   注意：命令末尾的 `.` 表示克隆到当前目录，请谨慎操作。
+
+2. **或者克隆到临时目录后移动**：
+
+   ```bash
+   git clone https://github.com/X-Mars/zabbix_modules.git temp_zabbix_modules
+   cp -r temp_zabbix_modules/* /usr/share/zabbix/modules/
+   rm -rf temp_zabbix_modules
+   ```
+
+3. **启用模块**：
+
+   进入Zabbix Web界面：
+   - 导航到 **Administration → General → Modules**
+   - 点击 **Scan directory** 扫描新模块
+   - 找到并启用 "Zabbix Reports" 和 "Zabbix CMDB" 模块
+
+4. **验证安装**：
+
+   刷新页面后，您将在相应菜单中看到新模块：
+   - Reports → Zabbix Reports
+   - Inventory → CMDB
+
+### 单独安装模块
+
+每个模块都有独立的安装说明，请参考各模块的README.md文件获取详细的安装和配置步骤。
+
+Each module has independent installation instructions. Please refer to the README.md file of each module for detailed installation and configuration steps.
+
 ---
 
 ## English
@@ -94,9 +136,43 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 **Version**: 1.0.0  
 **Compatibility**: Zabbix 7.0
 
-## 安装说明 / Installation
+## Installation Instructions
 
-每个模块都有独立的安装说明，请参考各模块的README.md文件获取详细的安装和配置步骤。
+### Install All Modules Using Git Clone
+
+If you want to install all modules at once, you can use Git to clone the entire project:
+
+1. **Clone the project to Zabbix modules directory**:
+
+   ```bash
+   cd /usr/share/zabbix/modules/
+   git clone https://github.com/X-Mars/zabbix_modules.git .
+   ```
+
+   Note: The `.` at the end means clone to the current directory, please be careful.
+
+2. **Or clone to a temporary directory and then move**:
+
+   ```bash
+   git clone https://github.com/X-Mars/zabbix_modules.git temp_zabbix_modules
+   cp -r temp_zabbix_modules/* /usr/share/zabbix/modules/
+   rm -rf temp_zabbix_modules
+   ```
+
+3. **Enable modules**:
+
+   Go to Zabbix Web UI:
+   - Navigate to **Administration → General → Modules**
+   - Click **Scan directory** to scan for new modules
+   - Find and enable "Zabbix Reports" and "Zabbix CMDB" modules
+
+4. **Verify installation**:
+
+   After refreshing the page, you will see the new modules in the respective menus:
+   - Reports → Zabbix Reports
+   - Inventory → CMDB
+
+### Install Individual Modules
 
 Each module has independent installation instructions. Please refer to the README.md file of each module for detailed installation and configuration steps.
 

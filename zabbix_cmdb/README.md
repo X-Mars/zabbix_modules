@@ -45,6 +45,35 @@
 
 5. 刷新页面，模块将在 **Inventory** 菜单下显示为 "CMDB" 子菜单，包含 "Host List" 和 "Host Groups" 两个子项。
 
+### 其他安装方法
+
+#### 方法二：使用Git克隆直接安装
+
+如果您有Git访问权限，可以直接克隆项目到modules目录：
+
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git temp_modules
+mv temp_modules/zabbix_cmdb .
+rm -rf temp_modules
+```
+
+然后按照上述步骤2-5启用模块。
+
+#### 方法三：解压ZIP文件安装
+
+如果您下载了ZIP压缩包，可以直接解压到modules目录：
+
+```bash
+# 假设ZIP文件名为 zabbix_cmdb.zip
+unzip zabbix_cmdb.zip -d /usr/share/zabbix/modules/
+# 或者如果ZIP文件包含完整路径
+unzip zabbix_cmdb.zip
+cp -r zabbix_cmdb /usr/share/zabbix/modules/
+```
+
+然后按照上述步骤2-5启用模块。
+
 ## 使用方法
 
 ### 访问CMDB
@@ -165,6 +194,35 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
 3. Click Scan directory.
 4. Find "Zabbix CMDB" and enable it.
 5. 5. The module will appear under the Inventory menu as "CMDB" submenu with "Host List" and "Host Groups" subitems.
+
+### Alternative Installation Methods
+
+#### Method 2: Direct Git Clone Installation
+
+If you have Git access, you can clone the project directly to the modules directory:
+
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git temp_modules
+mv temp_modules/zabbix_cmdb .
+rm -rf temp_modules
+```
+
+Then follow steps 2-5 above to enable the module.
+
+#### Method 3: Extract ZIP File Installation
+
+If you downloaded a ZIP archive, you can extract it directly to the modules directory:
+
+```bash
+# Assuming the ZIP file is named zabbix_cmdb.zip
+unzip zabbix_cmdb.zip -d /usr/share/zabbix/modules/
+# Or if the ZIP contains the full path
+unzip zabbix_cmdb.zip
+cp -r zabbix_cmdb /usr/share/zabbix/modules/
+```
+
+Then follow steps 2-5 above to enable the module.
 
 ## Usage
 
