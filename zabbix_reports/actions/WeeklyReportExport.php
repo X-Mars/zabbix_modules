@@ -9,8 +9,10 @@ use CController,
 
 require_once dirname(__DIR__) . '/lib/PdfGenerator.php';
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 use Modules\ZabbixReports\Lib\PdfGenerator;
 use Modules\ZabbixReports\Lib\ItemFinder;
+use Modules\ZabbixReports\Lib\LanguageManager;
 
 class WeeklyReportExport extends CController {
 
@@ -46,15 +48,15 @@ class WeeklyReportExport extends CController {
             'time_till' => $till
         ]);
 
-        // 获取告警事件信息
+        // 获取告警事件信息（包括问题和恢复事件）
         $events = API::Event()->get([
-            'output' => ['eventid', 'objectid', 'name', 'clock'],
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
+            'output' => ['eventid', 'objectid', 'name', 'clock', 'value', 'r_eventid'],
+            'filter' => ['value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE]],
             'time_from' => $from,
             'time_till' => $till,
             'sortfield' => 'clock',
             'sortorder' => 'DESC',
-            'limit' => 100
+            'limit' => 200
         ]);
 
         // 第一部分：告警信息
@@ -62,7 +64,18 @@ class WeeklyReportExport extends CController {
         $hostCounts = [];
         
         if (!empty($events)) {
-            $triggerIds = array_unique(array_column($events, 'objectid'));
+            // 构建事件映射：eventid -> event
+            $eventMap = [];
+            foreach ($events as $event) {
+                $eventMap[$event['eventid']] = $event;
+            }
+            
+            // 分离问题事件和恢复事件
+            $problemEvents = array_filter($events, function($event) {
+                return $event['value'] == TRIGGER_VALUE_TRUE;
+            });
+            
+            $triggerIds = array_unique(array_column($problemEvents, 'objectid'));
             
             // 获取触发器信息
             $triggers = API::Trigger()->get([
@@ -88,7 +101,7 @@ class WeeklyReportExport extends CController {
             }
             
             // 构建告警信息
-            foreach ($events as $event) {
+            foreach ($problemEvents as $event) {
                 $trigger = isset($triggerMap[$event['objectid']]) ? $triggerMap[$event['objectid']] : null;
                 $host = isset($triggerHosts[$event['objectid']]) ? $triggerHosts[$event['objectid']] : null;
                 
@@ -96,10 +109,18 @@ class WeeklyReportExport extends CController {
                 $triggerName = $trigger ? $trigger['description'] : $event['name'];
                 $alertTime = date('Y-m-d H:i:s', $event['clock']);
                 
+                // 查找恢复时间
+                $recoveryTime = null;
+                if (!empty($event['r_eventid']) && isset($eventMap[$event['r_eventid']])) {
+                    $recoveryEvent = $eventMap[$event['r_eventid']];
+                    $recoveryTime = date('Y-m-d H:i:s', $recoveryEvent['clock']);
+                }
+                
                 $alertInfo[] = [
                     'host' => $hostName,
                     'alert' => $triggerName,
-                    'time' => $alertTime
+                    'time' => $alertTime,
+                    'recovery_time' => $recoveryTime
                 ];
                 
                 $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
@@ -205,10 +226,10 @@ class WeeklyReportExport extends CController {
             }
             
             // 使用ItemFinder获取内存总量
-            $memTotalResult = ItemFinder::findMemoryTotal($host['hostid'], $from, $till);
+            $memTotalResult = ItemFinder::findMemorySize($host['hostid'], $from, $till);
             if ($memTotalResult && $memTotalResult['value'] !== null) {
                 $memTotal[$host['name']] = $memTotalResult['value'];
-                $hostInfo['mem_total'] = number_format($memTotalResult['value'] / (1024*1024), 0) . ' MB';
+                $hostInfo['mem_total'] = number_format($memTotalResult['value'] / (1024*1024*1024), 2);
             }
             
             // 添加主机到对应群组
@@ -218,6 +239,7 @@ class WeeklyReportExport extends CController {
         // 准备PDF数据（新格式）
         $reportData = [
             'date' => date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd),
+            'report_date' => date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd),
             'problemCount' => $problemCount,
             'resolvedCount' => $resolvedCount,
             'alertInfo' => $alertInfo,
@@ -231,7 +253,7 @@ class WeeklyReportExport extends CController {
         ];
 
         // 生成PDF
-        $pdfGenerator = new PdfGenerator('Weekly Report - ' . date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd));
+        $pdfGenerator = new PdfGenerator(LanguageManager::t('Zabbix Weekly Report') . ' - ' . date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd));
         $pdfGenerator->setData($reportData);
         $pdfContent = $pdfGenerator->generate();
 

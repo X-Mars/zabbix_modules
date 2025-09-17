@@ -43,7 +43,7 @@ class PdfGenerator {
         
         $pdf->AddPage();
         
-        $html = $this->buildHTMLContent();
+        $html = $this->generateHTML();
         $pdf->writeHTML($html, true, false, true, false, '');
         
         return $pdf->Output('', 'S');
@@ -60,21 +60,21 @@ class PdfGenerator {
         
         // 添加基本内容
         if (isset($this->data['problemCount'])) {
-            $pdf->Cell(0, 8, 'Problem Count: ' . $this->data['problemCount'], 0, 1);
+            $pdf->Cell(0, 8, LanguageManager::t('Problem Count') . ': ' . $this->data['problemCount'], 0, 1);
         }
         if (isset($this->data['resolvedCount'])) {
-            $pdf->Cell(0, 8, 'Resolved Count: ' . $this->data['resolvedCount'], 0, 1);
+            $pdf->Cell(0, 8, LanguageManager::t('Resolved Count') . ': ' . $this->data['resolvedCount'], 0, 1);
         }
         
         $pdf->Ln(5);
         
         if (!empty($this->data['topHosts'])) {
             $pdf->SetFont('Arial', 'B', 12);
-            $pdf->Cell(0, 8, 'Top Problem Hosts:', 0, 1);
+            $pdf->Cell(0, 8, LanguageManager::t('Top Problem Hosts') . ':', 0, 1);
             $pdf->SetFont('Arial', '', 10);
             
             foreach ($this->data['topHosts'] as $host => $count) {
-                $pdf->Cell(0, 6, "  $host: $count problems", 0, 1);
+                $pdf->Cell(0, 6, "  $host: $count " . LanguageManager::t('problems'), 0, 1);
             }
         }
         
@@ -98,136 +98,94 @@ class PdfGenerator {
         $html .= '<h1>' . $this->title . '</h1>';
         
         if (isset($this->data['date'])) {
-            $html .= '<p><strong>Report Date:</strong> ' . $this->data['date'] . '</p>';
+            $html .= '<p><strong>' . LanguageManager::t('Report Date') . ':</strong> ' . $this->data['date'] . '</p>';
         }
         
         $html .= '<div class="summary">';
-        $html .= '<h3>Summary</h3>';
+        $html .= '<table>';
         if (isset($this->data['problemCount'])) {
-            $html .= '<p><strong>Problem Count:</strong> ' . $this->data['problemCount'] . '</p>';
+            $html .= '<tr><td><strong>' . LanguageManager::t('Problem Count') . ':</strong></td><td>' . $this->data['problemCount'] . '</td></tr>';
         }
         if (isset($this->data['resolvedCount'])) {
-            $html .= '<p><strong>Resolved Count:</strong> ' . $this->data['resolvedCount'] . '</p>';
+            $html .= '<tr><td><strong>' . LanguageManager::t('Resolved Count') . ':</strong></td><td>' . $this->data['resolvedCount'] . '</td></tr>';
         }
+        if (isset($this->data['topHosts'])) {
+            $html .= '<tr><td><strong>' . LanguageManager::t('Top Problem Hosts') . ':</strong></td><td>' . implode(', ', array_keys($this->data['topHosts'])) . '</td></tr>';
+        }
+        $html .= '</table>';
         $html .= '</div>';
         
         // 第一部分：告警信息
+        $html .= '<h2>' . LanguageManager::t('Part 1: Alert Information') . '</h2>';
+        $html .= '<table>';
+        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Alert Name') . '</th><th>' . LanguageManager::t('Alert Time') . '</th><th>' . LanguageManager::t('Recovery Time') . '</th></tr>';
         if (!empty($this->data['alertInfo'])) {
-            $html .= '<h2>第一部分：告警信息</h2>';
-            $html .= '<table>';
-            $html .= '<tr><th>主机名</th><th>告警名称</th><th>告警时间</th></tr>';
+            $count = 0;
             foreach ($this->data['alertInfo'] as $alert) {
-                $html .= "<tr><td>{$alert['host']}</td><td>{$alert['alert']}</td><td>{$alert['time']}</td></tr>";
+                if ($count >= 10) break; // 显示前10条告警
+                $recoveryTime = isset($alert['recovery_time']) && $alert['recovery_time'] ? $alert['recovery_time'] : '-';
+                $html .= "<tr><td>{$alert['host']}</td><td>{$alert['alert']}</td><td>{$alert['time']}</td><td>{$recoveryTime}</td></tr>";
+                $count++;
             }
-            $html .= '</table>';
+        } else {
+            $html .= '<tr><td>' . LanguageManager::t('No alerts found') . '</td><td></td><td></td><td></td></tr>';
         }
+        $html .= '</table>';
         
-        // 第二部分：按主机群组分组的主机列表
+        // 第二部分：主机群组信息
+        $html .= '<h2>' . LanguageManager::t('Part 2: Host Group Information') . '</h2>';
+        $html .= '<table>';
+        $html .= '<tr><th>' . LanguageManager::t('Host Group') . '</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . '</th><th>' . LanguageManager::t('CPU Total') . '</th><th>' . LanguageManager::t('Memory Usage') . '</th><th>' . LanguageManager::t('Memory Total') . '</th></tr>';
         if (!empty($this->data['hostsByGroup'])) {
-            $html .= '<h2>第二部分：主机资源信息（按群组分类）</h2>';
+            $count = 0;
             foreach ($this->data['hostsByGroup'] as $groupName => $hosts) {
-                $html .= "<h3>群组：$groupName</h3>";
-                $html .= '<table>';
-                $html .= '<tr><th>主机名</th><th>CPU使用率</th><th>CPU总数</th><th>内存使用率</th><th>内存总量</th></tr>';
                 foreach ($hosts as $host) {
-                    $html .= "<tr><td>{$host['name']}</td><td>{$host['cpu_usage']}</td><td>{$host['cpu_total']}</td><td>{$host['mem_usage']}</td><td>{$host['mem_total']}</td></tr>";
+                    if ($count >= 20) break; // 显示前20个主机
+                    $html .= "<tr><td>$groupName</td><td>{$host['name']}</td><td>{$host['cpu_usage']}</td><td>{$host['cpu_total']}</td><td>{$host['mem_usage']}</td><td>{$host['mem_total']}</td></tr>";
+                    $count++;
                 }
-                $html .= '</table>';
+                if ($count >= 20) break;
             }
+        } else {
+            $html .= '<tr><td>' . LanguageManager::t('No host data available') . '</td><td></td><td></td><td></td><td></td><td></td></tr>';
         }
+        $html .= '</table>';
         
-        // 保留兼容性：旧格式的问题主机统计
-        if (!empty($this->data['topHosts'])) {
-            $html .= '<h3>问题主机统计</h3>';
-            $html .= '<table>';
-            $html .= '<tr><th>Host Name</th><th>Problem Count</th></tr>';
-            foreach ($this->data['topHosts'] as $host => $count) {
-                $html .= "<tr><td>$host</td><td>$count</td></tr>";
-            }
-            $html .= '</table>';
-        }
-        
+        // CPU Information (TOP 5)
+        $html .= '<h3>' . LanguageManager::t('CPU Information (TOP 5)') . '</h3>';
+        $html .= '<table>';
+        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . ' (%)</th><th>' . LanguageManager::t('CPU Total') . '</th></tr>';
         if (!empty($this->data['topCpuHosts'])) {
-            $html .= '<h3>Top CPU Usage Hosts</h3>';
-            $html .= '<table>';
-            $html .= '<tr><th>Host Name</th><th>CPU Usage (%)</th><th>CPU Count</th></tr>';
+            $count = 0;
             foreach ($this->data['topCpuHosts'] as $host => $usage) {
-                $cpuCount = isset($this->data['cpuTotal'][$host]) ? $this->data['cpuTotal'][$host] : 'N/A';
-                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$cpuCount</td></tr>";
+                if ($count >= 5) break;
+                $cpuTotal = isset($this->data['cpuTotal'][$host]) ? $this->data['cpuTotal'][$host] : 'N/A';
+                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$cpuTotal</td></tr>";
+                $count++;
             }
-            $html .= '</table>';
+        } else {
+            $html .= '<tr><td>' . LanguageManager::t('No data available') . '</td><td></td><td></td></tr>';
         }
+        $html .= '</table>';
         
+        // Memory Information (TOP 5)
+        $html .= '<h3>' . LanguageManager::t('Memory Information (TOP 5)') . '</h3>';
+        $html .= '<table>';
+        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Memory Usage') . ' (%)</th><th>' . LanguageManager::t('Memory Total (GB)') . '</th></tr>';
         if (!empty($this->data['topMemHosts'])) {
-            $html .= '<h3>Top Memory Usage Hosts</h3>';
-            $html .= '<table>';
-            $html .= '<tr><th>Host Name</th><th>Memory Usage (%)</th><th>Total Memory (MB)</th></tr>';
+            $count = 0;
             foreach ($this->data['topMemHosts'] as $host => $usage) {
-                $memTotal = isset($this->data['memTotal'][$host]) ? number_format($this->data['memTotal'][$host] / (1024*1024), 0) : 'N/A';
-                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$memTotal MB</td></tr>";
+                if ($count >= 5) break;
+                $memTotal = isset($this->data['memTotal'][$host]) ? number_format($this->data['memTotal'][$host] / (1024*1024*1024), 2) : 'N/A';
+                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$memTotal " . LanguageManager::t('GB') . "</td></tr>";
+                $count++;
             }
-            $html .= '</table>';
+        } else {
+            $html .= '<tr><td>' . LanguageManager::t('No data available') . '</td><td></td><td></td></tr>';
         }
+        $html .= '</table>';
         
         $html .= '</body></html>';
-        
-        return $html;
-    }
-    
-    private function buildHTMLContent() {
-        $html = '<h1>' . $this->title . '</h1>';
-        
-        if (isset($this->data['date'])) {
-            $html .= '<p><strong>Report Date:</strong> ' . $this->data['date'] . '</p>';
-        }
-        
-        $html .= '<table border="1" cellpadding="5">';
-        $html .= '<tr><th>Metric</th><th>Value</th></tr>';
-        
-        if (isset($this->data['problemCount'])) {
-            $html .= '<tr><td>Problem Count</td><td>' . $this->data['problemCount'] . '</td></tr>';
-        }
-        if (isset($this->data['resolvedCount'])) {
-            $html .= '<tr><td>Resolved Count</td><td>' . $this->data['resolvedCount'] . '</td></tr>';
-        }
-        
-        $html .= '</table><br>';
-        
-        // 第一部分：告警信息
-        if (!empty($this->data['alertInfo'])) {
-            $html .= '<h3>第一部分：告警信息</h3>';
-            $html .= '<table border="1" cellpadding="5">';
-            $html .= '<tr><th>主机名</th><th>告警名称</th><th>告警时间</th></tr>';
-            foreach ($this->data['alertInfo'] as $alert) {
-                $html .= "<tr><td>{$alert['host']}</td><td>{$alert['alert']}</td><td>{$alert['time']}</td></tr>";
-            }
-            $html .= '</table><br>';
-        }
-        
-        // 第二部分：按主机群组分组的主机列表
-        if (!empty($this->data['hostsByGroup'])) {
-            $html .= '<h3>第二部分：主机资源信息（按群组分类）</h3>';
-            foreach ($this->data['hostsByGroup'] as $groupName => $hosts) {
-                $html .= "<h4>群组：$groupName</h4>";
-                $html .= '<table border="1" cellpadding="5">';
-                $html .= '<tr><th>主机名</th><th>CPU使用率</th><th>CPU总数</th><th>内存使用率</th><th>内存总量</th></tr>';
-                foreach ($hosts as $host) {
-                    $html .= "<tr><td>{$host['name']}</td><td>{$host['cpu_usage']}</td><td>{$host['cpu_total']}</td><td>{$host['mem_usage']}</td><td>{$host['mem_total']}</td></tr>";
-                }
-                $html .= '</table><br>';
-            }
-        }
-        
-        // 保留兼容性的统计信息
-        if (!empty($this->data['topHosts'])) {
-            $html .= '<h3>问题主机统计</h3>';
-            $html .= '<table border="1" cellpadding="5">';
-            $html .= '<tr><th>Host Name</th><th>Problem Count</th></tr>';
-            foreach ($this->data['topHosts'] as $host => $count) {
-                $html .= "<tr><td>$host</td><td>$count</td></tr>";
-            }
-            $html .= '</table><br>';
-        }
         
         return $html;
     }

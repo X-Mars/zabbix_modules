@@ -46,15 +46,15 @@ class WeeklyReport extends CController {
             'time_till' => $till
         ]);
 
-        // 获取告警事件信息
+        // 获取告警事件信息（包括问题和恢复事件）
         $events = API::Event()->get([
-            'output' => ['eventid', 'objectid', 'name', 'clock'],
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
+            'output' => ['eventid', 'objectid', 'name', 'clock', 'value', 'r_eventid'],
+            'filter' => ['value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE]],
             'time_from' => $from,
             'time_till' => $till,
             'sortfield' => 'clock',
             'sortorder' => 'DESC',
-            'limit' => 100
+            'limit' => 200
         ]);
 
         // 第一部分：告警信息
@@ -62,7 +62,18 @@ class WeeklyReport extends CController {
         $hostCounts = [];
         
         if (!empty($events)) {
-            $triggerIds = array_unique(array_column($events, 'objectid'));
+            // 构建事件映射：eventid -> event
+            $eventMap = [];
+            foreach ($events as $event) {
+                $eventMap[$event['eventid']] = $event;
+            }
+            
+            // 分离问题事件和恢复事件
+            $problemEvents = array_filter($events, function($event) {
+                return $event['value'] == TRIGGER_VALUE_TRUE;
+            });
+            
+            $triggerIds = array_unique(array_column($problemEvents, 'objectid'));
             
             // 获取触发器信息
             $triggers = API::Trigger()->get([
@@ -88,7 +99,7 @@ class WeeklyReport extends CController {
             }
             
             // 构建告警信息
-            foreach ($events as $event) {
+            foreach ($problemEvents as $event) {
                 $trigger = isset($triggerMap[$event['objectid']]) ? $triggerMap[$event['objectid']] : null;
                 $host = isset($triggerHosts[$event['objectid']]) ? $triggerHosts[$event['objectid']] : null;
                 
@@ -96,10 +107,18 @@ class WeeklyReport extends CController {
                 $triggerName = $trigger ? $trigger['description'] : $event['name'];
                 $alertTime = date('Y-m-d H:i:s', $event['clock']);
                 
+                // 查找恢复时间
+                $recoveryTime = null;
+                if (!empty($event['r_eventid']) && isset($eventMap[$event['r_eventid']])) {
+                    $recoveryEvent = $eventMap[$event['r_eventid']];
+                    $recoveryTime = date('Y-m-d H:i:s', $recoveryEvent['clock']);
+                }
+                
                 $alertInfo[] = [
                     'host' => $hostName,
                     'alert' => $triggerName,
-                    'time' => $alertTime
+                    'time' => $alertTime,
+                    'recovery_time' => $recoveryTime
                 ];
                 
                 $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
@@ -204,7 +223,7 @@ class WeeklyReport extends CController {
             $memSizeResult = ItemFinder::findMemorySize($host['hostid'], $from, $till);
             if ($memSizeResult && $memSizeResult['value'] !== null) {
                 $memTotal[$host['name']] = $memSizeResult['value'];
-                $hostInfo['mem_total'] = number_format($memSizeResult['value'] / (1024*1024*1024), 2) . ' GB';
+                $hostInfo['mem_total'] = number_format($memSizeResult['value'] / (1024*1024*1024), 2);
             }
             
             $hostsByGroup[$groupName][] = $hostInfo;

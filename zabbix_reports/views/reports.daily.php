@@ -79,7 +79,7 @@ $page->addItem((new CTag('style', true, '
 
 // 创建告警信息表格
 $alertTable = new CTable();
-$alertTable->setHeader([LanguageManager::t('Host Name'), LanguageManager::t('Alert Name'), LanguageManager::t('Alert Time')]);
+$alertTable->setHeader([LanguageManager::t('Host Name'), LanguageManager::t('Alert Name'), LanguageManager::t('Alert Time'), LanguageManager::t('Recovery Time')]);
 if (!empty($data['alert_info'])) {
     $count = 0;
     foreach ($data['alert_info'] as $alert) {
@@ -87,12 +87,13 @@ if (!empty($data['alert_info'])) {
         $alertTable->addRow([
             $alert['host'],
             $alert['alert'],
-            $alert['time']
+            $alert['time'],
+            $alert['recovery_time'] ?: '-'
         ]);
         $count++;
     }
 } else {
-    $alertTable->addRow([LanguageManager::t('No alerts found'), '', '']);
+    $alertTable->addRow([LanguageManager::t('No alerts found'), '', '', '']);
 }
 
 // 创建主机群组信息表格
@@ -137,14 +138,14 @@ if (!empty($data['top_cpu_hosts'])) {
 
 // 创建内存信息表格（保留原有的Top 5显示）
 $memTable = new CTable();
-$memTable->setHeader([LanguageManager::t('Host Name'), LanguageManager::t('Memory Usage') . '(%)', LanguageManager::t('Memory Total') . '(MB)']);
+$memTable->setHeader([LanguageManager::t('Host Name'), LanguageManager::t('Memory Usage') . '(%)', LanguageManager::t('Memory Total') . '(GB)']);
 $count = 0;
 if (!empty($data['top_mem_hosts'])) {
     foreach ($data['top_mem_hosts'] as $host => $usage) {
         if ($count >= 5) break;
         $memUsage = number_format($usage, 2);
-        $memTotal = isset($data['mem_total'][$host]) ? number_format($data['mem_total'][$host] / (1024*1024), 0) : 'N/A';
-        $memTable->addRow([$host, $memUsage . '%', $memTotal . ' MB']);
+        $memTotal = isset($data['mem_total'][$host]) ? number_format($data['mem_total'][$host] / (1024*1024*1024), 2) : 'N/A';
+        $memTable->addRow([$host, $memUsage . '%', $memTotal . ' GB']);
         $count++;
     }
 } else {

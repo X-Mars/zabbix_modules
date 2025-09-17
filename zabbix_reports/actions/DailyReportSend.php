@@ -126,9 +126,9 @@ class DailyReportSend extends CController {
 
         // 发送邮件
         $to = 'admin@example.com'; // 配置收件人
-        $subject = 'Zabbix Daily Report - ' . date('Y-m-d', $yesterday);
+        $subject = LanguageManager::t('Zabbix Daily Report') . ' - ' . date('Y-m-d', $yesterday);
         $message = "
-        <h1>Zabbix Daily Report</h1>
+        <h1>" . LanguageManager::t('Zabbix Daily Report') . "</h1>
         <p>Problem Count: $problemCount</p>
         <p>Resolved Count: $resolvedCount</p>
         <p>Top Problem Hosts: " . implode(', ', array_keys($topHosts)) . "</p>

@@ -21,6 +21,7 @@ class LanguageManager {
             'Export PDF' => '导出PDF',
             'Send Email' => '发送邮件（开发中）',
             'Preview Data' => '预览数据',
+            'Report Date' => '报告日期',
             'Problem Count' => '问题事件总数',
             'Resolved Count' => '已解决事件总数',
             'Top Problem Hosts' => '问题最多的主机',
@@ -29,11 +30,14 @@ class LanguageManager {
             'Host Name' => '主机名',
             'Alert Name' => '告警名称',
             'Alert Time' => '告警时间',
+            'Recovery Time' => '恢复时间',
             'Host Group' => '主机群组',
             'CPU Usage' => 'CPU使用率',
             'CPU Total' => 'CPU总数',
             'Memory Usage' => '内存使用率',
             'Memory Total' => '内存总量',
+            'Memory Total (GB)' => '内存总量 (GB)',
+            'GB' => 'GB',
             'No alerts found' => '无告警信息',
             'No host data available' => '无主机数据',
             'No data available' => '无数据',
@@ -51,7 +55,8 @@ class LanguageManager {
             'Today' => '今日',
             'This Week' => '本周',
             'This Month' => '本月',
-            'In Development' => '开发中'
+            'In Development' => '开发中',
+            'problems' => '个问题'
         ],
         'en_US' => [
             'Daily Report' => 'Daily Report',
@@ -63,6 +68,7 @@ class LanguageManager {
             'Export PDF' => 'Export PDF',
             'Send Email' => 'Send Email（In Development）',
             'Preview Data' => 'Preview Data',
+            'Report Date' => 'Report Date',
             'Problem Count' => 'Problem Count',
             'Resolved Count' => 'Resolved Count',
             'Top Problem Hosts' => 'Top Problem Hosts',
@@ -71,11 +77,14 @@ class LanguageManager {
             'Host Name' => 'Host Name',
             'Alert Name' => 'Alert Name',
             'Alert Time' => 'Alert Time',
+            'Recovery Time' => 'Recovery Time',
             'Host Group' => 'Host Group',
             'CPU Usage' => 'CPU Usage',
             'CPU Total' => 'CPU Total',
             'Memory Usage' => 'Memory Usage',
             'Memory Total' => 'Memory Total',
+            'Memory Total (GB)' => 'Memory Total (GB)',
+            'GB' => 'GB',
             'No alerts found' => 'No alerts found',
             'No host data available' => 'No host data available',
             'No data available' => 'No data available',
@@ -93,7 +102,8 @@ class LanguageManager {
             'Today' => 'Today',
             'This Week' => 'This Week',
             'This Month' => 'This Month',
-            'In Development' => 'In Development'
+            'In Development' => 'In Development',
+            'problems' => 'problems'
         ]
     ];
     

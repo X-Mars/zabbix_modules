@@ -5,6 +5,9 @@ namespace Modules\ZabbixReports\Actions;
 use CController,
     API;
 
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+use Modules\ZabbixReports\Lib\LanguageManager;
+
 class WeeklyReportSend extends CController {
 
     public function init(): void {
@@ -126,9 +129,9 @@ class WeeklyReportSend extends CController {
         $topMemHosts = array_slice($memUsage, 0, 10, true);
 
         $to = 'admin@example.com';
-        $subject = 'Zabbix Weekly Report - ' . date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd);
+        $subject = LanguageManager::t('Zabbix Weekly Report') . ' - ' . date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd);
         $message = "
-        <h1>Zabbix Weekly Report</h1>
+        <h1>" . LanguageManager::t('Zabbix Weekly Report') . "</h1>
         <p>Problem Count: $problemCount</p>
         <p>Resolved Count: $resolvedCount</p>
         <p>Top Problem Hosts: " . implode(', ', array_keys($topHosts)) . "</p>

@@ -5,6 +5,9 @@ namespace Modules\ZabbixReports\Actions;
 use CController,
     API;
 
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+use Modules\ZabbixReports\Lib\LanguageManager;
+
 class MonthlyReportSend extends CController {
 
     public function init(): void {
@@ -126,9 +129,9 @@ class MonthlyReportSend extends CController {
         $topMemHosts = array_slice($memUsage, 0, 10, true);
 
         $to = 'admin@example.com';
-        $subject = 'Zabbix Monthly Report - ' . date('Y-m', $monthStart);
+        $subject = LanguageManager::t('Zabbix Monthly Report') . ' - ' . date('Y-m', $monthStart);
         $message = "
-        <h1>Zabbix Monthly Report</h1>
+        <h1>" . LanguageManager::t('Zabbix Monthly Report') . "</h1>
         <p>Problem Count: $problemCount</p>
         <p>Resolved Count: $resolvedCount</p>
         <p>Top Problem Hosts: " . implode(', ', array_keys($topHosts)) . "</p>
