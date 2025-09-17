@@ -24,8 +24,9 @@
 
 **文档链接**：[zabbix_reports/README.md](./zabbix_reports/README.md)
 
-**作者**：火星小刘  
-**版本**：1.0.0  
+![项目截图](zabbix_cmdb/images/1.jpg)
+![项目截图](zabbix_cmdb/images/2.jpg)
+
 **兼容性**：Zabbix 7.0
 
 ### 2. Zabbix CMDB
@@ -42,8 +43,8 @@
 
 **文档链接**：[zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
-**作者**：火星小刘  
-**版本**：1.0.0  
+![项目截图](zabbix_reports/images/1.png)
+
 **兼容性**：Zabbix 7.0
 
 ## 安装说明 / Installation
@@ -75,6 +76,8 @@
    - 导航到 **Administration → General → Modules**
    - 点击 **Scan directory** 扫描新模块
    - 找到并启用 "Zabbix Reports" 和 "Zabbix CMDB" 模块
+
+![项目截图](zabbix_reports/images/setting-1.png)
 
 4. **验证安装**：
 
