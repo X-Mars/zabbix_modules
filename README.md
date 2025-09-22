@@ -24,8 +24,7 @@
 
 **文档链接**：[zabbix_reports/README.md](./zabbix_reports/README.md)
 
-![项目截图](zabbix_cmdb/images/1.jpg)
-![项目截图](zabbix_cmdb/images/2.jpg)
+![项目截图](zabbix_reports/images/1.png)
 
 **兼容性**：Zabbix 7.0
 
@@ -43,7 +42,8 @@
 
 **文档链接**：[zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
-![项目截图](zabbix_reports/images/1.png)
+![项目截图](zabbix_cmdb/images/1.jpg)
+![项目截图](zabbix_cmdb/images/2.jpg)
 
 **兼容性**：Zabbix 7.0
 
