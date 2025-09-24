@@ -16,6 +16,7 @@ class ItemFinder {
             ['filter' => ['key_' => 'system.hw.cpu.num']],
             // 按名称搜索作为备选
             ['search' => ['name' => 'Number of CPUs'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Number of cores'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'CPU cores'], 'searchWildcardsEnabled' => true],
             ['search' => ['key_' => 'cpu.num'], 'searchWildcardsEnabled' => true]
         ];
