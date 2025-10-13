@@ -20,6 +20,14 @@
             "class": "MonthlyReport",
             "view": "reports.monthly"
         },
+        "reports.custom": {
+            "class": "CustomReport",
+            "view": "reports.custom"
+        },
+        "reports.custom.export": {
+            "class": "CustomReportExport",
+            "layout": "layout.json"
+        },
         "reports.daily.export": {
             "class": "DailyReportExport",
             "layout": "layout.json"
