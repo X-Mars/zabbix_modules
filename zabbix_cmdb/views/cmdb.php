@@ -1,42 +1,12 @@
 <?php
 
-// 引入语言管理器
+// 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
+require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 use Modules\ZabbixCmdb\Lib\ItemFinder;
-
-/**
- * 创建排序链接
- */
-function createSortLink($title, $field, $data) {
-    $currentSort = isset($data['sort']) ? $data['sort'] : '';
-    $currentOrder = isset($data['sortorder']) ? $data['sortorder'] : 'ASC';
-
-    $newOrder = ($currentSort === $field && $currentOrder === 'ASC') ? 'DESC' : 'ASC';
-
-    $icon = '';
-    if ($currentSort === $field) {
-        $icon = $currentOrder === 'ASC' ? ' ↑' : ' ↓';
-    }
-
-    // 构建URL，包含搜索参数
-    $url = 'zabbix.php?action=cmdb&sort=' . $field . '&sortorder=' . $newOrder;
-    if (!empty($data['search'])) {
-        $url .= '&search=' . urlencode($data['search']);
-    }
-    if (!empty($data['selected_groupid'])) {
-        $url .= '&groupid=' . $data['selected_groupid'];
-    }
-    if (!empty($data['selected_interface_type'])) {
-        $url .= '&interface_type=' . $data['selected_interface_type'];
-    }
-
-    $link = (new CLink($title . $icon, $url))
-        ->addClass('sort-link');
-
-    return $link;
-}
+use Modules\ZabbixCmdb\Lib\ViewRenderer;
 
 /**
  * 获取主机状态显示元素
@@ -106,14 +76,11 @@ function countActiveHosts($hosts) {
     return $activeCount;
 }
 
-// 使用Zabbix原生的页面结构
-$page = new CHtmlPage();
-$page->setTitle('🗂️ ' . LanguageManager::t('CMDB'));
-
-// 构建下拉框选项 - 使用CTag直接生成select元素
+// 从控制器获取标题
+$pageTitle = $data['title'] ?? 'CMDB';
 
 // 添加与Zabbix主题一致的CSS
-$page->addItem((new CTag('style', true, '
+$styleTag = new CTag('style', true, '
 .cmdb-container {
     padding: 20px;
     max-width: 1600px;
@@ -130,7 +97,7 @@ $page->addItem((new CTag('style', true, '
 
 .search-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr auto auto;
     gap: 15px;
     align-items: end;
 }
@@ -417,7 +384,7 @@ $page->addItem((new CTag('style', true, '
     color: #856404;
     border: 1px solid #ffeaa7;
 }
-')));
+');
 
 // 创建主体内容
 $content = (new CDiv())
@@ -467,41 +434,6 @@ $content = (new CDiv())
                                                 }
                                                 $select->addItem($opt);
                                             }
-                                        }
-
-                                        return $select;
-                                    })())
-                            )
-                            ->addItem(
-                                (new CDiv())
-                                    ->addClass('form-field')
-                                    ->addItem(new CLabel('🔌 ' . LanguageManager::t('Interface Type')))
-                                    ->addItem((function() use ($data) {
-                                        $select = new CTag('select', true);
-                                        $select->setAttribute('name', 'interface_type');
-                                        $select->setAttribute('id', 'interface-type-select');
-                                        $select->setAttribute('onchange', 'handleInterfaceChange(this)');
-
-                                        // 添加"所有接口"选项
-                                        $optAll = new CTag('option', true, LanguageManager::t('All Interfaces'));
-                                        $optAll->setAttribute('value', '0');
-                                        $select->addItem($optAll);
-
-                                        // 接口类型选项
-                                        $interfaceTypes = [
-                                            1 => LanguageManager::t('Agent'),
-                                            2 => LanguageManager::t('SNMP'),
-                                            3 => LanguageManager::t('IPMI'),
-                                            4 => LanguageManager::t('JMX')
-                                        ];
-
-                                        foreach ($interfaceTypes as $typeId => $typeName) {
-                                            $opt = new CTag('option', true, $typeName);
-                                            $opt->setAttribute('value', $typeId);
-                                            if (isset($data['selected_interface_type']) && $data['selected_interface_type'] == $typeId) {
-                                                $opt->setAttribute('selected', 'selected');
-                                            }
-                                            $select->addItem($opt);
                                         }
 
                                         return $select;
@@ -581,15 +513,15 @@ $table->addClass('hosts-table');
 
 // 添加表头
 $header = [
-    createSortLink(LanguageManager::t('Host Name'), 'host', $data),
-    createSortLink(LanguageManager::t('System Name'), 'system_name', $data),
+    LanguageManager::t('Host Name'),
+    LanguageManager::t('System Name'),
     LanguageManager::t('IP Address'),
     LanguageManager::t('Architecture'),
     LanguageManager::t('Interface Type'),
-    createSortLink(LanguageManager::t('CPU Total'), 'cpu_total', $data),
-    createSortLink(LanguageManager::t('CPU Usage'), 'cpu_usage', $data),
-    createSortLink(LanguageManager::t('Memory Total'), 'memory_total', $data),
-    createSortLink(LanguageManager::t('Memory Usage'), 'memory_usage', $data),
+    LanguageManager::t('CPU Total'),
+    LanguageManager::t('CPU Usage'),
+    LanguageManager::t('Memory Total'),
+    LanguageManager::t('Memory Usage'),
     LanguageManager::t('Operating System'),
     LanguageManager::t('Host Group')
 ];
@@ -705,7 +637,7 @@ if (empty($data['hosts'])) {
             $cpuCol->addItem([
                 (new CSpan(htmlspecialchars($host['cpu_total'])))->setAttribute('style', 'font-weight: 600; color: #4f46e5;'),
                 ' ',
-                (new CSpan(LanguageManager::t('cores')))->setAttribute('style', 'color: #6c757d; font-size: 12px;')
+                (new CSpan('cores'))->setAttribute('style', 'color: #6c757d; font-size: 12px;')
             ]);
         } else {
             $cpuCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
@@ -849,22 +781,13 @@ function handleGroupChange(select) {
     }
 }
 
-function handleInterfaceChange(select) {
-    var form = select.closest("form");
-
-    if (form) {
-        form.submit();
-    }
-}
-
 document.addEventListener("DOMContentLoaded", function() {
     // 可以在这里添加额外的初始化逻辑
     var searchInput = document.querySelector("input[name=\"search\"]");
     var groupSelect = document.getElementById("groupid-select");
-    var interfaceSelect = document.getElementById("interface-type-select");
 });
 '));
 
-$page->addItem($content);
-$page->show();
+// 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
+ViewRenderer::render($pageTitle, $styleTag, $content);
 

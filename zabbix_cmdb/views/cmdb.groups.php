@@ -1,10 +1,12 @@
 <?php
 
-// 引入语言管理器
+// 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
+require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 use Modules\ZabbixCmdb\Lib\ItemFinder;
+use Modules\ZabbixCmdb\Lib\ViewRenderer;
 
 /**
  * 获取主机分组状态显示元素
@@ -59,12 +61,11 @@ function createSortLink($title, $field, $data) {
     return $link;
 }
 
-// 使用Zabbix原生的页面结构
-$page = new CHtmlPage();
-$page->setTitle('📂 ' . LanguageManager::t('Host Groups'));
+// 从控制器获取标题
+$pageTitle = $data['title'] ?? 'Host Groups';
 
 // 添加与Zabbix主题一致的CSS
-$page->addItem((new CTag('style', true, '
+$styleTag = new CTag('style', true, '
 .cmdb-container {
     padding: 20px;
     max-width: 1600px;
@@ -271,7 +272,7 @@ $page->addItem((new CTag('style', true, '
     color: #007bff;
     text-decoration: underline;
 }
-')));
+');
 
 // 创建主体内容
 $content = (new CDiv())
@@ -412,5 +413,5 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 '));
 
-$page->addItem($content);
-$page->show();
+// 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
+ViewRenderer::render($pageTitle, $styleTag, $content);

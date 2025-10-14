@@ -14,7 +14,12 @@ use Modules\ZabbixReports\Lib\LanguageManager;
 class WeeklyReport extends CController {
 
     public function init(): void {
-        $this->disableCsrfValidation();
+        // 兼容Zabbix 6和7
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation(); // Zabbix 7
+        } elseif (method_exists($this, 'disableSIDvalidation')) {
+            $this->disableSIDvalidation(); // Zabbix 6
+        }
     }
 
     protected function checkInput(): bool {
@@ -230,6 +235,7 @@ class WeeklyReport extends CController {
         }
 
         $response = new CControllerResponseData([
+            'title' => LanguageManager::t('Weekly Report'),
             'report_period' => LanguageManager::formatPeriod('weekly', $weekStart),
             'report_period_raw' => date('Y-W', $weekStart),
             'problem_count' => $problemCount,
@@ -244,6 +250,9 @@ class WeeklyReport extends CController {
             'language' => LanguageManager::getCurrentLanguage(),
             'is_chinese' => LanguageManager::isChinese()
         ]);
+        
+        // 显式设置响应标题（Zabbix 6.0 需要）
+        $response->setTitle(LanguageManager::t('Weekly Report'));
 
         $this->setResponse($response);
     }

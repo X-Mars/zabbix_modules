@@ -14,7 +14,12 @@ use Modules\ZabbixCmdb\Lib\ItemFinder;
 class CmdbGroups extends CController {
 
     public function init(): void {
-        $this->disableCsrfValidation();
+        // 兼容Zabbix 6和7
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation(); // Zabbix 7
+        } elseif (method_exists($this, 'disableSIDvalidation')) {
+            $this->disableSIDvalidation(); // Zabbix 6
+        }
     }
 
     protected function checkInput(): bool {
@@ -124,6 +129,9 @@ class CmdbGroups extends CController {
             'sortorder' => $sortorder,
             'search' => $search
         ]);
+        
+        // 显式设置响应标题（Zabbix 6.0 需要）
+        $response->setTitle(LanguageManager::t('Host Groups'));
 
         $this->setResponse($response);
     }

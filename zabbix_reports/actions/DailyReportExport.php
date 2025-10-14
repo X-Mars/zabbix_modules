@@ -17,7 +17,12 @@ use Modules\ZabbixReports\Lib\LanguageManager;
 class DailyReportExport extends CController {
 
     public function init(): void {
-        $this->disableCsrfValidation();
+        // 兼容Zabbix 6和7
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation(); // Zabbix 7
+        } elseif (method_exists($this, 'disableSIDvalidation')) {
+            $this->disableSIDvalidation(); // Zabbix 6
+        }
     }
 
     protected function checkInput(): bool {

@@ -1,12 +1,16 @@
 <?php
 
-// 引入语言管理器
+// 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 use Modules\ZabbixReports\Lib\LanguageManager;
+use Modules\ZabbixReports\Lib\ViewRenderer;
+
+// 从控制器获取标题
+$pageTitle = $data['title'] ?? LanguageManager::t('Daily Report');
 
 // 添加自定义CSS
-$page = new CHtmlPage();
-$page->addItem((new CTag('style', true, '
+$styleTag = (new CTag('style', true, '
 .report-container {
     padding: 20px;
     max-width: 1200px;
@@ -75,7 +79,7 @@ $page->addItem((new CTag('style', true, '
     height: auto !important;
     min-height: 40px;
 }
-')));
+'));
 
 // 创建告警信息表格
 $alertTable = new CTable();
@@ -152,51 +156,50 @@ if (!empty($data['top_mem_hosts'])) {
     $memTable->addRow([LanguageManager::t('No data available'), '', '']);
 }
 
-$page
-    ->setTitle(LanguageManager::t('Daily Report'))
+// 创建页面内容
+$content = (new CDiv())
+    ->addClass('report-container')
+    ->addItem(
+        (new CTag('h1', true, LanguageManager::t('Zabbix Daily Report') . ' - ' . $data['report_date']))
+    )
     ->addItem(
         (new CDiv())
-            ->addClass('report-container')
+            ->addClass('button-group')
             ->addItem(
-                (new CTag('h1', true, LanguageManager::t('Zabbix Daily Report') . ' - ' . $data['report_date']))
+                (new CButton('export_pdf', LanguageManager::t('Export PDF')))
+                    ->onClick('javascript: window.open("?action=reports.daily.export&format=pdf", "_blank");')
             )
             ->addItem(
-                (new CDiv())
-                    ->addClass('button-group')
-                    ->addItem(
-                        (new CButton('export_pdf', LanguageManager::t('Export PDF')))
-                            ->onClick('javascript: window.open("?action=reports.daily.export&format=pdf", "_blank");')
-                    )
-                    ->addItem(
-                        (new CButton('send_email', LanguageManager::t('Send Email')))
-                            ->setAttribute('disabled', 'disabled')
-                            ->setAttribute('title', LanguageManager::t('In Development'))
-                    )
-            )
-            ->addItem(
-                (new CForm())
-                    ->addItem(
-                        (new CTable())
-                            ->addRow([LanguageManager::t('Problem Count'), $data['problem_count']])
-                            ->addRow([LanguageManager::t('Resolved Count'), $data['resolved_count']])
-                            ->addRow([LanguageManager::t('Top Problem Hosts'), implode(', ', array_keys($data['top_problem_hosts']))])
-                    )
-                    ->addItem(
-                        (new CTag('h2', true, LanguageManager::t('Part 1: Alert Information')))
-                    )
-                    ->addItem($alertTable)
-                    ->addItem(
-                        (new CTag('h2', true, LanguageManager::t('Part 2: Host Group Information')))
-                    )
-                    ->addItem($groupTable)
-                    ->addItem(
-                        (new CTag('h3', true, LanguageManager::t('CPU Information (TOP 5)')))
-                    )
-                    ->addItem($cpuTable)
-                    ->addItem(
-                        (new CTag('h3', true, LanguageManager::t('Memory Information (TOP 5)')))
-                    )
-                    ->addItem($memTable)
+                (new CButton('send_email', LanguageManager::t('Send Email')))
+                    ->setAttribute('disabled', 'disabled')
+                    ->setAttribute('title', LanguageManager::t('In Development'))
             )
     )
-    ->show();
+    ->addItem(
+        (new CForm())
+            ->addItem(
+                (new CTable())
+                    ->addRow([LanguageManager::t('Problem Count'), $data['problem_count']])
+                    ->addRow([LanguageManager::t('Resolved Count'), $data['resolved_count']])
+                    ->addRow([LanguageManager::t('Top Problem Hosts'), implode(', ', array_keys($data['top_problem_hosts']))])
+            )
+            ->addItem(
+                (new CTag('h2', true, LanguageManager::t('Part 1: Alert Information')))
+            )
+            ->addItem($alertTable)
+            ->addItem(
+                (new CTag('h2', true, LanguageManager::t('Part 2: Host Group Information')))
+            )
+            ->addItem($groupTable)
+            ->addItem(
+                (new CTag('h3', true, LanguageManager::t('CPU Information (TOP 5)')))
+            )
+            ->addItem($cpuTable)
+            ->addItem(
+                (new CTag('h3', true, LanguageManager::t('Memory Information (TOP 5)')))
+            )
+            ->addItem($memTable)
+    );
+
+// 使用兼容渲染器显示页面（模块视图需要直接输出）
+ViewRenderer::render($pageTitle, $styleTag, $content);
