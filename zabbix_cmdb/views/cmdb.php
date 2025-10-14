@@ -9,6 +9,32 @@ use Modules\ZabbixCmdb\Lib\ItemFinder;
 use Modules\ZabbixCmdb\Lib\ViewRenderer;
 
 /**
+ * 创建排序链接
+ */
+function createSortLink($title, $field, $data) {
+    $currentSort = isset($data['sort']) ? $data['sort'] : '';
+    $currentOrder = isset($data['sortorder']) ? $data['sortorder'] : 'ASC';
+
+    $newOrder = ($currentSort === $field && $currentOrder === 'ASC') ? 'DESC' : 'ASC';
+
+    $icon = '';
+    if ($currentSort === $field) {
+        $icon = $currentOrder === 'ASC' ? ' ↑' : ' ↓';
+    }
+
+    // 构建URL，包含搜索参数
+    $url = 'zabbix.php?action=cmdb&sort=' . $field . '&sortorder=' . $newOrder;
+    if (!empty($data['search'])) {
+        $url .= '&search=' . urlencode($data['search']);
+    }
+    if (!empty($data['selected_groupid'])) {
+        $url .= '&groupid=' . $data['selected_groupid'];
+    }
+
+    return new CLink($title . $icon, $url);
+}
+
+/**
  * 获取主机状态显示元素
  */
 function getHostStatusDisplay($host) {
@@ -511,18 +537,18 @@ if (!empty($data['hosts'])) {
 $table = new CTable();
 $table->addClass('hosts-table');
 
-// 添加表头
+// 添加表头（带排序链接）
 $header = [
-    LanguageManager::t('Host Name'),
-    LanguageManager::t('System Name'),
-    LanguageManager::t('IP Address'),
-    LanguageManager::t('Architecture'),
+    createSortLink(LanguageManager::t('Host Name'), 'name', $data),
+    createSortLink(LanguageManager::t('System Name'), 'system_name', $data),
+    createSortLink(LanguageManager::t('IP Address'), 'ip', $data),
+    createSortLink(LanguageManager::t('Architecture'), 'os_architecture', $data),
     LanguageManager::t('Interface Type'),
-    LanguageManager::t('CPU Total'),
-    LanguageManager::t('CPU Usage'),
-    LanguageManager::t('Memory Total'),
-    LanguageManager::t('Memory Usage'),
-    LanguageManager::t('Operating System'),
+    createSortLink(LanguageManager::t('CPU Total'), 'cpu_total', $data),
+    createSortLink(LanguageManager::t('CPU Usage'), 'cpu_usage', $data),
+    createSortLink(LanguageManager::t('Memory Total'), 'memory_total', $data),
+    createSortLink(LanguageManager::t('Memory Usage'), 'memory_usage', $data),
+    createSortLink(LanguageManager::t('Operating System'), 'operating_system', $data),
     LanguageManager::t('Host Group')
 ];
 $table->setHeader($header);

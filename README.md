@@ -79,6 +79,7 @@
 2. **如果使用Zabbix 6.0，修改manifest_version**：
 
    ```bash
+   cd /usr/share/zabbix/modules/
    # 修改 zabbix_reports 模块
    sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
    
@@ -184,6 +185,7 @@ This is the simplest and fastest way to deploy all modules at once:
 2. **For Zabbix 6.0, modify manifest_version**:
 
    ```bash
+   cd /usr/share/zabbix/modules/
    # Modify zabbix_reports module
    sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
    

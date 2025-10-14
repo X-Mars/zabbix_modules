@@ -47,6 +47,8 @@ class Cmdb extends CController {
     protected function doAction(): void {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
+        $sort = $this->getInput('sort', 'cpu_total');
+        $sortorder = $this->getInput('sortorder', 'DESC');
 
         // 获取主机分组列表 - 基于Zabbix 7.0 API文档的最佳实践
         $hostGroups = [];
@@ -313,18 +315,48 @@ class Cmdb extends CController {
             $hostData[] = $hostInfo;
         }
         
+        // 对主机数据进行排序
+        if (!empty($hostData)) {
+            usort($hostData, function($a, $b) use ($sort, $sortorder) {
+                $valueA = $a[$sort] ?? '';
+                $valueB = $b[$sort] ?? '';
+
+                // 对于数值字段，确保正确比较
+                if (in_array($sort, ['cpu_total', 'cpu_usage', 'memory_total', 'memory_usage'])) {
+                    if ($sort === 'cpu_usage' || $sort === 'memory_usage') {
+                        $valueA = $valueA !== '-' ? floatval(str_replace('%', '', $valueA)) : 0;
+                        $valueB = $valueB !== '-' ? floatval(str_replace('%', '', $valueB)) : 0;
+                    } else {
+                        $valueA = is_numeric($valueA) ? floatval($valueA) : 0;
+                        $valueB = is_numeric($valueB) ? floatval($valueB) : 0;
+                    }
+                } else {
+                    $valueA = (string)$valueA;
+                    $valueB = (string)$valueB;
+                }
+
+                if ($sortorder === 'DESC') {
+                    return $valueB <=> $valueA;
+                } else {
+                    return $valueA <=> $valueB;
+                }
+            });
+        }
+        
         $response = new CControllerResponseData([
-            'title' => LanguageManager::t('CMDB'),
+            'title' => LanguageManager::t('Host List'),
             'host_groups' => $hostGroups,
             'hosts' => $hostData,
             'search' => $search,
             'selected_groupid' => $groupid,
+            'sort' => $sort,
+            'sortorder' => $sortorder,
             'total_cpu' => $totalCpu,
             'total_memory' => $totalMemory
         ]);
         
         // 显式设置响应标题（Zabbix 6.0 需要）
-        $response->setTitle(LanguageManager::t('CMDB'));
+        $response->setTitle(LanguageManager::t('Host List'));
 
         $this->setResponse($response);
     }
