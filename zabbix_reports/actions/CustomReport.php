@@ -15,7 +15,12 @@ use Modules\ZabbixReports\Lib\LanguageManager;
 class CustomReport extends CController {
 
     public function init(): void {
-        $this->disableCsrfValidation();
+        // 兼容Zabbix 6和7
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation(); // Zabbix 7
+        } elseif (method_exists($this, 'disableSIDvalidation')) {
+            $this->disableSIDvalidation(); // Zabbix 6
+        }
     }
 
     protected function checkInput(): bool {
@@ -71,7 +76,15 @@ class CustomReport extends CController {
             }
         }
 
-        $this->setResponse(new CControllerResponseData($data));
+        // 添加标题到数据中
+        $data['title'] = LanguageManager::t('Custom Report');
+        
+        $response = new CControllerResponseData($data);
+        
+        // 显式设置响应标题（Zabbix 6.0 需要）
+        $response->setTitle(LanguageManager::t('Custom Report'));
+        
+        $this->setResponse($response);
     }
 
     private function generateReportData(int $fromTimestamp, int $toTimestamp): array {

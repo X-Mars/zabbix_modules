@@ -2,6 +2,13 @@
 
 [简体中文](#描述) | [English](#english)
 
+## ✨ 版本兼容性 / Version Compatibility
+
+### 所有模块均兼容 Zabbix 6.0 和 Zabbix 7.0+ / All modules compatible with both Zabbix 6.0 and Zabbix 7.0+
+
+- ✅ Zabbix 6.0.x
+- ✅ Zabbix 7.0.x
+
 ## 描述
 
 这是一个包含多个Zabbix模块的项目集合，每个模块都是独立的Zabbix扩展，为Zabbix监控系统提供额外的功能。
@@ -26,7 +33,7 @@
 
 ![项目截图](zabbix_reports/images/1.png)
 
-**兼容性**：Zabbix 7.0
+**兼容性**：Zabbix 6.0.x, 7.0.x（自动适配）
 
 ### 2. Zabbix CMDB
 
@@ -45,13 +52,20 @@
 ![项目截图](zabbix_cmdb/images/1.jpg)
 ![项目截图](zabbix_cmdb/images/2.jpg)
 
-**兼容性**：Zabbix 7.0
+**兼容性**：Zabbix 6.0.x, 7.0.x（自动适配）
 
 ## 安装说明 / Installation
 
-### 使用Git克隆安装所有模块
+### ⚠️ 重要提示：根据Zabbix版本修改manifest.json
 
-如果您想一次性安装所有模块，可以使用Git克隆整个项目：
+**在安装前，请根据您的Zabbix版本修改各模块的 `manifest.json` 文件：**
+
+- **Zabbix 6.0**: 将 `"manifest_version": 2.0` 改为 `"manifest_version": 1.0`
+- **Zabbix 7.0+**: 保持 `"manifest_version": 2.0` 不变
+
+### 推荐方法：使用Git克隆安装所有模块（首选）
+
+这是最简单快捷的安装方式，一次性部署所有模块：
 
 1. **克隆项目到Zabbix模块目录**：
 
@@ -60,30 +74,36 @@
    git clone https://github.com/X-Mars/zabbix_modules.git .
    ```
 
-   注意：命令末尾的 `.` 表示克隆到当前目录，请谨慎操作。
+   注意：命令末尾的 `.` 表示克隆到当前目录。
 
-2. **或者克隆到临时目录后移动**：
+2. **如果使用Zabbix 6.0，修改manifest_version**：
 
    ```bash
-   git clone https://github.com/X-Mars/zabbix_modules.git temp_zabbix_modules
-   cp -r temp_zabbix_modules/* /usr/share/zabbix/modules/
-   rm -rf temp_zabbix_modules
+   # 修改 zabbix_reports 模块
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+   
+   # 修改 zabbix_cmdb 模块
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
    ```
 
-3. **启用模块**：
+   如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
 
-   进入Zabbix Web界面：
-   - 导航到 **Administration → General → Modules**
-   - 点击 **Scan directory** 扫描新模块
-   - 找到并启用 "Zabbix Reports" 和 "Zabbix CMDB" 模块
+### 启用模块
+
+完成文件部署后，在Zabbix Web界面中启用模块：
+
+1. 进入Zabbix Web界面
+2. 导航到 **Administration → General → Modules**
+3. 点击 **Scan directory** 扫描新模块
+4. 找到并启用 "Zabbix Reports" 和 "Zabbix CMDB" 模块
 
 ![项目截图](zabbix_reports/images/setting-1.png)
 
-4. **验证安装**：
+### 验证安装
 
-   刷新页面后，您将在相应菜单中看到新模块：
-   - Reports → Zabbix Reports
-   - Inventory → CMDB
+刷新页面后，您将在相应菜单中看到新模块：
+- **Reports → Zabbix Reports** (每日/周/月报表)
+- **Inventory → CMDB** (主机列表/主机分组)
 
 ### 单独安装模块
 
@@ -118,8 +138,8 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 **Documentation**: [zabbix_reports/README.md](./zabbix_reports/README.md)
 
 **Author**: 火星小刘  
-**Version**: 1.0.0  
-**Compatibility**: Zabbix 7.0
+**Version**: 1.1.0  
+**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
 
 ### 2. Zabbix CMDB
 
@@ -136,14 +156,21 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 **Documentation**: [zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
 **Author**: 火星小刘  
-**Version**: 1.0.0  
-**Compatibility**: Zabbix 7.0
+**Version**: 1.1.0  
+**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
 
 ## Installation Instructions
 
-### Install All Modules Using Git Clone
+### ⚠️ Important: Modify manifest.json Based on Your Zabbix Version
 
-If you want to install all modules at once, you can use Git to clone the entire project:
+**Before installation, please modify the `manifest.json` file of each module according to your Zabbix version:**
+
+- **Zabbix 6.0**: Change `"manifest_version": 2.0` to `"manifest_version": 1.0`
+- **Zabbix 7.0+**: Keep `"manifest_version": 2.0` as default
+
+### Recommended Method: Install All Modules Using Git Clone (Preferred)
+
+This is the simplest and fastest way to deploy all modules at once:
 
 1. **Clone the project to Zabbix modules directory**:
 
@@ -152,28 +179,34 @@ If you want to install all modules at once, you can use Git to clone the entire 
    git clone https://github.com/X-Mars/zabbix_modules.git .
    ```
 
-   Note: The `.` at the end means clone to the current directory, please be careful.
+   Note: The `.` at the end means clone to the current directory.
 
-2. **Or clone to a temporary directory and then move**:
+2. **For Zabbix 6.0, modify manifest_version**:
 
    ```bash
-   git clone https://github.com/X-Mars/zabbix_modules.git temp_zabbix_modules
-   cp -r temp_zabbix_modules/* /usr/share/zabbix/modules/
-   rm -rf temp_zabbix_modules
+   # Modify zabbix_reports module
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+   
+   # Modify zabbix_cmdb module
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
    ```
 
-3. **Enable modules**:
+   For Zabbix 7.0+, no modification needed, keep the default value.
 
-   Go to Zabbix Web UI:
-   - Navigate to **Administration → General → Modules**
-   - Click **Scan directory** to scan for new modules
-   - Find and enable "Zabbix Reports" and "Zabbix CMDB" modules
+### Enable Modules
 
-4. **Verify installation**:
+After deploying the files, enable the modules in Zabbix Web UI:
 
-   After refreshing the page, you will see the new modules in the respective menus:
-   - Reports → Zabbix Reports
-   - Inventory → CMDB
+1. Go to Zabbix Web UI
+2. Navigate to **Administration → General → Modules**
+3. Click **Scan directory** to scan for new modules
+4. Find and enable "Zabbix Reports" and "Zabbix CMDB" modules
+
+### Verify Installation
+
+After refreshing the page, you will see the new modules in the respective menus:
+- **Reports → Zabbix Reports** (Daily/Weekly/Monthly reports)
+- **Inventory → CMDB** (Host List/Host Groups)
 
 ### Install Individual Modules
 

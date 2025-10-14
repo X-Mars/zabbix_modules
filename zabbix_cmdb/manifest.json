@@ -4,7 +4,7 @@
     "name": "Zabbix CMDB",
     "author": "火星小刘",
     "url": "https://github.com/X-Mars/zabbix_modules",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "namespace": "ZabbixCmdb",
     "description": "Configuration Management Database for Zabbix",
     "actions": {

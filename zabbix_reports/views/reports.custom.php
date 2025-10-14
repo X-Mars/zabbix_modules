@@ -1,8 +1,13 @@
 <?php
 
-// 引入语言管理器
+// 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 use Modules\ZabbixReports\Lib\LanguageManager;
+use Modules\ZabbixReports\Lib\ViewRenderer;
+
+// 从控制器获取标题
+$pageTitle = $data['title'] ?? LanguageManager::t('Custom Report');
 
 // 创建告警信息表格
 $buildAlertTable = static function(array $alerts) {
@@ -116,8 +121,7 @@ $buildMemTable = static function(array $topMemHosts, array $memTotal) {
 };
 
 // 添加自定义CSS
-$page = new CHtmlPage();
-$page->addItem((new CTag('style', true, '
+$styleTag = (new CTag('style', true, '
 .report-container {
     padding: 20px;
     max-width: 1200px;
@@ -243,12 +247,10 @@ $page->addItem((new CTag('style', true, '
 .report-container table tr:hover {
     background-color: #e9ecef;
 }
-')));
+'));
 
-$page
-    ->setTitle(LanguageManager::t('Custom Report'))
-    ->addItem(
-        (new CDiv())
+// 创建页面内容
+$content = (new CDiv())
             ->addClass('report-container')
             ->addItem([
                 // 页面标题
@@ -349,6 +351,7 @@ $page
                         (new CTag('p', true))
                             ->addItem(LanguageManager::t('Please select start and end dates to generate a custom report. Maximum date range is 90 days.'))
                     )
-            ])
-    )
-    ->show();
+            ]);
+
+// 使用兼容渲染器显示页面（模块视图需要直接输出）
+ViewRenderer::render($pageTitle, $styleTag, $content);
