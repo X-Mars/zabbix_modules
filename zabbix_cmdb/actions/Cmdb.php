@@ -155,7 +155,7 @@ class Cmdb extends CController {
                     'searchByAny' => true,
                     'sortfield' => 'host',
                     'sortorder' => 'ASC',
-                    'limit' => 100
+                    'limit' => 1000
                 ];                if ($groupid > 0) {
                     $nameSearchParams['groupids'] = [$groupid];
                 }
@@ -219,7 +219,7 @@ class Cmdb extends CController {
                 'selectInterfaces' => ['interfaceid', 'ip', 'dns', 'type', 'main', 'available', 'error'],
                 'sortfield' => 'host',
                 'sortorder' => 'ASC',
-                'limit' => 100
+                'limit' => 1000
             ];
             
             if ($groupid > 0) {
