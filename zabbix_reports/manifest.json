@@ -4,7 +4,7 @@
     "name": "Zabbix Reports",
     "author": "火星小刘",
     "url": "https://github.com/X-Mars/zabbix_reports",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "namespace": "ZabbixReports",
     "description": "Generate daily, weekly, monthly reports for Zabbix",
     "actions": {

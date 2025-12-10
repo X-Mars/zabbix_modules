@@ -2,9 +2,24 @@
 
 [简体中文](#描述) | [English](#english)
 
+## ✨ 版本兼容性 / Version Compatibility
+
+### 本模块同时兼容 Zabbix 6.0 和 Zabbix 7.0+ / Compatible with both Zabbix 6.0 and Zabbix 7.0+
+
+- ✅ Zabbix 6.0.x
+- ✅ Zabbix 7.0.x
+
+### 自动版本检测,无需手动配置 / Automatic version detection, no manual configuration needed
+
+模块内置智能版本检测机制,自动适配不同版本的Zabbix API和类库,无需任何手动配置。
+
+The module includes intelligent version detection that automatically adapts to different Zabbix API versions and class libraries, requiring no manual configuration.
+
 ## 描述
 
-这是一个Zabbix 7.0的前端模块，用于配置管理数据库（CMDB），提供主机信息的集中查看和管理功能。模块在Zabbix Web的资产记录菜单下新增CMDB菜单，支持主机搜索和分组筛选。
+这是一个Zabbix前端模块，用于配置管理数据库（CMDB），提供主机信息的集中查看和管理功能。模块在Zabbix Web的资产记录菜单下新增CMDB菜单，支持主机搜索和分组筛选。
+
+**兼容性说明**: 模块采用智能版本检测机制，可在Zabbix 6.0和7.0+环境中无缝运行。
 
 ## 项目截图
 
@@ -31,48 +46,45 @@
 
 ## 安装步骤
 
-1. 下载或复制`zabbix_cmdb`目录到Zabbix前端的`ui/modules/`目录下。
+![安装步骤](images/setting-1.png)
 
-   ```bash
-   cp -r zabbix_cmdb /usr/share/zabbix/modules/
-   ```
+### ⚠️ 重要提示：根据Zabbix版本修改manifest.json
 
-2. 在Zabbix Web界面中，转到 **Administration → General → Modules**。
+**在安装前，请根据您的Zabbix版本修改 `manifest.json` 文件：**
 
-3. 点击 **Scan directory** 按钮扫描新模块。
+- **Zabbix 6.0**: 将 `"manifest_version": 2.0` 改为 `"manifest_version": 1.0`
+- **Zabbix 7.0+**: 保持 `"manifest_version": 2.0` 不变
 
-4. 找到 "Zabbix CMDB" 模块，点击 "Disabled" 链接启用模块。
+```bash
+# 对于Zabbix 6.0用户
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
 
-5. 刷新页面，模块将在 **Inventory** 菜单下显示为 "CMDB" 子菜单，包含 "Host List" 和 "Host Groups" 两个子项。
+# 对于Zabbix 7.0+用户
+# 无需修改，默认即可
+```
 
-### 其他安装方法
+### 推荐方法：使用Git克隆安装（首选）
 
-#### 方法二：使用Git克隆直接安装
-
-如果您有Git访问权限，可以直接克隆项目到modules目录：
+直接克隆项目到Zabbix的modules目录，这是最简单快捷的方式：
 
 ```bash
 cd /usr/share/zabbix/modules/
-git clone https://github.com/X-Mars/zabbix_modules.git temp_modules
-mv temp_modules/zabbix_cmdb .
-rm -rf temp_modules
+git clone https://github.com/X-Mars/zabbix_modules.git .
 ```
-
-然后按照上述步骤2-5启用模块。
-
-#### 方法三：解压ZIP文件安装
-
-如果您下载了ZIP压缩包，可以直接解压到modules目录：
 
 ```bash
-# 假设ZIP文件名为 zabbix_cmdb.zip
-unzip zabbix_cmdb.zip -d /usr/share/zabbix/modules/
-# 或者如果ZIP文件包含完整路径
-unzip zabbix_cmdb.zip
-cp -r zabbix_cmdb /usr/share/zabbix/modules/
+# ⚠️ 如果使用Zabbix 6.0，修改manifest_version
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
 ```
 
-然后按照上述步骤2-5启用模块。
+然后在Zabbix Web界面中启用模块：
+
+1. 转到 **Administration → General → Modules**。
+2. 点击 **Scan directory** 按钮扫描新模块。
+3. 找到 "Zabbix CMDB" 模块，点击 "Disabled" 链接启用模块。
+4. 刷新页面，模块将在 **Inventory** 菜单下显示为 "CMDB" 子菜单，包含 "Host List" 和 "Host Groups" 两个子项。
+
+然后按照上述步骤启用模块。
 
 ## 使用方法
 
@@ -184,45 +196,41 @@ This is a frontend module for Zabbix 7.0 that provides Configuration Management 
 
 ## Installation
 
-1. Copy the `zabbix_cmdb` directory to Zabbix frontend modules directory.
+### ⚠️ Important: Modify manifest.json Based on Your Zabbix Version
 
-   ```bash
-   cp -r zabbix_cmdb /usr/share/zabbix/modules/
-   ```
+**Before installation, please modify the `manifest.json` file according to your Zabbix version:**
 
-2. In Zabbix Web UI, go to Administration → General → Modules.
-3. Click Scan directory.
-4. Find "Zabbix CMDB" and enable it.
-5. 5. The module will appear under the Inventory menu as "CMDB" submenu with "Host List" and "Host Groups" subitems.
+- **Zabbix 6.0**: Change `"manifest_version": 2.0` to `"manifest_version": 1.0`
+- **Zabbix 7.0+**: Keep `"manifest_version": 2.0` as default
 
-### Alternative Installation Methods
+```bash
+# For Zabbix 6.0 users
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
 
-#### Method 2: Direct Git Clone Installation
+# For Zabbix 7.0+ users
+# No modification needed, use default
+```
 
-If you have Git access, you can clone the project directly to the modules directory:
+### Recommended Method: Git Clone Installation (Preferred)
+
+Clone the project directly to Zabbix modules directory - this is the simplest and fastest way:
 
 ```bash
 cd /usr/share/zabbix/modules/
-git clone https://github.com/X-Mars/zabbix_modules.git temp_modules
-mv temp_modules/zabbix_cmdb .
-rm -rf temp_modules
+git clone https://github.com/X-Mars/zabbix_modules.git .
 ```
-
-Then follow steps 2-5 above to enable the module.
-
-#### Method 3: Extract ZIP File Installation
-
-If you downloaded a ZIP archive, you can extract it directly to the modules directory:
 
 ```bash
-# Assuming the ZIP file is named zabbix_cmdb.zip
-unzip zabbix_cmdb.zip -d /usr/share/zabbix/modules/
-# Or if the ZIP contains the full path
-unzip zabbix_cmdb.zip
-cp -r zabbix_cmdb /usr/share/zabbix/modules/
+# ⚠️ For Zabbix 6.0, modify manifest_version
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
 ```
 
-Then follow steps 2-5 above to enable the module.
+Then enable the module in Zabbix Web UI:
+
+1. Go to **Administration → General → Modules**.
+2. Click **Scan directory**.
+3. Find "Zabbix CMDB" and enable it.
+4. The module will appear under the Inventory menu as "CMDB" submenu with "Host List" and "Host Groups" subitems.
 
 ## Usage
 

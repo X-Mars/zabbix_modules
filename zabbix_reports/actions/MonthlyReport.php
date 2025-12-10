@@ -14,7 +14,12 @@ use Modules\ZabbixReports\Lib\LanguageManager;
 class MonthlyReport extends CController {
 
     public function init(): void {
-        $this->disableCsrfValidation();
+        // 兼容Zabbix 6和7
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation(); // Zabbix 7
+        } elseif (method_exists($this, 'disableSIDvalidation')) {
+            $this->disableSIDvalidation(); // Zabbix 6
+        }
     }
 
     protected function checkInput(): bool {
@@ -229,6 +234,7 @@ class MonthlyReport extends CController {
         }
 
         $response = new CControllerResponseData([
+            'title' => LanguageManager::t('Monthly Report'),
             'report_period' => LanguageManager::formatPeriod('monthly', $monthStart),
             'report_period_raw' => date('Y-m', $monthStart),
             'problem_count' => $problemCount,
@@ -243,6 +249,9 @@ class MonthlyReport extends CController {
             'language' => LanguageManager::getCurrentLanguage(),
             'is_chinese' => LanguageManager::isChinese()
         ]);
+        
+        // 显式设置响应标题（Zabbix 6.0 需要）
+        $response->setTitle(LanguageManager::t('Monthly Report'));
 
         $this->setResponse($response);
     }
