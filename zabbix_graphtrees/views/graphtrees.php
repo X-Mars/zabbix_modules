@@ -782,17 +782,36 @@ if (!empty($data['tree_data'])) {
     foreach ($data['tree_data'] as $group) {
         $groupDiv = (new CDiv())->addClass('tree-group');
         
+        // 检查该组是否包含选中的主机
+        $isExpanded = false;
+        foreach ($group['hosts'] as $host) {
+            if ($data['selected_hostid'] == $host['hostid']) {
+                $isExpanded = true;
+                break;
+            }
+        }
+        
         // 分组头
         $groupHeader = (new CDiv())
             ->addClass('tree-group-header')
-            ->setAttribute('onclick', 'toggleGroup(this)')
-            ->addItem((new CSpan('▼'))->addClass('tree-group-icon'))
+            ->setAttribute('onclick', 'toggleGroup(this)');
+        
+        // 根据是否展开设置图标（始终使用▼，通过CSS控制旋转）
+        $icon = (new CSpan('▼'))->addClass('tree-group-icon');
+        if (!$isExpanded) {
+            $icon->addClass('collapsed');
+        }
+        
+        $groupHeader->addItem($icon)
             ->addItem(new CSpan('📂 ' . htmlspecialchars($group['groupname'])));
         
         $groupDiv->addItem($groupHeader);
         
         // 主机列表
-        $hostsDiv = (new CDiv())->addClass('tree-hosts expanded');
+        $hostsDiv = (new CDiv())->addClass('tree-hosts');
+        if ($isExpanded) {
+            $hostsDiv->addClass('expanded');
+        }
         
         foreach ($group['hosts'] as $host) {
             $hostDiv = (new CDiv())
