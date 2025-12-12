@@ -1,0 +1,20 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-graphtrees",
+    "name": "Zabbix Graph Trees",
+    "author": "火星小刘",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "version": "1.0.0",
+    "namespace": "ZabbixGraphTrees",
+    "description": "Resource tree and monitoring graph visualization for Zabbix",
+    "actions": {
+        "graphtrees": {
+            "class": "GraphTrees",
+            "view": "graphtrees"
+        },
+        "graphtrees.data": {
+            "class": "GraphTreesData",
+            "layout": "layout.json"
+        }
+    }
+}
