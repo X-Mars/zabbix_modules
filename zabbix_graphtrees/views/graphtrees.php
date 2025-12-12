@@ -533,17 +533,180 @@ $styleTag = new CTag('style', true, '
     100% { transform: rotate(360deg); }
 }
 
-.time-range-inputs {
+/* 时间选择器样式 */
+.time-picker-container {
+    position: relative;
+}
+
+.time-picker-trigger {
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    height: 40px;
+    background-color: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.time-picker-trigger:hover {
+    border-color: #007bff;
+}
+
+.time-picker-trigger .trigger-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.time-picker-trigger .trigger-icon {
+    margin-left: 8px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.time-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    min-width: 320px;
+}
+
+.time-picker-dropdown.show {
+    display: block;
+}
+
+.time-picker-presets {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.time-picker-presets-title {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.time-picker-preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.time-picker-preset-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.2s;
+    height: 36px;
+    line-height: 1;
+}
+
+.time-picker-preset-btn:hover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.time-picker-preset-btn.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.time-picker-custom {
+    padding: 12px;
+}
+
+.time-picker-custom-title {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.time-picker-inputs {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+    margin-bottom: 12px;
 }
 
-.time-range-inputs input {
-    padding: 8px 12px;
+.time-picker-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.time-picker-input-group label {
+    font-size: 11px;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.time-picker-input-group input {
+    padding: 8px 10px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.time-picker-input-group input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.time-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.time-picker-actions button {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+    height: 36px;
+    line-height: 1;
+}
+
+.time-picker-apply-btn {
+    background-color: #007bff;
+    border: 1px solid #007bff;
+    color: #fff;
+}
+
+.time-picker-apply-btn:hover {
+    background-color: #0056b3;
+}
+
+.time-picker-cancel-btn {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.time-picker-cancel-btn:hover {
+    background-color: #e9ecef;
 }
 
 @media (max-width: 1200px) {
@@ -752,44 +915,31 @@ $itemsMultiSelect->addItem($itemsDropdown);
 $itemsField->addItem($itemsMultiSelect);
 $filterPanel->addItem($itemsField);
 
-// 时间范围选择
+// 时间选择器
 $timeField = (new CDiv())->addClass('filter-field');
 $timeField->addItem(new CLabel(LanguageManager::t('Time Range')));
-$timeSelect = new CTag('select', true);
-$timeSelect->setAttribute('id', 'time-range-select');
-$timeSelect->setAttribute('onchange', 'onTimeRangeChange()');
 
-$timeRanges = [
-    '3600' => LanguageManager::t('Last Hour'),
-    '10800' => LanguageManager::t('Last 3 Hours'),
-    '21600' => LanguageManager::t('Last 6 Hours'),
-    '43200' => LanguageManager::t('Last 12 Hours'),
-    '86400' => LanguageManager::t('Last 24 Hours'),
-    '604800' => LanguageManager::t('Last 7 Days'),
-    '2592000' => LanguageManager::t('Last 30 Days'),
-    'custom' => LanguageManager::t('Custom')
-];
+$timePickerContainer = (new CDiv())
+    ->addClass('time-picker-container')
+    ->setAttribute('id', 'time-picker-container');
 
-// 计算当前选中的时间范围
-$currentTimeRange = $currentTimeTo - $currentTimeFrom;
-$selectedTimeRange = '3600'; // 默认1小时
-foreach (array_keys($timeRanges) as $rangeValue) {
-    if ($rangeValue !== 'custom' && abs($currentTimeRange - (int)$rangeValue) < 60) {
-        $selectedTimeRange = $rangeValue;
-        break;
-    }
-}
+// 时间选择器触发器
+$timePickerTrigger = (new CDiv())
+    ->addClass('time-picker-trigger')
+    ->setAttribute('id', 'time-picker-trigger')
+    ->setAttribute('onclick', 'toggleTimePicker()')
+    ->addItem((new CSpan(''))->addClass('trigger-text')->setAttribute('id', 'time-picker-text'))
+    ->addItem((new CSpan('🕐'))->addClass('trigger-icon'));
 
-foreach ($timeRanges as $value => $label) {
-    $option = new CTag('option', true, $label);
-    $option->setAttribute('value', $value);
-    if ($value === $selectedTimeRange) {
-        $option->setAttribute('selected', 'selected');
-    }
-    $timeSelect->addItem($option);
-}
+$timePickerContainer->addItem($timePickerTrigger);
 
-$timeField->addItem($timeSelect);
+// 时间选择器下拉框（由JavaScript动态生成内容）
+$timePickerDropdown = (new CDiv())
+    ->addClass('time-picker-dropdown')
+    ->setAttribute('id', 'time-picker-dropdown');
+
+$timePickerContainer->addItem($timePickerDropdown);
+$timeField->addItem($timePickerContainer);
 $filterPanel->addItem($timeField);
 
 // 自动刷新下拉框
@@ -884,13 +1034,24 @@ $jsVars = [
         'selectedItems' => LanguageManager::t('selected'),
         'selectAll' => LanguageManager::t('Select All'),
         'deselectAll' => LanguageManager::t('Deselect All'),
-        'customTimeRange' => LanguageManager::t('Custom time range selection coming soon'),
         'loading' => LanguageManager::t('Loading...'),
         'failedToLoad' => LanguageManager::t('Failed to load data'),
         'noData' => LanguageManager::t('No data'),
         'noValidData' => LanguageManager::t('No valid data'),
         'zoomIn' => LanguageManager::t('Zoom In'),
-        'close' => LanguageManager::t('Close')
+        'close' => LanguageManager::t('Close'),
+        'quickSelect' => LanguageManager::t('Quick Select'),
+        'customRange' => LanguageManager::t('Custom Range'),
+        'from' => LanguageManager::t('From'),
+        'to' => LanguageManager::t('To'),
+        'apply' => LanguageManager::t('Apply'),
+        'cancel' => LanguageManager::t('Cancel'),
+        'last10Minutes' => LanguageManager::t('Last 10 Minutes'),
+        'last30Minutes' => LanguageManager::t('Last 30 Minutes'),
+        'lastHour' => LanguageManager::t('Last Hour'),
+        'last3Hours' => LanguageManager::t('Last 3 Hours'),
+        'last12Hours' => LanguageManager::t('Last 12 Hours'),
+        'last24Hours' => LanguageManager::t('Last 24 Hours')
     ]
 ];
 ?>
@@ -1023,12 +1184,19 @@ function deselectAllItems() {
 
 // 点击页面其他区域关闭下拉框
 document.addEventListener("click", function(e) {
-    var container = document.getElementById("items-multi-select");
-    if (container && !container.contains(e.target)) {
-        var dropdown = document.getElementById("items-dropdown");
-        if (dropdown) {
-            dropdown.classList.remove("show");
+    // 关闭监控项下拉框
+    var itemsContainer = document.getElementById("items-multi-select");
+    if (itemsContainer && !itemsContainer.contains(e.target)) {
+        var itemsDropdown = document.getElementById("items-dropdown");
+        if (itemsDropdown) {
+            itemsDropdown.classList.remove("show");
         }
+    }
+    
+    // 关闭时间选择器下拉框
+    var timeContainer = document.getElementById("time-picker-container");
+    if (timeContainer && !timeContainer.contains(e.target)) {
+        closeTimePicker();
     }
 });
 
@@ -1163,19 +1331,230 @@ function updateTagValueSelect(tag) {
     }
 }
 
-function onTimeRangeChange() {
-    var range = document.getElementById("time-range-select").value;
+// 时间选择器相关变量和函数
+var timePresets = [
+    { value: 600, label: 'last10Minutes' },
+    { value: 1800, label: 'last30Minutes' },
+    { value: 3600, label: 'lastHour' },
+    { value: 10800, label: 'last3Hours' },
+    { value: 43200, label: 'last12Hours' },
+    { value: 86400, label: 'last24Hours' }
+];
+var selectedPreset = 3600; // 默认选中1小时
+
+// 初始化时间选择器
+function initTimePicker() {
+    var dropdown = document.getElementById("time-picker-dropdown");
+    if (!dropdown) return;
     
-    if (range === "custom") {
-        alert(graphTreesConfig.i18n.customTimeRange);
+    // 构建下拉框内容
+    var html = '';
+    
+    // 快速选择区域
+    html += '<div class="time-picker-presets">';
+    html += '<div class="time-picker-presets-title">' + graphTreesConfig.i18n.quickSelect + '</div>';
+    html += '<div class="time-picker-preset-buttons">';
+    timePresets.forEach(function(preset) {
+        var activeClass = (currentTimeTo - currentTimeFrom === preset.value) ? ' active' : '';
+        html += '<button class="time-picker-preset-btn' + activeClass + '" data-value="' + preset.value + '" onclick="selectTimePreset(' + preset.value + ')">' + graphTreesConfig.i18n[preset.label] + '</button>';
+    });
+    html += '</div>';
+    html += '</div>';
+    
+    // 自定义时间区域
+    html += '<div class="time-picker-custom">';
+    html += '<div class="time-picker-custom-title">' + graphTreesConfig.i18n.customRange + '</div>';
+    html += '<div class="time-picker-inputs">';
+    html += '<div class="time-picker-input-group">';
+    html += '<label>' + graphTreesConfig.i18n.from + '</label>';
+    html += '<input type="datetime-local" id="time-picker-from" value="' + formatDateTimeLocal(currentTimeFrom * 1000) + '">';
+    html += '</div>';
+    html += '<div class="time-picker-input-group">';
+    html += '<label>' + graphTreesConfig.i18n.to + '</label>';
+    html += '<input type="datetime-local" id="time-picker-to" value="' + formatDateTimeLocal(currentTimeTo * 1000) + '">';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="time-picker-actions">';
+    html += '<button class="time-picker-cancel-btn" onclick="closeTimePicker()">' + graphTreesConfig.i18n.cancel + '</button>';
+    html += '<button class="time-picker-apply-btn" onclick="applyCustomTimeRange()">' + graphTreesConfig.i18n.apply + '</button>';
+    html += '</div>';
+    html += '</div>';
+    
+    dropdown.innerHTML = html;
+    
+    // 为datetime-local输入框绑定点击事件
+    bindDateTimePickerEvents();
+    
+    // 更新显示文本
+    updateTimePickerText();
+}
+
+// 格式化日期为datetime-local格式
+function formatDateTimeLocal(timestamp) {
+    var date = new Date(timestamp);
+    var year = date.getFullYear();
+    var month = ("0" + (date.getMonth() + 1)).slice(-2);
+    var day = ("0" + date.getDate()).slice(-2);
+    var hours = ("0" + date.getHours()).slice(-2);
+    var minutes = ("0" + date.getMinutes()).slice(-2);
+    return year + "-" + month + "-" + day + "T" + hours + ":" + minutes;
+}
+
+// 格式化时间显示
+function formatTimeDisplay(timestamp) {
+    var date = new Date(timestamp * 1000);
+    var month = ("0" + (date.getMonth() + 1)).slice(-2);
+    var day = ("0" + date.getDate()).slice(-2);
+    var hours = ("0" + date.getHours()).slice(-2);
+    var minutes = ("0" + date.getMinutes()).slice(-2);
+    return month + "-" + day + " " + hours + ":" + minutes;
+}
+
+// 更新时间选择器显示文本
+function updateTimePickerText() {
+    var textEl = document.getElementById("time-picker-text");
+    if (!textEl) return;
+    
+    var timeDiff = currentTimeTo - currentTimeFrom;
+    var presetLabel = null;
+    
+    // 检查是否匹配预设选项
+    timePresets.forEach(function(preset) {
+        if (Math.abs(timeDiff - preset.value) < 60) {
+            presetLabel = graphTreesConfig.i18n[preset.label];
+        }
+    });
+    
+    if (presetLabel) {
+        textEl.textContent = presetLabel;
+    } else {
+        // 显示自定义时间范围
+        textEl.textContent = formatTimeDisplay(currentTimeFrom) + " ~ " + formatTimeDisplay(currentTimeTo);
+    }
+}
+
+// 切换时间选择器下拉框
+function toggleTimePicker() {
+    var dropdown = document.getElementById("time-picker-dropdown");
+    if (dropdown) {
+        var isShowing = dropdown.classList.contains("show");
+        // 先关闭其他下拉框
+        closeAllDropdowns();
+        if (!isShowing) {
+            dropdown.classList.add("show");
+            // 更新输入框的值
+            var fromInput = document.getElementById("time-picker-from");
+            var toInput = document.getElementById("time-picker-to");
+            if (fromInput) fromInput.value = formatDateTimeLocal(currentTimeFrom * 1000);
+            if (toInput) toInput.value = formatDateTimeLocal(currentTimeTo * 1000);
+            // 更新预设按钮状态
+            updatePresetButtonsState();
+            // 绑定datetime-local点击事件
+            bindDateTimePickerEvents();
+        }
+    }
+}
+
+// 绑定datetime-local输入框点击事件
+function bindDateTimePickerEvents() {
+    var fromInput = document.getElementById("time-picker-from");
+    var toInput = document.getElementById("time-picker-to");
+    if (fromInput && !fromInput._pickerBound) {
+        fromInput.addEventListener("click", function() {
+            if (this.showPicker) this.showPicker();
+        });
+        fromInput._pickerBound = true;
+    }
+    if (toInput && !toInput._pickerBound) {
+        toInput.addEventListener("click", function() {
+            if (this.showPicker) this.showPicker();
+        });
+        toInput._pickerBound = true;
+    }
+}
+
+// 关闭时间选择器
+function closeTimePicker() {
+    var dropdown = document.getElementById("time-picker-dropdown");
+    if (dropdown) {
+        dropdown.classList.remove("show");
+    }
+}
+
+// 关闭所有下拉框
+function closeAllDropdowns() {
+    var itemsDropdown = document.getElementById("items-dropdown");
+    if (itemsDropdown) itemsDropdown.classList.remove("show");
+    closeTimePicker();
+}
+
+// 更新预设按钮状态
+function updatePresetButtonsState() {
+    var timeDiff = currentTimeTo - currentTimeFrom;
+    document.querySelectorAll(".time-picker-preset-btn").forEach(function(btn) {
+        var value = parseInt(btn.getAttribute("data-value"));
+        if (Math.abs(timeDiff - value) < 60) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+}
+
+// 选择预设时间范围
+function selectTimePreset(seconds) {
+    var now = Math.floor(Date.now() / 1000);
+    currentTimeTo = now;
+    currentTimeFrom = now - seconds;
+    selectedPreset = seconds;
+    
+    // 更新显示
+    updateTimePickerText();
+    updatePresetButtonsState();
+    
+    // 更新输入框
+    var fromInput = document.getElementById("time-picker-from");
+    var toInput = document.getElementById("time-picker-to");
+    if (fromInput) fromInput.value = formatDateTimeLocal(currentTimeFrom * 1000);
+    if (toInput) toInput.value = formatDateTimeLocal(currentTimeTo * 1000);
+    
+    // 关闭下拉框并刷新图表
+    closeTimePicker();
+    if (currentHostId > 0 && items.length > 0) {
+        renderGraphs();
+    }
+}
+
+// 应用自定义时间范围
+function applyCustomTimeRange() {
+    var fromInput = document.getElementById("time-picker-from");
+    var toInput = document.getElementById("time-picker-to");
+    
+    if (!fromInput || !toInput) return;
+    
+    var fromTime = new Date(fromInput.value).getTime() / 1000;
+    var toTime = new Date(toInput.value).getTime() / 1000;
+    
+    if (isNaN(fromTime) || isNaN(toTime)) {
+        alert("请输入有效的时间");
         return;
     }
     
-    var now = Math.floor(Date.now() / 1000);
-    currentTimeTo = now;
-    currentTimeFrom = now - parseInt(range);
+    if (fromTime >= toTime) {
+        alert("开始时间必须小于结束时间");
+        return;
+    }
     
-    // 切换时间范围后自动刷新图表
+    currentTimeFrom = Math.floor(fromTime);
+    currentTimeTo = Math.floor(toTime);
+    selectedPreset = null;
+    
+    // 更新显示
+    updateTimePickerText();
+    updatePresetButtonsState();
+    
+    // 关闭下拉框并刷新图表
+    closeTimePicker();
     if (currentHostId > 0 && items.length > 0) {
         renderGraphs();
     }
@@ -1210,13 +1589,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // 初始化监控项多选下拉框
     initItemsMultiSelect();
     
-    // 时间范围下拉框已在PHP端设置选中状态，这里同步JS变量
-    var timeSelect = document.getElementById("time-range-select");
-    if (timeSelect && timeSelect.value && timeSelect.value !== 'custom') {
-        var now = Math.floor(Date.now() / 1000);
-        currentTimeTo = now;
-        currentTimeFrom = now - parseInt(timeSelect.value);
-    }
+    // 初始化时间选择器
+    initTimePicker();
     
     if (items.length > 0 && currentHostId > 0) {
         renderGraphs();
@@ -1245,12 +1619,12 @@ function startAutoRefresh() {
     stopAutoRefresh(); // 先清除旧的
     autoRefreshInterval = setInterval(function() {
         if (currentHostId > 0 && items.length > 0) {
-            // 更新时间范围到当前时间
-            var timeSelect = document.getElementById("time-range-select");
-            if (timeSelect && timeSelect.value && timeSelect.value !== 'custom') {
+            // 如果选择了预设时间范围，更新到当前时间
+            if (selectedPreset) {
                 var now = Math.floor(Date.now() / 1000);
                 currentTimeTo = now;
-                currentTimeFrom = now - parseInt(timeSelect.value);
+                currentTimeFrom = now - selectedPreset;
+                updateTimePickerText();
             }
             renderGraphs();
         }

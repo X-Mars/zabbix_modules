@@ -13,7 +13,7 @@ $pageTitle = $data['title'] ?? LanguageManager::t('Daily Report');
 $styleTag = (new CTag('style', true, '
 .report-container {
     padding: 20px;
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
 }
 .report-container h1 {

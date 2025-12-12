@@ -68,7 +68,7 @@ $pageTitle = $data['title'] ?? 'Host Groups';
 $styleTag = new CTag('style', true, '
 .cmdb-container {
     padding: 20px;
-    max-width: 1600px;
+    width: 100%;
     margin: 0 auto;
 }
 

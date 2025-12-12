@@ -131,7 +131,7 @@
 
 - **Reports → Zabbix Reports** (每日/周/月报表)
 - **Inventory → CMDB** (主机列表/主机分组)
-- **Monitoring → Graph Trees** (图形树)
+- **Monitoring → Graph Trees** (图表树)
 
 ### 单独安装模块
 
