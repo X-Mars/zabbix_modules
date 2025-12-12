@@ -47,6 +47,7 @@ class Cmdb extends CController {
     protected function doAction(): void {
         $search = $this->getInput('search', '');
         $groupid = $this->getInput('groupid', 0);
+        $interface_type = $this->getInput('interface_type', 0);
         $sort = $this->getInput('sort', 'cpu_total');
         $sortorder = $this->getInput('sortorder', 'DESC');
 
@@ -234,6 +235,22 @@ class Cmdb extends CController {
             }
         }
 
+        // 按接口类型过滤
+        if ($interface_type > 0) {
+            $filteredHosts = [];
+            foreach ($hosts as $host) {
+                if (!empty($host['interfaces'])) {
+                    foreach ($host['interfaces'] as $interface) {
+                        if ($interface['type'] == $interface_type) {
+                            $filteredHosts[] = $host;
+                            break; // 找到匹配的接口后跳出
+                        }
+                    }
+                }
+            }
+            $hosts = $filteredHosts;
+        }
+
         // 处理主机数据，获取CPU、内存信息和使用率
         $hostData = [];
         $totalCpu = 0;
@@ -349,6 +366,7 @@ class Cmdb extends CController {
             'hosts' => $hostData,
             'search' => $search,
             'selected_groupid' => $groupid,
+            'interface_type' => $interface_type,
             'sort' => $sort,
             'sortorder' => $sortorder,
             'total_cpu' => $totalCpu,

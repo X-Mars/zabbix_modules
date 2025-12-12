@@ -53,6 +53,7 @@ class ItemFinder {
             ['filter' => ['key_' => 'system.cpu.load[avg1]']],
             // 按名称搜索作为备选
             ['search' => ['name' => 'CPU utilization'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'CPU Utilization'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'CPU usage'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'Processor load'], 'searchWildcardsEnabled' => true],
             ['search' => ['key_' => 'cpu.util'], 'searchWildcardsEnabled' => true],
@@ -73,6 +74,7 @@ class ItemFinder {
             ['filter' => ['key_' => 'vm.memory.pused']],
             // 按名称搜索作为备选
             ['search' => ['name' => 'Memory utilization'], 'searchWildcardsEnabled' => true],
+            ['search' => ['name' => 'Memory Utilization'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'Memory usage'], 'searchWildcardsEnabled' => true],
             ['search' => ['name' => 'Used memory'], 'searchWildcardsEnabled' => true],
             ['search' => ['key_' => 'memory.util'], 'searchWildcardsEnabled' => true],

@@ -68,7 +68,7 @@ class GraphTreesData extends CController {
                         'time_till' => $timeTo,
                         'sortfield' => 'clock',
                         'sortorder' => 'ASC',
-                        'limit' => 1000
+                        'limit' => 10000
                     ]);
 
                     $dataPoints = [];

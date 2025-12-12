@@ -12,7 +12,7 @@ class LanguageManager {
     private static $currentLanguage = null;
     private static $translations = [
         'zh_CN' => [
-            'Graph Trees' => '图形树',
+            'Graph Trees' => '图表树',
             'Resource Tree' => '资源树',
             'Host Groups' => '主机分组',
             'Hosts' => '主机',
@@ -22,6 +22,8 @@ class LanguageManager {
             'Select Tag' => '选择标记',
             'Select Tag Value' => '选择标记值',
             'Select Time Range' => '选择时间范围',
+            'Last 10 Minutes' => '最近10分钟',
+            'Last 30 Minutes' => '最近30分钟',
             'Last Hour' => '最近1小时',
             'Last 3 Hours' => '最近3小时',
             'Last 6 Hours' => '最近6小时',
@@ -57,7 +59,10 @@ class LanguageManager {
             'All Items' => '全部监控项',
             'selected' => '项已选',
             'Select All' => '全选',
-            'Deselect All' => '取消全选'
+            'Deselect All' => '取消全选',
+            'Quick Select' => '快速选择',
+            'Custom Range' => '自定义范围',
+            'Cancel' => '取消'
         ],
         'en_US' => [
             'Graph Trees' => 'Graph Trees',
@@ -70,6 +75,8 @@ class LanguageManager {
             'Select Tag' => 'Select Tag',
             'Select Tag Value' => 'Select Tag Value',
             'Select Time Range' => 'Select Time Range',
+            'Last 10 Minutes' => 'Last 10 Minutes',
+            'Last 30 Minutes' => 'Last 30 Minutes',
             'Last Hour' => 'Last Hour',
             'Last 3 Hours' => 'Last 3 Hours',
             'Last 6 Hours' => 'Last 6 Hours',
@@ -105,7 +112,10 @@ class LanguageManager {
             'All Items' => 'All Items',
             'selected' => 'selected',
             'Select All' => 'Select All',
-            'Deselect All' => 'Deselect All'
+            'Deselect All' => 'Deselect All',
+            'Quick Select' => 'Quick Select',
+            'Custom Range' => 'Custom Range',
+            'Cancel' => 'Cancel'
         ]
     ];
     

@@ -124,7 +124,7 @@ $buildMemTable = static function(array $topMemHosts, array $memTotal) {
 $styleTag = (new CTag('style', true, '
 .report-container {
     padding: 20px;
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
 }
 .date-form-container {

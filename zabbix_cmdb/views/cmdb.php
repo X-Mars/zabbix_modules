@@ -109,7 +109,7 @@ $pageTitle = $data['title'] ?? 'CMDB';
 $styleTag = new CTag('style', true, '
 .cmdb-container {
     padding: 20px;
-    max-width: 1600px;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -123,7 +123,7 @@ $styleTag = new CTag('style', true, '
 
 .search-form {
     display: grid;
-    grid-template-columns: 1fr 1fr auto auto;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
     gap: 15px;
     align-items: end;
 }
@@ -460,6 +460,36 @@ $content = (new CDiv())
                                                 }
                                                 $select->addItem($opt);
                                             }
+                                        }
+
+                                        return $select;
+                                    })())
+                            )
+                            ->addItem(
+                                (new CDiv())
+                                    ->addClass('form-field')
+                                    ->addItem(new CLabel('🔌 ' . LanguageManager::t('Interface Type')))
+                                    ->addItem((function() use ($data) {
+                                        $select = new CTag('select', true);
+                                        $select->setAttribute('name', 'interface_type');
+                                        $select->setAttribute('id', 'interface-type-select');
+                                        $select->setAttribute('onchange', 'handleInterfaceTypeChange(this)');
+
+                                        $interfaceTypes = [
+                                            0 => LanguageManager::t('All Interfaces'),
+                                            1 => LanguageManager::t('Agent'),
+                                            2 => LanguageManager::t('SNMP'),
+                                            3 => LanguageManager::t('IPMI'),
+                                            4 => LanguageManager::t('JMX')
+                                        ];
+
+                                        foreach ($interfaceTypes as $value => $label) {
+                                            $opt = new CTag('option', true, $label);
+                                            $opt->setAttribute('value', $value);
+                                            if (isset($data['interface_type']) && $data['interface_type'] == $value) {
+                                                $opt->setAttribute('selected', 'selected');
+                                            }
+                                            $select->addItem($opt);
                                         }
 
                                         return $select;
@@ -807,10 +837,19 @@ function handleGroupChange(select) {
     }
 }
 
+function handleInterfaceTypeChange(select) {
+    var form = select.closest("form");
+
+    if (form) {
+        form.submit();
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     // 可以在这里添加额外的初始化逻辑
     var searchInput = document.querySelector("input[name=\"search\"]");
     var groupSelect = document.getElementById("groupid-select");
+    var interfaceTypeSelect = document.getElementById("interface-type-select");
 });
 '));
 
