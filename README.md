@@ -54,6 +54,28 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x（自动适配）
 
+### 3. Zabbix Graph Trees
+
+**简介**：用于以树形结构浏览监控数据的Zabbix前端模块，提供主机分组树形导航、监控项筛选和实时图表展示功能。
+
+**功能特性**：
+
+- 树形结构浏览主机分组和主机
+- 支持按标记（Tag）和标记值筛选监控项
+- 监控项多选下拉框，灵活选择要展示的图表
+- SVG折线图实时展示监控数据
+- 多图表tooltip同步显示
+- 图表放大全屏查看
+- 自动刷新功能（支持5/10/20/30/60秒间隔）
+- 多种时间范围选择（1小时至30天）
+- 支持中英文界面国际化
+
+**文档链接**：[zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
+
+![项目截图](zabbix_graphtrees/images/1.png)
+
+**兼容性**：Zabbix 6.0.x, 7.0.x（自动适配）
+
 ## 安装说明 / Installation
 
 ### ⚠️ 重要提示：根据Zabbix版本修改manifest.json
@@ -85,6 +107,9 @@
    
    # 修改 zabbix_cmdb 模块
    sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+   
+   # 修改 zabbix_graphtrees 模块
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
    ```
 
    如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
@@ -96,15 +121,17 @@
 1. 进入Zabbix Web界面
 2. 导航到 **Administration → General → Modules**
 3. 点击 **Scan directory** 扫描新模块
-4. 找到并启用 "Zabbix Reports" 和 "Zabbix CMDB" 模块
+4. 找到并启用 "Zabbix Reports"、"Zabbix CMDB" 和 "Zabbix Graph Trees" 模块
 
 ![项目截图](zabbix_reports/images/setting-1.png)
 
 ### 验证安装
 
 刷新页面后，您将在相应菜单中看到新模块：
+
 - **Reports → Zabbix Reports** (每日/周/月报表)
 - **Inventory → CMDB** (主机列表/主机分组)
+- **Monitoring → Graph Trees** (图形树)
 
 ### 单独安装模块
 
@@ -160,6 +187,30 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 **Version**: 1.1.0  
 **Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
 
+### 3. Zabbix Graph Trees
+
+**Description**: A frontend module for Zabbix that provides tree-structured browsing of monitoring data, featuring host group tree navigation, item filtering, and real-time chart display.
+
+**Features**:
+
+- Tree-structured browsing of host groups and hosts
+- Filter items by tags and tag values
+- Multi-select dropdown for flexible chart selection
+- SVG line charts for real-time monitoring data display
+- Synchronized tooltip display across multiple charts
+- Full-screen chart zoom view
+- Auto-refresh functionality (5/10/20/30/60 second intervals)
+- Multiple time range selections (1 hour to 30 days)
+- Support for Chinese and English interfaces
+
+**Documentation**: [zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
+
+![Screenshot](zabbix_graphtrees/images/1.png)
+
+**Author**: 火星小刘  
+**Version**: 1.0.0  
+**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
+
 ## Installation Instructions
 
 ### ⚠️ Important: Modify manifest.json Based on Your Zabbix Version
@@ -191,6 +242,9 @@ This is the simplest and fastest way to deploy all modules at once:
    
    # Modify zabbix_cmdb module
    sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+   
+   # Modify zabbix_graphtrees module
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
    ```
 
    For Zabbix 7.0+, no modification needed, keep the default value.
@@ -202,13 +256,15 @@ After deploying the files, enable the modules in Zabbix Web UI:
 1. Go to Zabbix Web UI
 2. Navigate to **Administration → General → Modules**
 3. Click **Scan directory** to scan for new modules
-4. Find and enable "Zabbix Reports" and "Zabbix CMDB" modules
+4. Find and enable "Zabbix Reports", "Zabbix CMDB" and "Zabbix Graph Trees" modules
 
 ### Verify Installation
 
 After refreshing the page, you will see the new modules in the respective menus:
+
 - **Reports → Zabbix Reports** (Daily/Weekly/Monthly reports)
 - **Inventory → CMDB** (Host List/Host Groups)
+- **Monitoring → Graph Trees** (Graph Trees)
 
 ### Install Individual Modules
 
