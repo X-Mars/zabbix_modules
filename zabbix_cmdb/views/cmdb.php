@@ -1,56 +1,18 @@
 <?php
-/**
- * CMDB 主机列表视图
- * 
- * 功能特性：
- * - 分页组件：页码切换、每页数量切换、页面跳转
- * - 搜索和过滤：按主机名/IP、分组、接口类型
- * - 统计信息：基于筛选条件的CPU/内存总量
- * - 兼容 Zabbix 6.0、7.0、7.4
- */
 
+// 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
-
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 use Modules\ZabbixCmdb\Lib\ItemFinder;
 use Modules\ZabbixCmdb\Lib\ViewRenderer;
 
 /**
- * 构建分页URL
- */
-function buildPageUrl($data, $page = null, $perPage = null) {
-    $params = [
-        'action' => 'cmdb',
-        'page' => $page ?? $data['page'],
-        'per_page' => $perPage ?? $data['per_page'],
-    ];
-    
-    if (!empty($data['search'])) {
-        $params['search'] = $data['search'];
-    }
-    if (!empty($data['selected_groupid'])) {
-        $params['groupid'] = $data['selected_groupid'];
-    }
-    if (!empty($data['interface_type'])) {
-        $params['interface_type'] = $data['interface_type'];
-    }
-    if (!empty($data['sort'])) {
-        $params['sort'] = $data['sort'];
-    }
-    if (!empty($data['sortorder'])) {
-        $params['sortorder'] = $data['sortorder'];
-    }
-    
-    return 'zabbix.php?' . http_build_query($params, '', '&amp;');
-}
-
-/**
  * 创建排序链接
  */
 function createSortLink($title, $field, $data) {
-    $currentSort = isset($data['sort']) ? $data['sort'] : 'name';
+    $currentSort = isset($data['sort']) ? $data['sort'] : '';
     $currentOrder = isset($data['sortorder']) ? $data['sortorder'] : 'ASC';
 
     $newOrder = ($currentSort === $field && $currentOrder === 'ASC') ? 'DESC' : 'ASC';
@@ -60,186 +22,37 @@ function createSortLink($title, $field, $data) {
         $icon = $currentOrder === 'ASC' ? ' ↑' : ' ↓';
     }
 
-    // 构建URL
-    $params = [
-        'action' => 'cmdb',
-        'sort' => $field,
-        'sortorder' => $newOrder,
-        'page' => 1, // 排序时回到第一页
-        'per_page' => $data['per_page'] ?? 25,
-    ];
-    
+    // 构建URL，包含搜索参数
+    $url = 'zabbix.php?action=cmdb&sort=' . $field . '&sortorder=' . $newOrder;
     if (!empty($data['search'])) {
-        $params['search'] = $data['search'];
+        $url .= '&search=' . urlencode($data['search']);
     }
     if (!empty($data['selected_groupid'])) {
-        $params['groupid'] = $data['selected_groupid'];
-    }
-    if (!empty($data['interface_type'])) {
-        $params['interface_type'] = $data['interface_type'];
+        $url .= '&groupid=' . $data['selected_groupid'];
     }
 
-    return new CLink($title . $icon, 'zabbix.php?' . http_build_query($params, '', '&amp;'));
-}
-
-/**
- * 创建分页组件
- */
-function createPagination($data) {
-    $page = (int)$data['page'];
-    $perPage = (int)$data['per_page'];
-    $totalHosts = (int)$data['total_hosts'];
-    $totalPages = (int)$data['total_pages'];
-    $allowedPerPage = $data['allowed_per_page'] ?? [10, 25, 50, 100];
-    
-    // 计算显示范围
-    $start = ($page - 1) * $perPage + 1;
-    $end = min($page * $perPage, $totalHosts);
-    
-    $container = (new CDiv())->addClass('pagination-container');
-    
-    // 左侧：显示信息
-    $infoText = sprintf(
-        LanguageManager::t('Showing %d-%d of %d hosts'),
-        $totalHosts > 0 ? $start : 0,
-        $end,
-        $totalHosts
-    );
-    $infoDiv = (new CDiv($infoText))->addClass('pagination-info');
-    
-    // 中间：页码导航
-    $navDiv = (new CDiv())->addClass('pagination-nav');
-    
-    // 首页按钮
-    if ($page > 1) {
-        $navDiv->addItem(
-            (new CLink('«', buildPageUrl($data, 1)))
-                ->addClass('page-link')
-                ->setAttribute('title', LanguageManager::t('First Page'))
-        );
-        $navDiv->addItem(
-            (new CLink('‹', buildPageUrl($data, $page - 1)))
-                ->addClass('page-link')
-                ->setAttribute('title', LanguageManager::t('Previous Page'))
-        );
-    } else {
-        $navDiv->addItem((new CSpan('«'))->addClass('page-link disabled'));
-        $navDiv->addItem((new CSpan('‹'))->addClass('page-link disabled'));
-    }
-    
-    // 页码按钮
-    $pageRange = 2; // 当前页前后显示的页数
-    $startPage = max(1, $page - $pageRange);
-    $endPage = min($totalPages, $page + $pageRange);
-    
-    // 如果开始不是1，显示省略号
-    if ($startPage > 1) {
-        $navDiv->addItem(
-            (new CLink('1', buildPageUrl($data, 1)))->addClass('page-link')
-        );
-        if ($startPage > 2) {
-            $navDiv->addItem((new CSpan('...'))->addClass('page-ellipsis'));
-        }
-    }
-    
-    // 显示页码范围
-    for ($i = $startPage; $i <= $endPage; $i++) {
-        if ($i === $page) {
-            $navDiv->addItem((new CSpan($i))->addClass('page-link current'));
-        } else {
-            $navDiv->addItem(
-                (new CLink($i, buildPageUrl($data, $i)))->addClass('page-link')
-            );
-        }
-    }
-    
-    // 如果结束不是最后一页，显示省略号
-    if ($endPage < $totalPages) {
-        if ($endPage < $totalPages - 1) {
-            $navDiv->addItem((new CSpan('...'))->addClass('page-ellipsis'));
-        }
-        $navDiv->addItem(
-            (new CLink($totalPages, buildPageUrl($data, $totalPages)))->addClass('page-link')
-        );
-    }
-    
-    // 下一页和末页按钮
-    if ($page < $totalPages) {
-        $navDiv->addItem(
-            (new CLink('›', buildPageUrl($data, $page + 1)))
-                ->addClass('page-link')
-                ->setAttribute('title', LanguageManager::t('Next Page'))
-        );
-        $navDiv->addItem(
-            (new CLink('»', buildPageUrl($data, $totalPages)))
-                ->addClass('page-link')
-                ->setAttribute('title', LanguageManager::t('Last Page'))
-        );
-    } else {
-        $navDiv->addItem((new CSpan('›'))->addClass('page-link disabled'));
-        $navDiv->addItem((new CSpan('»'))->addClass('page-link disabled'));
-    }
-    
-    // 右侧：每页数量选择和跳转
-    $controlsDiv = (new CDiv())->addClass('pagination-controls');
-    
-    // 每页数量选择
-    $perPageSelect = new CTag('select', true);
-    $perPageSelect->setAttribute('id', 'per-page-select');
-    $perPageSelect->setAttribute('onchange', 'changePerPage(this.value)');
-    $perPageSelect->addClass('per-page-select');
-    
-    foreach ($allowedPerPage as $value) {
-        $opt = new CTag('option', true, $value . ' ' . LanguageManager::t('per page'));
-        $opt->setAttribute('value', $value);
-        if ($perPage == $value) {
-            $opt->setAttribute('selected', 'selected');
-        }
-        $perPageSelect->addItem($opt);
-    }
-    
-    $controlsDiv->addItem($perPageSelect);
-    
-    // 跳转输入
-    $jumpDiv = (new CDiv())->addClass('page-jump');
-    $jumpDiv->addItem(new CSpan(LanguageManager::t('Go to') . ': '));
-    
-    $jumpInput = (new CTextBox('jump_page', ''))
-        ->setAttribute('id', 'jump-page-input')
-        ->setAttribute('type', 'number')
-        ->setAttribute('min', '1')
-        ->setAttribute('max', $totalPages)
-        ->setAttribute('placeholder', $page)
-        ->addClass('jump-input');
-    $jumpDiv->addItem($jumpInput);
-    
-    $jumpBtn = (new CButton('jump_btn', LanguageManager::t('Go')))
-        ->setAttribute('onclick', 'jumpToPage()')
-        ->addClass('jump-btn');
-    $jumpDiv->addItem($jumpBtn);
-    
-    $controlsDiv->addItem($jumpDiv);
-    
-    $container->addItem($infoDiv);
-    $container->addItem($navDiv);
-    $container->addItem($controlsDiv);
-    
-    return $container;
+    return new CLink($title . $icon, $url);
 }
 
 /**
  * 获取主机状态显示元素
  */
 function getHostStatusDisplay($host) {
+    // 获取主机状态信息
     $statusInfo = isset($host['availability']) ? $host['availability'] : ['status' => 'unknown', 'text' => 'Unknown', 'class' => 'status-unknown'];
     
+    // 如果主机被禁用，显示Disabled
     if ($host['status'] == 1) {
         $statusText = '🚫 Disabled';
         $statusClass = 'status-disabled';
-    } elseif (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
+    } 
+    // 如果主机在维护中，显示Maintenance
+    elseif (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
         $statusText = '🔧 Maintenance';
         $statusClass = 'status-maintenance';
-    } else {
+    }
+    // 否则显示接口可用性状态
+    else {
         $icon = '';
         switch ($statusInfo['status']) {
             case 'available':
@@ -248,6 +61,7 @@ function getHostStatusDisplay($host) {
             case 'unavailable':
                 $icon = '🔴';
                 break;
+            case 'unknown':
             default:
                 $icon = '🟡';
                 break;
@@ -262,35 +76,43 @@ function getHostStatusDisplay($host) {
 }
 
 /**
- * 计算活跃主机数量
+ * 计算活跃主机数量（基于实际可用性状态）
  */
 function countActiveHosts($hosts) {
     $activeCount = 0;
+    
     foreach ($hosts as $host) {
-        if ($host['status'] == 1) continue;
-        if (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) continue;
+        // 如果主机被禁用，跳过
+        if ($host['status'] == 1) {
+            continue;
+        }
+        
+        // 如果主机在维护中，跳过
+        if (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
+            continue;
+        }
+        
+        // 检查可用性状态
         $availability = isset($host['availability']) ? $host['availability'] : ['status' => 'unknown'];
         if ($availability['status'] === 'available') {
             $activeCount++;
         }
     }
+    
     return $activeCount;
 }
 
-// ============ 页面渲染开始 ============
-
+// 从控制器获取标题
 $pageTitle = $data['title'] ?? 'CMDB';
 
-// CSS 样式
+// 添加与Zabbix主题一致的CSS
 $styleTag = new CTag('style', true, '
-/* 基础容器 */
 .cmdb-container {
     padding: 20px;
     width: 100%;
     margin: 0 auto;
 }
 
-/* 搜索表单 */
 .cmdb-search-form {
     background-color: #f8f9fa;
     padding: 20px;
@@ -301,7 +123,7 @@ $styleTag = new CTag('style', true, '
 
 .search-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
     gap: 15px;
     align-items: end;
 }
@@ -309,6 +131,7 @@ $styleTag = new CTag('style', true, '
 @media (max-width: 768px) {
     .search-form {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
 }
 
@@ -330,7 +153,7 @@ $styleTag = new CTag('style', true, '
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 14px;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s ease-in-out;
     background-color: #fff;
     height: 38px;
     box-sizing: border-box;
@@ -343,10 +166,49 @@ $styleTag = new CTag('style', true, '
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-/* 统计卡片 */
+.btn {
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 400;
+    text-align: center;
+    transition: all 0.15s ease-in-out;
+    height: 38px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.btn-secondary {
+    color: #6c757d;
+    background-color: transparent;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
 .stats-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
 }
@@ -373,7 +235,7 @@ $styleTag = new CTag('style', true, '
 }
 
 .stat-number {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     font-weight: 600;
     color: #495057;
     margin-bottom: 5px;
@@ -381,124 +243,12 @@ $styleTag = new CTag('style', true, '
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* 分页组件 */
-.pagination-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 0;
-    flex-wrap: wrap;
-    gap: 15px;
-    border-top: 1px solid #dee2e6;
-    margin-top: 10px;
-}
-
-.pagination-info {
-    color: #6c757d;
-    font-size: 14px;
-}
-
-.pagination-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.page-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    background-color: #fff;
-    color: #007bff;
-    text-decoration: none;
-    font-size: 14px;
-    transition: all 0.15s;
-}
-
-.page-link:hover {
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-    text-decoration: none;
-}
-
-.page-link.current {
-    background-color: #007bff;
-    border-color: #007bff;
-    color: #fff;
-}
-
-.page-link.disabled {
-    color: #6c757d;
-    pointer-events: none;
-    background-color: #f8f9fa;
-}
-
-.page-ellipsis {
-    padding: 0 8px;
-    color: #6c757d;
-}
-
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.per-page-select {
-    padding: 6px 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 13px;
-    background-color: #fff;
-}
-
-.page-jump {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.page-jump span {
-    color: #6c757d;
-    font-size: 13px;
-}
-
-.jump-input {
-    width: 60px;
-    padding: 6px 8px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 13px;
-    text-align: center;
-}
-
-.jump-btn {
-    padding: 6px 12px;
-    border: 1px solid #007bff;
-    border-radius: 4px;
-    background-color: #007bff;
-    color: #fff;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-.jump-btn:hover {
-    background-color: #0056b3;
-}
-
-/* 表格 */
 .hosts-table {
     width: 100%;
     border-collapse: collapse;
@@ -506,6 +256,7 @@ $styleTag = new CTag('style', true, '
     border: 1px solid #dee2e6;
     border-radius: 4px;
     table-layout: fixed;
+    overflow: visible;
 }
 
 .hosts-table thead th {
@@ -516,7 +267,13 @@ $styleTag = new CTag('style', true, '
     text-align: left;
     font-size: 13px;
     border-bottom: 1px solid #dee2e6;
-    white-space: nowrap;
+    max-width: 300px;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: normal;
+    overflow: visible;
+    min-height: 20px;
+    line-height: 1.4;
 }
 
 .hosts-table tbody td {
@@ -524,11 +281,25 @@ $styleTag = new CTag('style', true, '
     border-bottom: 1px solid #dee2e6;
     font-size: 13px;
     vertical-align: top;
-    max-width: 200px;
+    max-width: 300px;
     word-break: break-all;
     overflow-wrap: break-word;
     white-space: normal;
     overflow: hidden;
+    min-height: 20px;
+    line-height: 1.4;
+    max-height: 55px; /* 3行文字高度 */
+    position: relative;
+}
+
+.hosts-table tbody td:hover {
+    overflow: visible;
+    max-height: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    white-space: normal;
+    border-radius: 4px;
 }
 
 .hosts-table tbody tr:hover {
@@ -549,7 +320,6 @@ $styleTag = new CTag('style', true, '
     text-decoration: underline;
 }
 
-/* 接口类型标签 */
 .interface-type {
     display: inline-block;
     padding: 2px 6px;
@@ -561,18 +331,55 @@ $styleTag = new CTag('style', true, '
     margin-bottom: 2px;
 }
 
-.interface-agent { background-color: #28a745; color: white; }
-.interface-snmp { background-color: #007bff; color: white; }
-.interface-ipmi { background-color: #fd7e14; color: white; }
-.interface-jmx { background-color: #6f42c1; color: white; }
+.interface-agent {
+    background-color: #28a745;
+    color: white;
+}
 
-/* 状态样式 */
-.status-enabled { color: #28a745; font-weight: 600; }
-.status-disabled { color: #dc3545; font-weight: 600; }
-.status-available { color: #28a745; font-weight: 600; }
-.status-unavailable { color: #dc3545; font-weight: 600; }
-.status-maintenance { color: #ffc107; font-weight: 600; }
-.status-unknown { color: #6c757d; font-weight: 600; }
+.interface-snmp {
+    background-color: #007bff;
+    color: white;
+}
+
+.interface-ipmi {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.interface-jmx {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.status-enabled {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-disabled {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-available {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-unavailable {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-maintenance {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.status-unknown {
+    color: #6c757d;
+    font-weight: 600;
+}
 
 .no-data {
     text-align: center;
@@ -582,7 +389,6 @@ $styleTag = new CTag('style', true, '
     background-color: #f8f9fa;
 }
 
-/* 分组标签 */
 .group-tag {
     background-color: #e7f3ff;
     color: #004085;
@@ -595,177 +401,173 @@ $styleTag = new CTag('style', true, '
     border: 1px solid #b8daff;
 }
 
-/* 代码显示 */
-.code-display {
+.kernel-display {
+    background-color: #fff3cd;
+    padding: 3px 6px;
+    border-radius: 3px;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-    font-size: 12px;
+    font-size: 11px;
+    color: #856404;
+    border: 1px solid #ffeaa7;
 }
 ');
 
 // 创建主体内容
-$content = (new CDiv())->addClass('cmdb-container');
+$content = (new CDiv())
+    ->addClass('cmdb-container')
+    ->addItem(
+        (new CDiv())
+            ->addClass('cmdb-search-form')
+            ->addItem(
+                (new CForm())
+                    ->setMethod('get')
+                    ->setAction('zabbix.php?action=cmdb')
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('search-form')
+                            ->addItem(
+                                (new CDiv())
+                                    ->addClass('form-field')
+                                    ->addItem(new CLabel('🔍 ' . LanguageManager::t('Search by hostname or IP')))
+                                    ->addItem(
+                                        (new CTextBox('search', $data['search']))
+                                            ->setAttribute('placeholder', LanguageManager::t('Search hosts...'))
+                                            ->setAttribute('oninput', 'handleSearchInput(this)')
+                                    )
+                            )
+                            ->addItem(
+                                (new CDiv())
+                                    ->addClass('form-field')
+                                    ->addItem(new CLabel('📂 ' . LanguageManager::t('Select host group')))
+                                    ->addItem((function() use ($data) {
+                                        $select = new CTag('select', true);
+                                        $select->setAttribute('name', 'groupid');
+                                        $select->setAttribute('id', 'groupid-select');
+                                        $select->setAttribute('onchange', 'handleGroupChange(this)');
 
-// 搜索表单
-$searchForm = (new CForm())
-    ->setMethod('get')
-    ->setAction('zabbix.php')
-    ->addItem((new CInput('hidden', 'action', 'cmdb')))
-    ->addItem((new CInput('hidden', 'page', '1')))
-    ->addItem((new CInput('hidden', 'per_page', $data['per_page'] ?? 25)));
+                                        // 添加"所有分组"选项
+                                        $optAll = new CTag('option', true, LanguageManager::t('All Groups'));
+                                        $optAll->setAttribute('value', '0');
+                                        $select->addItem($optAll);
 
-$searchGrid = (new CDiv())->addClass('search-form');
+                                        // 添加实际的主机组
+                                        if (!empty($data['host_groups'])) {
+                                            foreach ($data['host_groups'] as $group) {
+                                                $opt = new CTag('option', true, $group['name']);
+                                                $opt->setAttribute('value', $group['groupid']);
+                                                if (isset($data['selected_groupid']) && $data['selected_groupid'] == $group['groupid']) {
+                                                    $opt->setAttribute('selected', 'selected');
+                                                }
+                                                $select->addItem($opt);
+                                            }
+                                        }
 
-// 搜索输入
-$searchGrid->addItem(
-    (new CDiv())
-        ->addClass('form-field')
-        ->addItem(new CLabel('🔍 ' . LanguageManager::t('Search by hostname or IP')))
-        ->addItem(
-            (new CTextBox('search', $data['search'] ?? ''))
-                ->setAttribute('placeholder', LanguageManager::t('Search hosts...'))
-                ->setAttribute('oninput', 'handleSearchInput(this)')
-        )
-);
+                                        return $select;
+                                    })())
+                            )
+                            ->addItem(
+                                (new CDiv())
+                                    ->addClass('form-field')
+                                    ->addItem(new CLabel('🔌 ' . LanguageManager::t('Interface Type')))
+                                    ->addItem((function() use ($data) {
+                                        $select = new CTag('select', true);
+                                        $select->setAttribute('name', 'interface_type');
+                                        $select->setAttribute('id', 'interface-type-select');
+                                        $select->setAttribute('onchange', 'handleInterfaceTypeChange(this)');
 
-// 分组选择
-$groupSelect = new CTag('select', true);
-$groupSelect->setAttribute('name', 'groupid');
-$groupSelect->setAttribute('id', 'groupid-select');
-$groupSelect->setAttribute('onchange', 'handleFilterChange()');
+                                        $interfaceTypes = [
+                                            0 => LanguageManager::t('All Interfaces'),
+                                            1 => LanguageManager::t('Agent'),
+                                            2 => LanguageManager::t('SNMP'),
+                                            3 => LanguageManager::t('IPMI'),
+                                            4 => LanguageManager::t('JMX')
+                                        ];
 
-$optAll = new CTag('option', true, LanguageManager::t('All Groups'));
-$optAll->setAttribute('value', '0');
-$groupSelect->addItem($optAll);
+                                        foreach ($interfaceTypes as $value => $label) {
+                                            $opt = new CTag('option', true, $label);
+                                            $opt->setAttribute('value', $value);
+                                            if (isset($data['interface_type']) && $data['interface_type'] == $value) {
+                                                $opt->setAttribute('selected', 'selected');
+                                            }
+                                            $select->addItem($opt);
+                                        }
 
-if (!empty($data['host_groups'])) {
-    foreach ($data['host_groups'] as $group) {
-        $opt = new CTag('option', true, $group['name']);
-        $opt->setAttribute('value', $group['groupid']);
-        if (isset($data['selected_groupid']) && $data['selected_groupid'] == $group['groupid']) {
-            $opt->setAttribute('selected', 'selected');
-        }
-        $groupSelect->addItem($opt);
-    }
+                                        return $select;
+                                    })())
+                            )
+                    )
+                    ->addItem((new CInput('hidden', 'action', 'cmdb')))
+            )
+    );
+
+// 如果有主机数据，添加统计卡片
+if (!empty($data['hosts'])) {
+    $content->addItem(
+        (new CDiv())
+            ->addClass('stats-container')
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
+                    )
+            )
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CSpan('💾'))->addClass('stat-icon'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
+                    )
+            )
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(count($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
+                    )
+            )
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CSpan('🗂️'))->addClass('stat-icon'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(count($data['host_groups'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Host Groups')))->addClass('stat-label'))
+                    )
+            )
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-card')
+                    ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
+                    ->addItem(
+                        (new CDiv())
+                            ->addClass('stat-content')
+                            ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
+                    )
+            )
+    );
 }
-
-$searchGrid->addItem(
-    (new CDiv())
-        ->addClass('form-field')
-        ->addItem(new CLabel('📂 ' . LanguageManager::t('Select host group')))
-        ->addItem($groupSelect)
-);
-
-// 接口类型选择
-$interfaceSelect = new CTag('select', true);
-$interfaceSelect->setAttribute('name', 'interface_type');
-$interfaceSelect->setAttribute('id', 'interface-type-select');
-$interfaceSelect->setAttribute('onchange', 'handleFilterChange()');
-
-$interfaceTypes = [
-    0 => LanguageManager::t('All Interfaces'),
-    1 => LanguageManager::t('Agent'),
-    2 => LanguageManager::t('SNMP'),
-    3 => LanguageManager::t('IPMI'),
-    4 => LanguageManager::t('JMX')
-];
-
-foreach ($interfaceTypes as $value => $label) {
-    $opt = new CTag('option', true, $label);
-    $opt->setAttribute('value', $value);
-    if (isset($data['interface_type']) && $data['interface_type'] == $value) {
-        $opt->setAttribute('selected', 'selected');
-    }
-    $interfaceSelect->addItem($opt);
-}
-
-$searchGrid->addItem(
-    (new CDiv())
-        ->addClass('form-field')
-        ->addItem(new CLabel('🔌 ' . LanguageManager::t('Interface Type')))
-        ->addItem($interfaceSelect)
-);
-
-$searchForm->addItem($searchGrid);
-$content->addItem((new CDiv())->addClass('cmdb-search-form')->addItem($searchForm));
-
-// 统计卡片 - 使用控制器传来的统计数据
-$statsContainer = (new CDiv())->addClass('stats-container');
-
-// CPU总量（基于筛选条件的所有主机）
-$statsContainer->addItem(
-    (new CDiv())
-        ->addClass('stat-card')
-        ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
-        ->addItem(
-            (new CDiv())
-                ->addClass('stat-content')
-                ->addItem((new CDiv($data['total_cpu'] ?? 0))->addClass('stat-number'))
-                ->addItem((new CDiv(LanguageManager::t('CPU Total')))->addClass('stat-label'))
-        )
-);
-
-// 内存总量（基于筛选条件的所有主机）
-$statsContainer->addItem(
-    (new CDiv())
-        ->addClass('stat-card')
-        ->addItem((new CSpan('💾'))->addClass('stat-icon'))
-        ->addItem(
-            (new CDiv())
-                ->addClass('stat-content')
-                ->addItem((new CDiv($data['total_memory'] ? ItemFinder::formatMemorySize($data['total_memory']) : '0 B'))->addClass('stat-number'))
-                ->addItem((new CDiv(LanguageManager::t('Memory Total')))->addClass('stat-label'))
-        )
-);
-
-// 总主机数（筛选后的所有主机数量）
-$statsContainer->addItem(
-    (new CDiv())
-        ->addClass('stat-card')
-        ->addItem((new CSpan('📊'))->addClass('stat-icon'))
-        ->addItem(
-            (new CDiv())
-                ->addClass('stat-content')
-                ->addItem((new CDiv($data['total_hosts'] ?? 0))->addClass('stat-number'))
-                ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
-        )
-);
-
-// 主机分组数
-$statsContainer->addItem(
-    (new CDiv())
-        ->addClass('stat-card')
-        ->addItem((new CSpan('🗂️'))->addClass('stat-icon'))
-        ->addItem(
-            (new CDiv())
-                ->addClass('stat-content')
-                ->addItem((new CDiv(count($data['host_groups'] ?? [])))->addClass('stat-number'))
-                ->addItem((new CDiv(LanguageManager::t('Host Groups')))->addClass('stat-label'))
-        )
-);
-
-// 当前页活跃主机
-$statsContainer->addItem(
-    (new CDiv())
-        ->addClass('stat-card')
-        ->addItem((new CSpan('✅'))->addClass('stat-icon'))
-        ->addItem(
-            (new CDiv())
-                ->addClass('stat-content')
-                ->addItem((new CDiv(countActiveHosts($data['hosts'] ?? [])))->addClass('stat-number'))
-                ->addItem((new CDiv(LanguageManager::t('Active (Current Page)')))->addClass('stat-label'))
-        )
-);
-
-$content->addItem($statsContainer);
-
-// 顶部分页组件
-$content->addItem(createPagination($data));
 
 // 创建表格
 $table = new CTable();
 $table->addClass('hosts-table');
 
-// 表头
+// 添加表头（带排序链接）
 $header = [
     createSortLink(LanguageManager::t('Host Name'), 'name', $data),
     createSortLink(LanguageManager::t('System Name'), 'system_name', $data),
@@ -792,44 +594,44 @@ if (empty($data['hosts'])) {
     // 添加主机数据行
     foreach ($data['hosts'] as $host) {
         // 获取主要IP地址
-        $mainIp = '-';
+        $mainIp = '';
         $interfaceTypes = [];
-        
-        if (!empty($host['interfaces'])) {
-            foreach ($host['interfaces'] as $interface) {
-                if (isset($interface['main']) && $interface['main'] == 1) {
-                    $mainIp = !empty($interface['ip']) ? $interface['ip'] : (!empty($interface['dns']) ? $interface['dns'] : '-');
-                }
-
-                // 收集接口类型
-                $typeClass = '';
-                $typeText = '';
-                switch ($interface['type']) {
-                    case 1:
-                        $typeClass = 'interface-agent';
-                        $typeText = LanguageManager::t('Agent');
-                        break;
-                    case 2:
-                        $typeClass = 'interface-snmp';
-                        $typeText = LanguageManager::t('SNMP');
-                        break;
-                    case 3:
-                        $typeClass = 'interface-ipmi';
-                        $typeText = LanguageManager::t('IPMI');
-                        break;
-                    case 4:
-                        $typeClass = 'interface-jmx';
-                        $typeText = LanguageManager::t('JMX');
-                        break;
-                }
-
-                if (!empty($typeText)) {
-                    $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
-                }
+        foreach ($host['interfaces'] as $interface) {
+            if ($interface['main'] == 1) {
+                $mainIp = !empty($interface['ip']) ? $interface['ip'] : $interface['dns'];
             }
-        }
 
-        // 获取主机分组
+            // 收集接口类型
+            $typeClass = '';
+            $typeText = '';
+            $typeIcon = '';
+            switch ($interface['type']) {
+                case 1:
+                    $typeClass = 'interface-agent';
+                    $typeIcon = '🤖';
+                    $typeText = LanguageManager::t('Agent');
+                    break;
+                case 2:
+                    $typeClass = 'interface-snmp';
+                    $typeIcon = '📡';
+                    $typeText = LanguageManager::t('SNMP');
+                    break;
+                case 3:
+                    $typeClass = 'interface-ipmi';
+                    $typeIcon = '🔧';
+                    $typeText = LanguageManager::t('IPMI');
+                    break;
+                case 4:
+                    $typeClass = 'interface-jmx';
+                    $typeIcon = '☕';
+                    $typeText = LanguageManager::t('JMX');
+                    break;
+            }
+
+            if (!empty($typeText)) {
+                $interfaceTypes[] = (new CSpan($typeText))->addClass('interface-type ' . $typeClass);
+            }
+        }        // 获取主机分组
         $groupNames = [];
         if (isset($host['groups']) && is_array($host['groups'])) {
             $groupNames = array_column($host['groups'], 'name');
@@ -841,25 +643,34 @@ if (empty($data['hosts'])) {
             (new CLink(htmlspecialchars($host['name']), 'zabbix.php?action=host.view&hostid=' . $host['hostid']))
                 ->addClass('host-link')
         );
-        $hostNameCol->addItem((new CDiv())->addItem(getHostStatusDisplay($host)));
+        $hostNameCol->addItem(
+            (new CDiv())
+                ->addItem(
+                    getHostStatusDisplay($host)
+                )
+        );
 
         // 系统名称
         $systemNameCol = new CCol();
-        if (!empty($host['system_name'])) {
+        if (isset($host['system_name']) && $host['system_name'] !== null) {
             $systemNameCol->addItem(
-                (new CSpan(htmlspecialchars($host['system_name'])))->addClass('code-display')
+                (new CSpan(htmlspecialchars($host['system_name'])))->setAttribute('style', 'font-family: monospace; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
             );
         } else {
             $systemNameCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
 
         // IP地址
-        $ipCol = new CCol((new CSpan(htmlspecialchars($mainIp)))->addClass('code-display'));
+        $ipCol = new CCol(
+            (new CSpan(htmlspecialchars($mainIp)))->addClass('code-display')->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
+        );
 
         // 架构
         $archCol = new CCol();
-        if (!empty($host['os_architecture'])) {
-            $archCol->addItem((new CSpan(htmlspecialchars($host['os_architecture'])))->addClass('code-display'));
+        if (isset($host['os_architecture']) && $host['os_architecture'] !== null) {
+            $archCol->addItem(
+                (new CSpan(htmlspecialchars($host['os_architecture'])))->setAttribute('style', 'font-family: monospace; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
+            );
         } else {
             $archCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
         }
@@ -867,7 +678,7 @@ if (empty($data['hosts'])) {
         // 接口类型
         $interfaceCol = new CCol();
         if (!empty($interfaceTypes)) {
-            $interfaceContainer = new CDiv();
+            $interfaceContainer = (new CDiv())->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;');
             foreach ($interfaceTypes as $interfaceType) {
                 $interfaceContainer->addItem($interfaceType);
             }
@@ -878,9 +689,9 @@ if (empty($data['hosts'])) {
 
         // CPU总量
         $cpuCol = new CCol();
-        if ($host['cpu_total'] !== null) {
+        if ($host['cpu_total'] !== '-') {
             $cpuCol->addItem([
-                (new CSpan($host['cpu_total']))->setAttribute('style', 'font-weight: 600; color: #4f46e5;'),
+                (new CSpan(htmlspecialchars($host['cpu_total'])))->setAttribute('style', 'font-weight: 600; color: #4f46e5;'),
                 ' ',
                 (new CSpan('cores'))->setAttribute('style', 'color: #6c757d; font-size: 12px;')
             ]);
@@ -890,20 +701,19 @@ if (empty($data['hosts'])) {
 
         // CPU使用率
         $cpuUsageCol = new CCol();
-        if ($host['cpu_usage'] !== null) {
-            $usageValue = floatval($host['cpu_usage']);
-            $usageColor = '#28a745';
-            $usageIcon = '🟢';
+        if ($host['cpu_usage'] !== '-') {
+            $usageValue = floatval(str_replace('%', '', $host['cpu_usage']));
+            $usageColor = '#28a745'; // 绿色
+            $usageIcon = '🟢'; // 正常
             if ($usageValue > 80) {
-                $usageColor = '#dc3545';
-                $usageIcon = '🔴';
+                $usageColor = '#dc3545'; // 红色
+                $usageIcon = '🔴'; // 高负载
             } elseif ($usageValue > 60) {
-                $usageColor = '#ffc107';
-                $usageIcon = '🟡';
+                $usageColor = '#ffc107'; // 黄色
+                $usageIcon = '🟡'; // 中等负载
             }
             $cpuUsageCol->addItem(
-                (new CSpan($usageIcon . ' ' . number_format($usageValue, 1) . '%'))
-                    ->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+                (new CSpan($usageIcon . ' ' . htmlspecialchars($host['cpu_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
             );
         } else {
             $cpuUsageCol->addItem((new CSpan('⚪ -'))->setAttribute('style', 'color: #6c757d;'));
@@ -911,10 +721,9 @@ if (empty($data['hosts'])) {
 
         // 内存总量
         $memoryCol = new CCol();
-        if ($host['memory_total'] !== null) {
+        if ($host['memory_total'] !== '-') {
             $memoryCol->addItem(
-                (new CSpan(ItemFinder::formatMemorySize($host['memory_total'])))
-                    ->setAttribute('style', 'font-weight: 600; color: #059669;')
+                (new CSpan(htmlspecialchars($host['memory_total'])))->setAttribute('style', 'font-weight: 600; color: #059669;')
             );
         } else {
             $memoryCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
@@ -922,20 +731,19 @@ if (empty($data['hosts'])) {
 
         // 内存使用率
         $memoryUsageCol = new CCol();
-        if ($host['memory_usage'] !== null) {
-            $usageValue = floatval($host['memory_usage']);
-            $usageColor = '#28a745';
-            $usageIcon = '🟢';
+        if ($host['memory_usage'] !== '-') {
+            $usageValue = floatval(str_replace('%', '', $host['memory_usage']));
+            $usageColor = '#28a745'; // 绿色
+            $usageIcon = '🟢'; // 正常
             if ($usageValue > 80) {
-                $usageColor = '#dc3545';
-                $usageIcon = '🔴';
+                $usageColor = '#dc3545'; // 红色
+                $usageIcon = '🔴'; // 高负载
             } elseif ($usageValue > 60) {
-                $usageColor = '#ffc107';
-                $usageIcon = '🟡';
+                $usageColor = '#ffc107'; // 黄色
+                $usageIcon = '🟡'; // 中等负载
             }
             $memoryUsageCol->addItem(
-                (new CSpan($usageIcon . ' ' . number_format($usageValue, 1) . '%'))
-                    ->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
+                (new CSpan($usageIcon . ' ' . htmlspecialchars($host['memory_usage'])))->setAttribute('style', 'font-weight: 600; color: ' . $usageColor . ';')
             );
         } else {
             $memoryUsageCol->addItem((new CSpan('⚪ -'))->setAttribute('style', 'color: #6c757d;'));
@@ -943,10 +751,33 @@ if (empty($data['hosts'])) {
 
         // 操作系统
         $osCol = new CCol();
-        if (!empty($host['operating_system'])) {
+        if (isset($host['operating_system']) && $host['operating_system'] !== null) {
+            $osName = $host['operating_system'];
+            $osIcon = '💻'; // 默认图标
+            
+            // 根据操作系统类型设置图标
+            if (stripos($osName, 'windows') !== false) {
+                $osIcon = '🪟';
+            } elseif (stripos($osName, 'linux') !== false) {
+                $osIcon = '🐧';
+            } elseif (stripos($osName, 'ubuntu') !== false) {
+                $osIcon = '🟠';
+            } elseif (stripos($osName, 'centos') !== false || stripos($osName, 'red hat') !== false) {
+                $osIcon = '🔴';
+            } elseif (stripos($osName, 'debian') !== false) {
+                $osIcon = '🔵';
+            } elseif (stripos($osName, 'mac') !== false || stripos($osName, 'darwin') !== false) {
+                $osIcon = '🍎';
+            } elseif (stripos($osName, 'freebsd') !== false) {
+                $osIcon = '👿';
+            } elseif (stripos($osName, 'solaris') !== false) {
+                $osIcon = '☀️';
+            }
+            
             $osCol->addItem(
-                (new CSpan(htmlspecialchars($host['operating_system'])))
-                    ->setAttribute('title', htmlspecialchars($host['operating_system']))
+                (new CSpan(htmlspecialchars($osName)))
+                    ->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;')
+                    ->setAttribute('title', htmlspecialchars($osName))
             );
         } else {
             $osCol->addItem((new CSpan('❓ -'))->setAttribute('style', 'color: #6c757d;'));
@@ -954,9 +785,11 @@ if (empty($data['hosts'])) {
 
         // 主机分组
         $groupCol = new CCol();
-        $groupContainer = new CDiv();
+        $groupContainer = (new CDiv())->setAttribute('style', 'display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; max-height: 3.8em;');
         foreach ($groupNames as $groupName) {
-            $groupContainer->addItem((new CSpan(htmlspecialchars($groupName)))->addClass('group-tag'));
+            $groupContainer->addItem(
+                (new CSpan(htmlspecialchars($groupName)))->addClass('group-tag')
+            );
             $groupContainer->addItem(' ');
         }
         $groupCol->addItem($groupContainer);
@@ -979,34 +812,47 @@ if (empty($data['hosts'])) {
 
 $content->addItem($table);
 
-// 底部分页组件
-$content->addItem(createPagination($data));
+// 添加JavaScript
+$content->addItem(new CTag('script', true, '
+// 添加自动搜索功能
+// 全局变量用于防抖
+var searchTimeout;
 
-// JavaScript 数据
-$jsData = json_encode([
-    'action' => 'cmdb',
-    'page' => $data['page'],
-    'per_page' => $data['per_page'],
-    'total_pages' => $data['total_pages'],
-    'search' => $data['search'] ?? '',
-    'groupid' => $data['selected_groupid'] ?? 0,
-    'interface_type' => $data['interface_type'] ?? 0,
-    'sort' => $data['sort'] ?? 'name',
-    'sortorder' => $data['sortorder'] ?? 'ASC',
-], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+function handleSearchInput(input) {
+    clearTimeout(searchTimeout);
+    var form = input.closest("form");
 
-// 使用 heredoc 语法避免 HTML 编码问题
-$jsCode = <<<JAVASCRIPT
-window.cmdbPageData = {$jsData};
-JAVASCRIPT;
+    searchTimeout = setTimeout(function() {
+        if (form) {
+            form.submit();
+        }
+    }, 500);
+}
 
-$content->addItem(new CScriptTag($jsCode));
+function handleGroupChange(select) {
+    var form = select.closest("form");
 
-// 加载外部 JS 文件
-$content->addItem((new CTag('script', true))
-    ->setAttribute('src', 'modules/zabbix_cmdb/assets/js/cmdb.js')
-    ->setAttribute('type', 'text/javascript'));
+    if (form) {
+        form.submit();
+    }
+}
 
-// 渲染页面
+function handleInterfaceTypeChange(select) {
+    var form = select.closest("form");
+
+    if (form) {
+        form.submit();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // 可以在这里添加额外的初始化逻辑
+    var searchInput = document.querySelector("input[name=\"search\"]");
+    var groupSelect = document.getElementById("groupid-select");
+    var interfaceTypeSelect = document.getElementById("interface-type-select");
+});
+'));
+
+// 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
 ViewRenderer::render($pageTitle, $styleTag, $content);
 

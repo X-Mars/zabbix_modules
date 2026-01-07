@@ -4,9 +4,9 @@
     "name": "Zabbix CMDB",
     "author": "火星小刘",
     "url": "https://github.com/X-Mars/zabbix_modules",
-    "version": "1.2.0",
+    "version": "1.1.0",
     "namespace": "ZabbixCmdb",
-    "description": "Configuration Management Database for Zabbix - Optimized with pagination support",
+    "description": "Configuration Management Database for Zabbix",
     "actions": {
         "cmdb": {
             "class": "Cmdb",
@@ -15,6 +15,9 @@
         "cmdb.groups": {
             "class": "CmdbGroups",
             "view": "cmdb.groups"
+        },
+        "cmdb.debug": {
+            "class": "CmdbDebug"
         }
     }
 }
