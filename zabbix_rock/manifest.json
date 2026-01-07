@@ -1,0 +1,44 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-rock",
+    "name": "Zabbix Rock",
+    "version": "1.1.0",
+    "namespace": "ZabbixRock",
+    "author": "火星小刘",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "description": "Data center rack visualization and host placement management module for Zabbix. Supports room/rack management and visual host assignment.",
+    "actions": {
+        "rack.view": {
+            "class": "RackView",
+            "view": "rack.view"
+        },
+        "rack.manage": {
+            "class": "RackManage",
+            "view": "rack.manage"
+        },
+        "room.save": {
+            "class": "RoomSave"
+        },
+        "room.delete": {
+            "class": "RoomDelete"
+        },
+        "rack.save": {
+            "class": "RackSave"
+        },
+        "rack.delete": {
+            "class": "RackDelete"
+        },
+        "host.assign": {
+            "class": "HostAssign"
+        },
+        "host.remove": {
+            "class": "HostRemove"
+        },
+        "hosts.get": {
+            "class": "HostsGet"
+        },
+        "host.problems": {
+            "class": "HostProblems"
+        }
+    }
+}
