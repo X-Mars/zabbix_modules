@@ -22,7 +22,6 @@ class LanguageManager {
             'IP Address' => 'IP地址',
             'Interface Type' => '接口方式',
             'All Interfaces' => '所有接口',
-            'Interface Type' => '接口方式',
             'CPU Total' => 'CPU总量',
             'CPU Usage' => 'CPU使用率',
             'Memory Total' => '内存总量',
@@ -57,7 +56,20 @@ class LanguageManager {
             'Basic Group' => '基础分组',
             'hosts' => '个主机',
             'cores' => '核',
-            'Invalid input parameters.' => '无效的输入参数。'
+            'Invalid input parameters.' => '无效的输入参数。',
+            // 分页相关
+            'Showing %d-%d of %d hosts' => '显示 %d-%d / 共 %d 个主机',
+            'Showing %d-%d of %d groups' => '显示 %d-%d / 共 %d 个分组',
+            'per page' => '条/页',
+            'Go to' => '跳转到',
+            'Go' => '跳转',
+            'First Page' => '第一页',
+            'Last Page' => '最后一页',
+            'Previous Page' => '上一页',
+            'Next Page' => '下一页',
+            'Invalid page number' => '无效的页码',
+            'Total Groups' => '分组总数',
+            'Active (Current Page)' => '当前页活跃'
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -70,7 +82,6 @@ class LanguageManager {
             'IP Address' => 'IP Address',
             'Interface Type' => 'Interface Type',
             'All Interfaces' => 'All Interfaces',
-            'Interface Type' => 'Interface Type',
             'CPU Total' => 'CPU Total',
             'CPU Usage' => 'CPU Usage',
             'Memory Total' => 'Memory Total',
@@ -105,7 +116,20 @@ class LanguageManager {
             'Basic Group' => 'Basic Group',
             'hosts' => 'hosts',
             'cores' => 'cores',
-            'Invalid input parameters.' => 'Invalid input parameters.'
+            'Invalid input parameters.' => 'Invalid input parameters.',
+            // Pagination related
+            'Showing %d-%d of %d hosts' => 'Showing %d-%d of %d hosts',
+            'Showing %d-%d of %d groups' => 'Showing %d-%d of %d groups',
+            'per page' => 'per page',
+            'Go to' => 'Go to',
+            'Go' => 'Go',
+            'First Page' => 'First Page',
+            'Last Page' => 'Last Page',
+            'Previous Page' => 'Previous Page',
+            'Next Page' => 'Next Page',
+            'Invalid page number' => 'Invalid page number',
+            'Total Groups' => 'Total Groups',
+            'Active (Current Page)' => 'Active (Current Page)'
         ]
     ];
 

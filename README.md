@@ -8,6 +8,7 @@
 
 - ✅ Zabbix 6.0.x
 - ✅ Zabbix 7.0.x
+- ✅ Zabbix 7.4.x
 
 ## 描述
 
@@ -89,28 +90,35 @@
 
 这是最简单快捷的安装方式，一次性部署所有模块：
 
-1. **克隆项目到Zabbix模块目录**：
+1. **zabbix 6.0 / 7.0 部署方法**
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   git clone https://github.com/X-Mars/zabbix_modules.git .
-   ```
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
 
    注意：命令末尾的 `.` 表示克隆到当前目录。
 
-2. **如果使用Zabbix 6.0，修改manifest_version**：
+2. **zabbix 7.4 部署方法**
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   # 修改 zabbix_reports 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
-   
-   # 修改 zabbix_cmdb 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
-   
-   # 修改 zabbix_graphtrees 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-   ```
+```bash
+cd /usr/share/zabbix/ui/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
+
+3. **如果使用Zabbix 6.0，修改manifest_version**
+
+```bash
+cd /usr/share/zabbix/modules/
+# 修改 zabbix_reports 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+
+# 修改 zabbix_cmdb 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+
+# 修改 zabbix_graphtrees 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
+```
 
    如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
 
@@ -143,141 +151,138 @@ Each module has independent installation instructions. Please refer to the READM
 
 ## English
 
+## ✨ Version Compatibility
+
+All modules are compatible with both Zabbix 6.0 and Zabbix 7.0+.
+
+- ✅ Zabbix 6.0.x
+- ✅ Zabbix 7.0.x
+- ✅ Zabbix 7.4.x
+
 ## Description
 
-This is a collection of Zabbix modules, where each module is an independent Zabbix extension that provides additional functionality to the Zabbix monitoring system.
+This repository contains a collection of Zabbix frontend modules. Each module is an independent extension that adds features to the Zabbix web UI.
 
 ## Module List
 
 ### 1. Zabbix Reports
 
-**Description**: A frontend module for Zabbix 7.0 that generates daily, weekly, and monthly reports. It supports report preview, PDF export, and email push functionality.
+Description: frontend module for generating daily, weekly and monthly reports. Features include report preview, PDF export and email push.
 
-**Features**:
+Features:
 
-- Support for daily, weekly, and monthly report generation
-- Problem count and status statistics
-- Display top problem hosts (Top 10)
-- Display top CPU and memory utilization hosts (Top 10)
+- Daily, weekly and monthly report generation
+- Problem counts and status statistics
+- Top problem hosts (top 10)
+- Top CPU and memory utilization hosts (top 10)
 - In-page report preview
 - Manual PDF export
-- Email push reports (HTML format)
+- Email push (HTML format)
 
-**Documentation**: [zabbix_reports/README.md](./zabbix_reports/README.md)
+Documentation: [zabbix_reports/README.md](./zabbix_reports/README.md)
 
-**Author**: 火星小刘  
-**Version**: 1.1.0  
-**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
+Author: 火星小刘  
+Version: 1.1.0  
+Compatibility: Zabbix 6.0.x, 7.0.x (auto-adaptive)
 
 ### 2. Zabbix CMDB
 
-**Description**: A frontend module for Zabbix 7.0 that provides Configuration Management Database (CMDB) functionality, offering centralized viewing and management of host information.
+Description: frontend CMDB module for centralized viewing and management of host information.
 
-**Features**:
+Features:
 
-- Support searching by hostname or IP address
-- Support filtering by host groups
+- Search by hostname or IP address
+- Filter by host groups
 - Display host name, IP address, interface type, CPU total, memory total, host groups
-- Support for Chinese and English interfaces
-- Responsive design that adapts to different screen sizes
+- Chinese and English localization
+- Responsive layout for different screen sizes
 
-**Documentation**: [zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
+Documentation: [zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
-**Author**: 火星小刘  
-**Version**: 1.1.0  
-**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
+Author: 火星小刘  
+Version: 1.1.0  
+Compatibility: Zabbix 6.0.x, 7.0.x (auto-adaptive)
 
 ### 3. Zabbix Graph Trees
 
-**Description**: A frontend module for Zabbix that provides tree-structured browsing of monitoring data, featuring host group tree navigation, item filtering, and real-time chart display.
+Description: frontend module for tree-structured browsing of monitoring data, with host group tree navigation, item filtering and real-time charts.
 
-**Features**:
+Features:
 
 - Tree-structured browsing of host groups and hosts
 - Filter items by tags and tag values
-- Multi-select dropdown for flexible chart selection
-- SVG line charts for real-time monitoring data display
-- Synchronized tooltip display across multiple charts
-- Full-screen chart zoom view
-- Auto-refresh functionality (5/10/20/30/60 second intervals)
-- Multiple time range selections (1 hour to 30 days)
-- Support for Chinese and English interfaces
+- Multi-select item selector for flexible chart selection
+- SVG line charts for real-time data
+- Synchronized tooltips across multiple charts
+- Fullscreen chart view
+- Auto-refresh (5/10/20/30/60s)
+- Multiple time ranges (1 hour to 30 days)
+- Chinese and English localization
 
-**Documentation**: [zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
+Documentation: [zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
 
 ![Screenshot](zabbix_graphtrees/images/1.png)
 
-**Author**: 火星小刘  
-**Version**: 1.0.0  
-**Compatibility**: Zabbix 6.0.x, 7.0.x (Auto-adaptive)
+Author: 火星小刘  
+Version: 1.0.0  
+Compatibility: Zabbix 6.0.x, 7.0.x (auto-adaptive)
 
 ## Installation Instructions
 
-### ⚠️ Important: Modify manifest.json Based on Your Zabbix Version
+### ⚠️ Important: Modify `manifest.json` Based on Your Zabbix Version
 
-**Before installation, please modify the `manifest.json` file of each module according to your Zabbix version:**
+Before installation, update the `manifest.json` of each module according to your Zabbix version:
 
-- **Zabbix 6.0**: Change `"manifest_version": 2.0` to `"manifest_version": 1.0`
-- **Zabbix 7.0+**: Keep `"manifest_version": 2.0` as default
+- Zabbix 6.0: change `"manifest_version": 2.0` to `"manifest_version": 1.0`
+- Zabbix 7.0+: keep `"manifest_version": 2.0`
 
-### Recommended Method: Install All Modules Using Git Clone (Preferred)
+### Recommended: Install All Modules via Git (preferred)
 
-This is the simplest and fastest way to deploy all modules at once:
+One-step install for all modules:
 
-1. **Clone the project to Zabbix modules directory**:
+Zabbix 6.0 / 7.0:
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   git clone https://github.com/X-Mars/zabbix_modules.git .
-   ```
+Zabbix 7.4:
+```bash
+cd /usr/share/zabbix/ui/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
 
-   Note: The `.` at the end means clone to the current directory.
-
-2. **For Zabbix 6.0, modify manifest_version**:
-
-   ```bash
-   cd /usr/share/zabbix/modules/
-   # Modify zabbix_reports module
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
-   
-   # Modify zabbix_cmdb module
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
-   
-   # Modify zabbix_graphtrees module
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-   ```
-
-   For Zabbix 7.0+, no modification needed, keep the default value.
+For Zabbix 6.0, adjust `manifest_version` after copying files:
+```bash
+cd /usr/share/zabbix/modules/
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
+```
 
 ### Enable Modules
 
-After deploying the files, enable the modules in Zabbix Web UI:
-
-1. Go to Zabbix Web UI
-2. Navigate to **Administration → General → Modules**
-3. Click **Scan directory** to scan for new modules
-4. Find and enable "Zabbix Reports", "Zabbix CMDB" and "Zabbix Graph Trees" modules
+1. Open Zabbix Web UI
+2. Go to Administration → General → Modules
+3. Click "Scan directory"
+4. Enable the modules: "Zabbix Reports", "Zabbix CMDB", "Zabbix Graph Trees"
 
 ### Verify Installation
 
-After refreshing the page, you will see the new modules in the respective menus:
+After enabling and refreshing the UI you should see:
 
-- **Reports → Zabbix Reports** (Daily/Weekly/Monthly reports)
-- **Inventory → CMDB** (Host List/Host Groups)
-- **Monitoring → Graph Trees** (Graph Trees)
+- Reports → Zabbix Reports (Daily/Weekly/Monthly)
+- Inventory → CMDB (Host List / Host Groups)
+- Monitoring → Graph Trees
 
-### Install Individual Modules
+### Individual Module Install
 
-Each module has independent installation instructions. Please refer to the README.md file of each module for detailed installation and configuration steps.
+Each module has its own README with detailed instructions. See the module folders for more information.
 
-## 贡献 / Contributing
+## Contributing
 
-欢迎提交问题报告和功能改进建议。请在相应模块的目录下提交问题。
+Issues and feature suggestions are welcome. Please open issues in the appropriate module directory.
 
-Issues and feature improvement suggestions are welcome. Please submit issues in the appropriate module directory.
+## License
 
-## 许可证 / License
-
-所有模块遵循Zabbix的许可证条款。详情请见 [Zabbix许可证](https://www.zabbix.com/license)。
-
-All modules follow the Zabbix license terms. For details, see [Zabbix License](https://www.zabbix.com/license).
+All modules follow Zabbix license terms. See: https://www.zabbix.com/license

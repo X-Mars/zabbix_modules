@@ -6,8 +6,9 @@
 
 ### 本模块同时兼容 Zabbix 6.0 和 Zabbix 7.0+ / Compatible with both Zabbix 6.0 and Zabbix 7.0+
 
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
+- ✅ Zabbix 6.0.40+
+- ✅ Zabbix 7.0.10+
+- ✅ Zabbix 7.4.x
 
 ### 自动版本检测,无需手动配置 / Automatic version detection, no manual configuration needed
 
@@ -25,17 +26,32 @@ The module includes intelligent version detection that automatically adapts to d
 
 ## 功能特性
 
+### v1.2.0 新特性 🆕
+
+- **分页功能**：支持大量主机时的性能优化
+  - 页码切换（首页、上一页、下一页、末页）
+  - 每页显示数量切换（10/25/50/100）
+  - 页面跳转功能
+- **动态统计**：CPU/内存总量根据搜索和筛选条件动态计算（非仅当前页）
+- **性能优化**：批量API查询，大幅减少API调用次数
+- **多监控项支持**：自动匹配Zabbix官方模板中的多种监控项key
+
+### 核心功能
+
 - **主机搜索**：支持通过主机名或IP地址进行搜索
 - **分组筛选**：支持按主机分组进行筛选
+- **接口类型筛选**：支持按Agent、SNMP、IPMI、JMX筛选
 - **主机信息展示**：
   - 主机名（可点击跳转到主机详情）
+  - 系统名称
   - IP地址
+  - 系统架构
   - 接口方式（Agent、SNMP、IPMI、JMX）
-  - CPU总量
-  - 内存总量
-  - 内核版本
+  - CPU总量和使用率
+  - 内存总量和使用率
+  - 操作系统信息
   - 主机分组
-  - 主机状态（活跃/禁用）
+  - 主机状态（可用/不可用/维护中）
 - **主机分组管理**：查看所有主机分组的统计信息
 - **分组搜索**：支持按分组名称搜索
 - **分组统计**：显示分组中的主机数量、CPU总量、内存总量
@@ -63,21 +79,43 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 # 无需修改，默认即可
 ```
 
-### 推荐方法：使用Git克隆安装（首选）
+### 推荐方法：使用Git克隆安装所有模块（首选）
 
-直接克隆项目到Zabbix的modules目录，这是最简单快捷的方式：
+这是最简单快捷的安装方式，一次性部署所有模块：
+
+1. **zabbix 6.0 / 7.0 部署方法**
 
 ```bash
 cd /usr/share/zabbix/modules/
 git clone https://github.com/X-Mars/zabbix_modules.git .
 ```
 
+   注意：命令末尾的 `.` 表示克隆到当前目录。
+
+2. **zabbix 7.4 部署方法**
+
 ```bash
-# ⚠️ 如果使用Zabbix 6.0，修改manifest_version
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+cd /usr/share/zabbix/ui/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
 ```
 
-然后在Zabbix Web界面中启用模块：
+3. **如果使用Zabbix 6.0，修改manifest_version**
+
+```bash
+cd /usr/share/zabbix/modules/
+# 修改 zabbix_reports 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+
+# 修改 zabbix_cmdb 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+
+# 修改 zabbix_graphtrees 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
+```
+
+   如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
+
+### 启用模块
 
 1. 转到 **Administration → General → Modules**。
 2. 点击 **Scan directory** 按钮扫描新模块。
