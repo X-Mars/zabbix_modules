@@ -11,9 +11,11 @@ use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
 use Modules\ZabbixRock\Lib\LanguageManager;
 use Modules\ZabbixRock\Lib\RackConfig;
+use Modules\ZabbixRock\Lib\HostRackManager;
 
 class RackManage extends CController {
     
@@ -47,8 +49,25 @@ class RackManage extends CController {
             $roomNames[$room['id']] = $room['name'];
         }
         
+        // 计算每个机柜的已使用 U 位
         foreach ($racks as &$rack) {
             $rack['room_name'] = $roomNames[$rack['room_id']] ?? '';
+            
+            // 获取机柜中的主机来计算已使用 U 位
+            $usedU = 0;
+            if (!empty($rack['room_name']) && !empty($rack['name'])) {
+                try {
+                    $hosts = HostRackManager::getHostsInRack($rack['room_name'], $rack['name']);
+                    foreach ($hosts as $host) {
+                        if (isset($host['u_height']) && $host['u_height'] > 0) {
+                            $usedU += $host['u_height'];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // 忽略错误，使用默认值
+                }
+            }
+            $rack['used_u'] = $usedU;
         }
         
         $data = [

@@ -68,15 +68,20 @@ class RackView extends CController {
         $currentRack = null;
         $hosts = [];
         
+        // 新增：所有机柜的数据（用于多机柜展示）
+        $allRacksData = [];
+        $showOverview = false; // 是否展示机柜概览模式
+        
         if ($rackId) {
+            // 用户选择了特定机柜，展示单机柜详情
             $currentRack = RackConfig::getRack($rackId);
-        } elseif (!empty($racks)) {
-            // 默认选择第一个机柜
-            $currentRack = $racks[0];
-            $rackId = $currentRack['id'];
+            $showOverview = false;
+        } else {
+            // 没有选择机柜，展示当前机房所有机柜概览
+            $showOverview = true;
         }
         
-        // 获取机柜中的主机
+        // 获取机柜中的主机 - 单机柜模式
         if ($currentRack) {
             $roomInfo = RackConfig::getRoom($currentRack['room_id']);
             $roomName = $roomInfo ? $roomInfo['name'] : '';
@@ -93,12 +98,88 @@ class RackView extends CController {
                     if (isset($hostProblems[$hostId])) {
                         $host['problem_count'] = $hostProblems[$hostId]['count'];
                         $host['problems'] = $hostProblems[$hostId]['problems'];
+                        // 获取最高严重程度
+                        $host['max_severity'] = 0;
+                        foreach ($hostProblems[$hostId]['problems'] as $problem) {
+                            if ($problem['severity'] > $host['max_severity']) {
+                                $host['max_severity'] = $problem['severity'];
+                            }
+                        }
                     } else {
                         $host['problem_count'] = 0;
                         $host['problems'] = [];
+                        $host['max_severity'] = -1; // 无告警
                     }
                 }
                 unset($host);
+            }
+        }
+        
+        // 获取所有机柜的数据 - 概览模式
+        if ($showOverview && !empty($racks)) {
+            $roomInfo = RackConfig::getRoom($roomId);
+            $roomName = $roomInfo ? $roomInfo['name'] : '';
+            
+            foreach ($racks as $rack) {
+                $rackHosts = HostRackManager::getHostsInRack($roomName, $rack['name']);
+                $rackProblems = 0;
+                $maxSeverity = -1; // -1 表示无告警
+                $hostCount = count($rackHosts);
+                $usedU = 0;
+                
+                // 获取主机告警
+                if (!empty($rackHosts)) {
+                    $hostIds = array_column($rackHosts, 'hostid');
+                    $hostProblemsData = HostRackManager::getHostProblems($hostIds);
+                    
+                    // 遍历主机并添加告警信息
+                    foreach ($rackHosts as &$host) {
+                        $usedU += ($host['u_end'] - $host['u_start'] + 1);
+                        $hostId = $host['hostid'];
+                        
+                        if (isset($hostProblemsData[$hostId])) {
+                            $host['problem_count'] = $hostProblemsData[$hostId]['count'];
+                            $host['problems'] = $hostProblemsData[$hostId]['problems'];
+                            // 获取最高严重程度
+                            $host['max_severity'] = 0;
+                            foreach ($hostProblemsData[$hostId]['problems'] as $problem) {
+                                if ($problem['severity'] > $host['max_severity']) {
+                                    $host['max_severity'] = $problem['severity'];
+                                }
+                                // 更新机柜级别的最高严重程度
+                                if ($problem['severity'] > $maxSeverity) {
+                                    $maxSeverity = $problem['severity'];
+                                }
+                            }
+                            $rackProblems += $hostProblemsData[$hostId]['count'];
+                        } else {
+                            $host['problem_count'] = 0;
+                            $host['problems'] = [];
+                            $host['max_severity'] = -1; // 无告警
+                        }
+                        
+                        // 将groups数组转换为字符串，方便前端显示
+                        if (is_array($host['groups'])) {
+                            $host['groups'] = implode(', ', $host['groups']);
+                        }
+                        // 添加ip别名，确保前端可以访问
+                        $host['ip'] = $host['main_ip'] ?? '';
+                    }
+                    unset($host); // 解除引用
+                }
+                
+                $allRacksData[] = [
+                    'id' => $rack['id'],
+                    'name' => $rack['name'],
+                    'room_id' => $rack['room_id'] ?? $roomId,
+                    'height' => $rack['height'] ?? 42,
+                    'description' => $rack['description'] ?? '',
+                    'host_count' => $hostCount,
+                    'used_u' => $usedU,
+                    'problem_count' => $rackProblems,
+                    'max_severity' => $maxSeverity,
+                    'hosts' => $rackHosts
+                ];
             }
         }
         
@@ -121,7 +202,9 @@ class RackView extends CController {
             'search' => $search,
             'search_results' => $searchResults,
             'host_groups' => $hostGroups,
-            'lang' => LanguageManager::class
+            'lang' => LanguageManager::class,
+            'show_overview' => $showOverview,
+            'all_racks_data' => $allRacksData
         ];
         
         $response = new CControllerResponseData($data);
