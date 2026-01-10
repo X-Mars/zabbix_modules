@@ -8,6 +8,7 @@
 
 - ✅ Zabbix 6.0.x
 - ✅ Zabbix 7.0.x
+- ✅ Zabbix 7.4.x
 
 ## 描述
 
@@ -89,28 +90,35 @@
 
 这是最简单快捷的安装方式，一次性部署所有模块：
 
-1. **克隆项目到Zabbix模块目录**：
+1. **zabbix 6.0 / 7.0 部署方法**
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   git clone https://github.com/X-Mars/zabbix_modules.git .
-   ```
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
 
    注意：命令末尾的 `.` 表示克隆到当前目录。
 
-2. **如果使用Zabbix 6.0，修改manifest_version**：
+2. **zabbix 7.4 部署方法**
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   # 修改 zabbix_reports 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
-   
-   # 修改 zabbix_cmdb 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
-   
-   # 修改 zabbix_graphtrees 模块
-   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-   ```
+```bash
+cd /usr/share/zabbix/ui/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
+
+3. **如果使用Zabbix 6.0，修改manifest_version**
+
+```bash
+cd /usr/share/zabbix/modules/
+# 修改 zabbix_reports 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+
+# 修改 zabbix_cmdb 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+
+# 修改 zabbix_graphtrees 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
+```
 
    如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
 
@@ -224,12 +232,12 @@ This is a collection of Zabbix modules, where each module is an independent Zabb
 
 This is the simplest and fastest way to deploy all modules at once:
 
-1. **Clone the project to Zabbix modules directory**:
+1. **zabbix 6.0 / 7.0**:
 
-   ```bash
-   cd /usr/share/zabbix/modules/
-   git clone https://github.com/X-Mars/zabbix_modules.git .
-   ```
+```bash
+cd /usr/share/zabbix/modules/
+git clone https://github.com/X-Mars/zabbix_modules.git .
+```
 
    Note: The `.` at the end means clone to the current directory.
 
