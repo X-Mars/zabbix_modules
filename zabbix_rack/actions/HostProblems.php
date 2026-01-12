@@ -4,14 +4,14 @@
  * 返回指定主机的活跃告警信息
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
 use API;
 
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
-use Modules\ZabbixRock\Lib\HostRackManager;
+use Modules\ZabbixRack\Lib\HostRackManager;
 
 class HostProblems extends CController {
     

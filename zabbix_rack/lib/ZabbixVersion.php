@@ -3,7 +3,7 @@
  * Zabbix 版本兼容层
  */
 
-namespace Modules\ZabbixRock\Lib;
+namespace Modules\ZabbixRack\Lib;
 
 /**
  * Zabbix版本检测和兼容性工具类

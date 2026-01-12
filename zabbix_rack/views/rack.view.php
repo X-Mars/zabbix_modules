@@ -7,8 +7,8 @@
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\ViewRenderer;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\ViewRenderer;
 
 $lang = $data['lang'];
 $rooms = $data['rooms'];

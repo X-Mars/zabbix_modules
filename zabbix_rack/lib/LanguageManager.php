@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\ZabbixRock\Lib;
+namespace Modules\ZabbixRack\Lib;
 
 class LanguageManager {
     /**

@@ -8,8 +8,8 @@
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\ViewRenderer;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\ViewRenderer;
 
 // 获取数据
 $lang = $data['lang'];
@@ -919,7 +919,6 @@ $html .= '</div>';
 $html .= '<div class="form-group">';
 $html .= '<label class="form-label">' . LanguageManager::t('description') . '</label>';
 $html .= '<textarea id="room-description" name="description" class="form-control" placeholder="' . LanguageManager::t('enter_room_description') . '" maxlength="500"></textarea>';
-$html .= '<div class="form-hint">' . LanguageManager::t('optional_field') . '</div>';
 $html .= '</div>';
 
 $html .= '</form>';

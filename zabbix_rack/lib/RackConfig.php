@@ -4,7 +4,7 @@
  * 负责机房、机柜数据的存储和读取
  */
 
-namespace Modules\ZabbixRock\Lib;
+namespace Modules\ZabbixRack\Lib;
 
 class RackConfig {
     
