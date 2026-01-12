@@ -1,20 +1,20 @@
 <?php
 /**
- * 获取可分配主机列表控制器
+ * 删除机房控制器
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
-require_once dirname(__DIR__) . '/lib/HostRackManager.php';
+require_once dirname(__DIR__) . '/lib/RackConfig.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\HostRackManager;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackConfig;
 
-class HostsGet extends CController {
+class RoomDelete extends CController {
     
     protected function init(): void {
         // 兼容Zabbix 6和7
@@ -27,11 +27,19 @@ class HostsGet extends CController {
     
     protected function checkInput(): bool {
         $fields = [
-            'groupid' => 'string',
-            'search' => 'string'
+            'id' => 'required|string'
         ];
         
         $ret = $this->validateInput($fields);
+        
+        if (!$ret) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => 'Invalid input'
+            ]);
+            exit;
+        }
         
         return $ret;
     }
@@ -41,18 +49,14 @@ class HostsGet extends CController {
     }
     
     protected function doAction(): void {
-        $groupId = $this->getInput('groupid', '');
-        $search = $this->getInput('search', '');
+        $roomId = $this->getInput('id');
         
-        $hosts = HostRackManager::getAvailableHosts(
-            $groupId ?: null,
-            $search ?: null
-        );
+        $success = RackConfig::deleteRoom($roomId);
         
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => true,
-            'hosts' => $hosts
+            'success' => $success,
+            'message' => $success ? LanguageManager::t('delete_success') : LanguageManager::t('delete_failed')
         ]);
         exit;
     }

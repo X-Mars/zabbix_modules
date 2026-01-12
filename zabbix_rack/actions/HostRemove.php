@@ -1,20 +1,20 @@
 <?php
 /**
- * 保存机柜控制器
+ * 从机柜移除主机控制器
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
-require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\HostRackManager;
 
-class RackSave extends CController {
+class HostRemove extends CController {
     
     protected function init(): void {
         // 兼容Zabbix 6和7
@@ -27,11 +27,7 @@ class RackSave extends CController {
     
     protected function checkInput(): bool {
         $fields = [
-            'id' => 'string',
-            'name' => 'required|string',
-            'room_id' => 'required|string',
-            'height' => 'int32',
-            'description' => 'string'
+            'hostid' => 'required|string'
         ];
         
         $ret = $this->validateInput($fields);
@@ -53,20 +49,14 @@ class RackSave extends CController {
     }
     
     protected function doAction(): void {
-        $rack = [
-            'id' => $this->getInput('id', ''),
-            'name' => $this->getInput('name'),
-            'room_id' => $this->getInput('room_id'),
-            'height' => $this->getInput('height', 42),
-            'description' => $this->getInput('description', '')
-        ];
+        $hostId = $this->getInput('hostid');
         
-        $success = RackConfig::saveRack($rack);
+        $success = HostRackManager::removeHost($hostId);
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $success,
-            'message' => $success ? LanguageManager::t('save_success') : LanguageManager::t('save_failed')
+            'message' => $success ? LanguageManager::t('remove_success') : LanguageManager::t('remove_failed')
         ]);
         exit;
     }

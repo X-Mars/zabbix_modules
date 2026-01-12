@@ -1,11 +1,11 @@
 <?php
 
-namespace Modules\ZabbixRock;
+namespace Modules\ZabbixRack;
 
 // 动态导入版本兼容工具
 require_once __DIR__ . '/lib/ZabbixVersion.php';
-use Modules\ZabbixRock\Lib\ZabbixVersion;
-use Modules\ZabbixRock\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\ZabbixVersion;
+use Modules\ZabbixRack\Lib\LanguageManager;
 use CMenu;
 use CMenuItem;
 

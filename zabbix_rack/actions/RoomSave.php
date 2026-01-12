@@ -1,20 +1,20 @@
 <?php
 /**
- * 从机柜移除主机控制器
+ * 保存机房控制器
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
-require_once dirname(__DIR__) . '/lib/HostRackManager.php';
+require_once dirname(__DIR__) . '/lib/RackConfig.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\HostRackManager;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackConfig;
 
-class HostRemove extends CController {
+class RoomSave extends CController {
     
     protected function init(): void {
         // 兼容Zabbix 6和7
@@ -27,7 +27,9 @@ class HostRemove extends CController {
     
     protected function checkInput(): bool {
         $fields = [
-            'hostid' => 'required|string'
+            'id' => 'string',
+            'name' => 'required|string',
+            'description' => 'string'
         ];
         
         $ret = $this->validateInput($fields);
@@ -49,14 +51,18 @@ class HostRemove extends CController {
     }
     
     protected function doAction(): void {
-        $hostId = $this->getInput('hostid');
+        $room = [
+            'id' => $this->getInput('id', ''),
+            'name' => $this->getInput('name'),
+            'description' => $this->getInput('description', '')
+        ];
         
-        $success = HostRackManager::removeHost($hostId);
+        $success = RackConfig::saveRoom($room);
         
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $success,
-            'message' => $success ? LanguageManager::t('remove_success') : LanguageManager::t('remove_failed')
+            'message' => $success ? LanguageManager::t('save_success') : LanguageManager::t('save_failed')
         ]);
         exit;
     }

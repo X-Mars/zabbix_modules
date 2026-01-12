@@ -4,7 +4,7 @@
  * 兼容 Zabbix 6.0/7.0/7.4
  */
 
-namespace Modules\ZabbixRock\Lib;
+namespace Modules\ZabbixRack\Lib;
 
 class ViewRenderer {
     

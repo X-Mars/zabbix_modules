@@ -4,7 +4,7 @@
  * 管理机房和机柜的配置
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
@@ -13,9 +13,9 @@ require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\RackConfig;
-use Modules\ZabbixRock\Lib\HostRackManager;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\HostRackManager;
 
 class RackManage extends CController {
     

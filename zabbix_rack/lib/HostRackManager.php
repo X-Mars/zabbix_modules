@@ -4,7 +4,7 @@
  * 负责主机与机柜位置的关联管理（通过 Zabbix 主机标签）
  */
 
-namespace Modules\ZabbixRock\Lib;
+namespace Modules\ZabbixRack\Lib;
 
 class HostRackManager {
     

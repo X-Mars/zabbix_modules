@@ -1,9 +1,9 @@
 <?php
 /**
- * 保存机房控制器
+ * 保存机柜控制器
  */
 
-namespace Modules\ZabbixRock\Actions;
+namespace Modules\ZabbixRack\Actions;
 
 use CController;
 use CControllerResponseData;
@@ -11,10 +11,10 @@ use CControllerResponseData;
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
 
-use Modules\ZabbixRock\Lib\LanguageManager;
-use Modules\ZabbixRock\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackConfig;
 
-class RoomSave extends CController {
+class RackSave extends CController {
     
     protected function init(): void {
         // 兼容Zabbix 6和7
@@ -29,6 +29,8 @@ class RoomSave extends CController {
         $fields = [
             'id' => 'string',
             'name' => 'required|string',
+            'room_id' => 'required|string',
+            'height' => 'int32',
             'description' => 'string'
         ];
         
@@ -51,13 +53,15 @@ class RoomSave extends CController {
     }
     
     protected function doAction(): void {
-        $room = [
+        $rack = [
             'id' => $this->getInput('id', ''),
             'name' => $this->getInput('name'),
+            'room_id' => $this->getInput('room_id'),
+            'height' => $this->getInput('height', 42),
             'description' => $this->getInput('description', '')
         ];
         
-        $success = RackConfig::saveRoom($room);
+        $success = RackConfig::saveRack($rack);
         
         header('Content-Type: application/json');
         echo json_encode([
