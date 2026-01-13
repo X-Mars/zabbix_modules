@@ -16,6 +16,10 @@ This module is compatible with Zabbix 6.0 and 7.0+ versions.
 
 This is a frontend module for Zabbix that provides data center rack visualization and host placement management. The module adds rack management functionality under the Inventory section of Zabbix Web, supporting room and rack configuration, and visual host assignment.
 
+![1](images/1.png)
+![2](images/2.png)
+![3](images/3.png)
+
 ## Features
 
 - **Room Management**:
