@@ -157,3 +157,7 @@ Issues and feature improvement suggestions are welcome. Please submit issues in 
 ## License
 
 All modules follow the Zabbix license terms. For details, see [Zabbix License](https://www.zabbix.com/license).
+
+## Author
+
+火星小刘 (Mars Xiao Liu)
