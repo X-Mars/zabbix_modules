@@ -157,3 +157,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 ## 许可证
 
 所有模块遵循Zabbix的许可证条款。详情请见 [Zabbix许可证](https://www.zabbix.com/license)。
+
+## 作者
+
+火星小刘
