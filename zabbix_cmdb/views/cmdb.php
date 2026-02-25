@@ -302,7 +302,7 @@ $styleTag = new CTag('style', true, '
     background-color: #fff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    table-layout: fixed;
+    table-layout: auto;
     overflow: visible;
 }
 
@@ -314,12 +314,8 @@ $styleTag = new CTag('style', true, '
     text-align: left;
     font-size: 13px;
     border-bottom: 1px solid #dee2e6;
-    max-width: 300px;
-    word-break: break-all;
-    overflow-wrap: break-word;
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
-    min-height: 20px;
     line-height: 1.4;
 }
 
@@ -328,15 +324,14 @@ $styleTag = new CTag('style', true, '
     border-bottom: 1px solid #dee2e6;
     font-size: 13px;
     vertical-align: top;
-    max-width: 300px;
-    word-break: break-all;
+    word-break: break-word;
     overflow-wrap: break-word;
     white-space: normal;
     overflow: hidden;
-    min-height: 20px;
     line-height: 1.4;
-    max-height: 55px; /* 3行文字高度 */
+    max-height: 55px;
     position: relative;
+    max-width: 200px;
 }
 
 .hosts-table tbody td:hover {
@@ -466,6 +461,7 @@ $styleTag = new CTag('style', true, '
     flex-wrap: wrap;
     gap: 12px;
     margin-top: 20px;
+    margin-bottom: 20px;
     padding: 12px 16px;
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
@@ -706,6 +702,7 @@ $table->addClass('hosts-table');
 
 // 添加表头（带排序链接）
 $header = [
+    LanguageManager::t('#'),
     createSortLink(LanguageManager::t('Host Name'), 'name', $data),
     createSortLink(LanguageManager::t('System Name'), 'system_name', $data),
     createSortLink(LanguageManager::t('IP Address'), 'ip', $data),
@@ -725,11 +722,15 @@ if (empty($data['hosts'])) {
     $table->addRow([
         (new CCol(LanguageManager::t('No hosts found')))
             ->addClass('no-data')
-            ->setAttribute('colspan', 11)
+            ->setAttribute('colspan', 12)
     ]);
 } else {
+    // 序号起始值：基于分页偏移量
+    $rowNum = (($data['page'] ?? 1) - 1) * ($data['page_size'] ?? 50);
+
     // 添加主机数据行
     foreach ($data['hosts'] as $host) {
+        $rowNum++;
         // 获取主要IP地址
         $mainIp = '';
         $interfaceTypes = [];
@@ -932,6 +933,7 @@ if (empty($data['hosts'])) {
         $groupCol->addItem($groupContainer);
 
         $table->addRow([
+            (new CCol($rowNum))->setAttribute('style', 'text-align: center; color: #6c757d; font-size: 12px;'),
             $hostNameCol,
             $systemNameCol,
             $ipCol,
