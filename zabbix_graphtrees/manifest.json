@@ -13,8 +13,7 @@
             "view": "graphtrees"
         },
         "graphtrees.data": {
-            "class": "GraphTreesData",
-            "layout": "layout.json"
+            "class": "GraphTreesData"
         }
     }
 }

@@ -57,7 +57,14 @@ class LanguageManager {
             'Basic Group' => '基础分组',
             'hosts' => '个主机',
             'cores' => '核',
-            'Invalid input parameters.' => '无效的输入参数。'
+            'Invalid input parameters.' => '无效的输入参数。',
+            'Showing %d to %d of %d hosts' => '显示第 %d 到 %d 条，共 %d 台主机',
+            'First' => '首页',
+            'Prev' => '上一页',
+            'Next' => '下一页',
+            'Last' => '末页',
+            'Per page' => '每页显示',
+            'Current Page' => '当前页',
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -105,7 +112,14 @@ class LanguageManager {
             'Basic Group' => 'Basic Group',
             'hosts' => 'hosts',
             'cores' => 'cores',
-            'Invalid input parameters.' => 'Invalid input parameters.'
+            'Invalid input parameters.' => 'Invalid input parameters.',
+            'Showing %d to %d of %d hosts' => 'Showing %d to %d of %d hosts',
+            'First' => 'First',
+            'Prev' => 'Prev',
+            'Next' => 'Next',
+            'Last' => 'Last',
+            'Per page' => 'Per page',
+            'Current Page' => 'Current Page',
         ]
     ];
 

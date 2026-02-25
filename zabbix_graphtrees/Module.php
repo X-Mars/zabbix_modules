@@ -4,6 +4,7 @@ namespace Modules\ZabbixGraphTrees;
 
 // 动态导入版本兼容工具
 require_once __DIR__ . '/lib/ZabbixVersion.php';
+require_once __DIR__ . '/lib/LanguageManager.php';
 use Modules\ZabbixGraphTrees\Lib\ZabbixVersion;
 use Modules\ZabbixGraphTrees\Lib\LanguageManager;
 use CMenu;
@@ -26,8 +27,6 @@ if (class_exists('Zabbix\Core\CModule')) {
 class Module extends ModuleBase {
 
     public function init(): void {
-        $lm = new LanguageManager();
-        
         // 兼容不同版本的菜单注册方式
         try {
             // 尝试使用APP类 (Zabbix 6和7都支持)
@@ -40,7 +39,7 @@ class Module extends ModuleBase {
                         ->findOrAdd(_('Monitoring'))
                         ->getSubmenu()
                         ->add(
-                            (new CMenuItem($lm->t('Graph Trees')))
+                            (new CMenuItem(LanguageManager::t('Graph Trees')))
                                 ->setAction('graphtrees')
                         );
                 }

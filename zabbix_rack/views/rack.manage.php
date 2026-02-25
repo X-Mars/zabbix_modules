@@ -364,7 +364,6 @@ $styleTag = new CTag('style', true, '
     background: rgba(0,0,0,0.5);
     z-index: 10000;
     display: none;
-    backdrop-filter: blur(4px);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -382,14 +381,17 @@ $styleTag = new CTag('style', true, '
     width: 480px;
     max-width: 95vw;
     max-height: 90vh;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 25px 80px rgba(0,0,0,0.3);
-    transform: scale(0.9) translateY(-20px);
-    transition: transform 0.3s ease;
 }
 
 .modal-overlay.visible .modal-content {
-    transform: scale(1) translateY(0);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal-header {
@@ -434,6 +436,7 @@ $styleTag = new CTag('style', true, '
 .modal-body {
     padding: 24px;
     overflow-y: auto;
+    overflow-x: visible;
     max-height: calc(90vh - 180px);
 }
 
@@ -495,14 +498,17 @@ $styleTag = new CTag('style', true, '
     box-shadow: 0 0 0 4px rgba(220,53,69,0.1);
 }
 
-select.form-control {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 12px;
-    padding-right: 40px;
-    cursor: pointer;
+/* z-select (Zabbix CSelect) 自适应宽度 + 圆角 */
+z-select {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+z-select button.focusable {
+    border-radius: 6px !important;
+}
+z-select .list {
+    border-radius: 6px !important;
+    overflow: hidden;
 }
 
 textarea.form-control {
@@ -738,264 +744,509 @@ textarea.form-control {
 }
 ');
 
-// 构建 HTML
-$html = '<div class="manage-wrapper">';
-$html .= '<div class="manage-container">';
+// ==================== 构建页面内容（CTag 模式，与 CMDB 保持一致） ====================
 
-// ==================== 统计卡片 ====================
-$html .= '<div class="stats-row">';
-$html .= '<div class="stat-card rooms">';
-$html .= '<div class="stat-icon">🏢</div>';
-$html .= '<div class="stat-content">';
-$html .= '<div class="stat-number">' . $totalRooms . '</div>';
-$html .= '<div class="stat-label">' . LanguageManager::t('total_rooms') . '</div>';
-$html .= '</div></div>';
+$content = (new CDiv())->addClass('manage-wrapper');
+$container = (new CDiv())->addClass('manage-container');
 
-$html .= '<div class="stat-card racks">';
-$html .= '<div class="stat-icon">🗄️</div>';
-$html .= '<div class="stat-content">';
-$html .= '<div class="stat-number">' . $totalRacks . '</div>';
-$html .= '<div class="stat-label">' . LanguageManager::t('total_racks') . '</div>';
-$html .= '</div></div>';
+// ── 统计卡片 ──
+$statsRow = (new CDiv())->addClass('stats-row');
 
-$html .= '<div class="stat-card capacity">';
-$html .= '<div class="stat-icon">📐</div>';
-$html .= '<div class="stat-content">';
-$html .= '<div class="stat-number">' . $totalU . 'U</div>';
-$html .= '<div class="stat-label">' . LanguageManager::t('total_capacity') . '</div>';
-$html .= '</div></div>';
+$statsRow->addItem(
+    (new CDiv())
+        ->addClass('stat-card rooms')
+        ->addItem((new CDiv('🏢'))->addClass('stat-icon'))
+        ->addItem(
+            (new CDiv())
+                ->addClass('stat-content')
+                ->addItem((new CDiv((string)$totalRooms))->addClass('stat-number'))
+                ->addItem((new CDiv(LanguageManager::t('total_rooms')))->addClass('stat-label'))
+        )
+);
 
-$html .= '<div class="stat-card used">';
-$html .= '<div class="stat-icon">📊</div>';
-$html .= '<div class="stat-content">';
-$html .= '<div class="stat-number">' . $usedU . 'U <small style="font-size:14px;color:#6c757d;">(' . $usagePercent . '%)</small></div>';
-$html .= '<div class="stat-label">' . LanguageManager::t('used_capacity') . '</div>';
-$html .= '</div></div>';
-$html .= '</div>';
+$statsRow->addItem(
+    (new CDiv())
+        ->addClass('stat-card racks')
+        ->addItem((new CDiv('🗄️'))->addClass('stat-icon'))
+        ->addItem(
+            (new CDiv())
+                ->addClass('stat-content')
+                ->addItem((new CDiv((string)$totalRacks))->addClass('stat-number'))
+                ->addItem((new CDiv(LanguageManager::t('total_racks')))->addClass('stat-label'))
+        )
+);
 
-// ==================== 机房管理区域 ====================
-$html .= '<div class="manage-section">';
-$html .= '<div class="section-header">';
-$html .= '<h2>🏢 ' . LanguageManager::t('room_management') . '</h2>';
-$html .= '<button class="btn btn-primary" onclick="RackManager.openRoomModal()">';
-$html .= '<span>➕</span> ' . LanguageManager::t('add_room') . '</button>';
-$html .= '</div>';
-$html .= '<div class="section-body">';
+$statsRow->addItem(
+    (new CDiv())
+        ->addClass('stat-card capacity')
+        ->addItem((new CDiv('📐'))->addClass('stat-icon'))
+        ->addItem(
+            (new CDiv())
+                ->addClass('stat-content')
+                ->addItem((new CDiv($totalU . 'U'))->addClass('stat-number'))
+                ->addItem((new CDiv(LanguageManager::t('total_capacity')))->addClass('stat-label'))
+        )
+);
+
+$usedNumberDiv = (new CDiv())->addClass('stat-number');
+$usedNumberDiv->addItem($usedU . 'U ');
+$usedNumberDiv->addItem(
+    (new CTag('small', true, '(' . $usagePercent . '%)'))
+        ->setAttribute('style', 'font-size:14px;color:#6c757d;')
+);
+$statsRow->addItem(
+    (new CDiv())
+        ->addClass('stat-card used')
+        ->addItem((new CDiv('📊'))->addClass('stat-icon'))
+        ->addItem(
+            (new CDiv())
+                ->addClass('stat-content')
+                ->addItem($usedNumberDiv)
+                ->addItem((new CDiv(LanguageManager::t('used_capacity')))->addClass('stat-label'))
+        )
+);
+
+$container->addItem($statsRow);
+
+// ── 机房管理区域 ──
+$roomSection = (new CDiv())->addClass('manage-section');
+
+$roomHeader = (new CDiv())->addClass('section-header');
+$roomHeader->addItem(new CTag('h2', true, '🏢 ' . LanguageManager::t('room_management')));
+$roomHeader->addItem(
+    (new CTag('button', true))
+        ->addClass('btn btn-primary')
+        ->setAttribute('onclick', 'RackManager.openRoomModal()')
+        ->addItem(new CSpan('➕'))
+        ->addItem(' ' . LanguageManager::t('add_room'))
+);
+$roomSection->addItem($roomHeader);
+
+$roomBody = (new CDiv())->addClass('section-body');
 
 if (empty($rooms)) {
-    $html .= '<div class="no-data">';
-    $html .= '<div class="no-data-icon">📭</div>';
-    $html .= '<div>' . LanguageManager::t('no_rooms') . '</div>';
-    $html .= '</div>';
+    $roomBody->addItem(
+        (new CDiv())
+            ->addClass('no-data')
+            ->addItem((new CDiv('📭'))->addClass('no-data-icon'))
+            ->addItem(new CDiv(LanguageManager::t('no_rooms')))
+    );
 } else {
-    $html .= '<table class="data-table">';
-    $html .= '<thead><tr>';
-    $html .= '<th>' . LanguageManager::t('room_name') . '</th>';
-    $html .= '<th>' . LanguageManager::t('description') . '</th>';
-    $html .= '<th>' . LanguageManager::t('rack_count') . '</th>';
-    $html .= '<th>' . LanguageManager::t('created_at') . '</th>';
-    $html .= '<th style="width:120px;">' . LanguageManager::t('actions') . '</th>';
-    $html .= '</tr></thead>';
-    $html .= '<tbody>';
-    
+    $roomTable = (new CTable())->addClass('data-table');
+    $roomTable->setHeader([
+        LanguageManager::t('room_name'),
+        LanguageManager::t('description'),
+        LanguageManager::t('rack_count'),
+        LanguageManager::t('created_at'),
+        (new CCol(LanguageManager::t('actions')))->setAttribute('style', 'width:120px;')
+    ]);
+
     foreach ($rooms as $room) {
         $rackCount = $roomRackCount[$room['id']] ?? 0;
         $roomId = htmlspecialchars($room['id'], ENT_QUOTES);
         $roomName = htmlspecialchars($room['name'], ENT_QUOTES);
-        
-        $html .= '<tr data-room-id="' . $roomId . '">';
-        $html .= '<td><div class="cell-main">' . htmlspecialchars($room['name']) . '</div></td>';
-        $html .= '<td>' . htmlspecialchars($room['description'] ?? '-') . '</td>';
-        $html .= '<td><span class="badge badge-blue">🗄️ ' . $rackCount . '</span></td>';
-        $html .= '<td>' . htmlspecialchars($room['created_at'] ?? '-') . '</td>';
-        $html .= '<td>';
-        $html .= '<div class="action-btns">';
-        $html .= '<button class="btn btn-sm btn-secondary" onclick="RackManager.editRoom(\'' . $roomId . '\')">';
-        $html .= '✏️</button>';
-        $html .= '<button class="btn btn-sm btn-danger" onclick="RackManager.confirmDeleteRoom(\'' . $roomId . '\', \'' . addslashes($roomName) . '\', ' . $rackCount . ')">';
-        $html .= '🗑️</button>';
-        $html .= '</div>';
-        $html .= '</td>';
-        $html .= '</tr>';
+
+        $nameCol = new CCol(
+            (new CDiv(htmlspecialchars($room['name'])))->addClass('cell-main')
+        );
+        $descCol = new CCol(htmlspecialchars($room['description'] ?? '-'));
+        $countCol = new CCol(
+            (new CSpan('🗄️ ' . $rackCount))->addClass('badge badge-blue')
+        );
+        $dateCol = new CCol(htmlspecialchars($room['created_at'] ?? '-'));
+
+        $actionBtns = (new CDiv())->addClass('action-btns');
+        $actionBtns->addItem(
+            (new CTag('button', true, '✏️'))
+                ->addClass('btn btn-sm btn-secondary')
+                ->setAttribute('onclick', "RackManager.editRoom('" . $roomId . "')")
+        );
+        $actionBtns->addItem(
+            (new CTag('button', true, '🗑️'))
+                ->addClass('btn btn-sm btn-danger')
+                ->setAttribute('onclick', "RackManager.confirmDeleteRoom('" . $roomId . "', '" . addslashes($roomName) . "', " . $rackCount . ")")
+        );
+        $actionCol = new CCol($actionBtns);
+
+        $roomTable->addRow([$nameCol, $descCol, $countCol, $dateCol, $actionCol]);
     }
-    
-    $html .= '</tbody></table>';
+
+    $roomBody->addItem($roomTable);
 }
 
-$html .= '</div></div>';
+$roomSection->addItem($roomBody);
+$container->addItem($roomSection);
 
-// ==================== 机柜管理区域 ====================
-$html .= '<div class="manage-section">';
-$html .= '<div class="section-header">';
-$html .= '<h2>🗄️ ' . LanguageManager::t('rack_management') . '</h2>';
-$html .= '<button class="btn btn-primary" onclick="RackManager.openRackModal()">';
-$html .= '<span>➕</span> ' . LanguageManager::t('add_rack') . '</button>';
-$html .= '</div>';
-$html .= '<div class="section-body">';
+// ── 机柜管理区域（不再生成隐藏 select，改用 JS 直接设置 value） ──
+$rackSection = (new CDiv())->addClass('manage-section');
+
+$rackHeader = (new CDiv())->addClass('section-header');
+$rackHeader->addItem(new CTag('h2', true, '🗄️ ' . LanguageManager::t('rack_management')));
+$rackHeader->addItem(
+    (new CTag('button', true))
+        ->addClass('btn btn-primary')
+        ->setAttribute('onclick', 'RackManager.openRackModal()')
+        ->addItem(new CSpan('➕'))
+        ->addItem(' ' . LanguageManager::t('add_rack'))
+);
+$rackSection->addItem($rackHeader);
+
+$rackBody = (new CDiv())->addClass('section-body');
 
 if (empty($racks)) {
-    $html .= '<div class="no-data">';
-    $html .= '<div class="no-data-icon">📭</div>';
-    $html .= '<div>' . LanguageManager::t('no_racks') . '</div>';
-    $html .= '</div>';
+    $rackBody->addItem(
+        (new CDiv())
+            ->addClass('no-data')
+            ->addItem((new CDiv('📭'))->addClass('no-data-icon'))
+            ->addItem(new CDiv(LanguageManager::t('no_racks')))
+    );
 } else {
-    $html .= '<table class="data-table">';
-    $html .= '<thead><tr>';
-    $html .= '<th>' . LanguageManager::t('rack_name') . '</th>';
-    $html .= '<th>' . LanguageManager::t('room') . '</th>';
-    $html .= '<th>' . LanguageManager::t('height') . '</th>';
-    $html .= '<th>' . LanguageManager::t('used') . '</th>';
-    $html .= '<th>' . LanguageManager::t('description') . '</th>';
-    $html .= '<th>' . LanguageManager::t('created_at') . '</th>';
-    $html .= '<th style="width:120px;">' . LanguageManager::t('actions') . '</th>';
-    $html .= '</tr></thead>';
-    $html .= '<tbody>';
-    
+    $rackTable = (new CTable())->addClass('data-table');
+    $rackTable->setHeader([
+        LanguageManager::t('rack_name'),
+        LanguageManager::t('room'),
+        LanguageManager::t('height'),
+        LanguageManager::t('used'),
+        LanguageManager::t('description'),
+        LanguageManager::t('created_at'),
+        (new CCol(LanguageManager::t('actions')))->setAttribute('style', 'width:120px;')
+    ]);
+
     foreach ($racks as $rack) {
         $rackId = htmlspecialchars($rack['id'], ENT_QUOTES);
         $rackName = htmlspecialchars($rack['name'], ENT_QUOTES);
-        $currentRoomId = $rack['room_id'] ?? '';
         $rackHeight = (int)($rack['height'] ?? 42);
         $rackUsedU = (int)($rack['used_u'] ?? 0);
         $rackUsagePercent = $rackHeight > 0 ? round(($rackUsedU / $rackHeight) * 100, 1) : 0;
-        
-        // 根据使用率决定徽章颜色
+
         $usageBadgeClass = 'badge-green';
         if ($rackUsagePercent >= 90) {
             $usageBadgeClass = 'badge-red';
         } elseif ($rackUsagePercent >= 70) {
             $usageBadgeClass = 'badge-yellow';
         }
-        
-        $html .= '<tr data-rack-id="' . $rackId . '">';
-        $html .= '<td><div class="cell-main">' . htmlspecialchars($rack['name']) . '</div></td>';
-        $html .= '<td>' . htmlspecialchars($rack['room_name'] ?? '-') . '</td>';
-        $html .= '<td><span class="badge badge-green">📐 ' . $rackHeight . 'U</span></td>';
-        $html .= '<td><span class="badge ' . $usageBadgeClass . '">📊 ' . $rackUsedU . 'U (' . $rackUsagePercent . '%)</span></td>';
-        $html .= '<td>' . htmlspecialchars($rack['description'] ?? '-') . '</td>';
-        $html .= '<td>' . htmlspecialchars($rack['created_at'] ?? '-') . '</td>';
-        $html .= '<td>';
-        $html .= '<div class="action-btns">';
-        $html .= '<button class="btn btn-sm btn-secondary" onclick="RackManager.editRack(\'' . $rackId . '\')">';
-        $html .= '✏️</button>';
-        $html .= '<button class="btn btn-sm btn-danger" onclick="RackManager.confirmDeleteRack(\'' . $rackId . '\', \'' . addslashes($rackName) . '\')">';
-        $html .= '🗑️</button>';
-        $html .= '</div>';
-        // 为每个机柜生成隐藏的机房下拉框（带 selected 属性）
-        $html .= '<select class="rack-room-options" data-rack-id="' . $rackId . '" style="display:none;">';
-        $html .= '<option value="">-- ' . LanguageManager::t('select_room') . ' --</option>';
-        foreach ($rooms as $room) {
-            $selected = ($room['id'] === $currentRoomId) ? ' selected' : '';
-            $html .= '<option value="' . htmlspecialchars($room['id']) . '"' . $selected . '>' . htmlspecialchars($room['name']) . '</option>';
-        }
-        $html .= '</select>';
-        $html .= '</td>';
-        $html .= '</tr>';
+
+        $nameCol = new CCol(
+            (new CDiv(htmlspecialchars($rack['name'])))->addClass('cell-main')
+        );
+        $roomCol = new CCol(htmlspecialchars($rack['room_name'] ?? '-'));
+        $heightCol = new CCol(
+            (new CSpan('📐 ' . $rackHeight . 'U'))->addClass('badge badge-green')
+        );
+        $usedCol = new CCol(
+            (new CSpan('📊 ' . $rackUsedU . 'U (' . $rackUsagePercent . '%)'))->addClass('badge ' . $usageBadgeClass)
+        );
+        $descCol = new CCol(htmlspecialchars($rack['description'] ?? '-'));
+        $dateCol = new CCol(htmlspecialchars($rack['created_at'] ?? '-'));
+
+        $actionBtns = (new CDiv())->addClass('action-btns');
+        $actionBtns->addItem(
+            (new CTag('button', true, '✏️'))
+                ->addClass('btn btn-sm btn-secondary')
+                ->setAttribute('onclick', "RackManager.editRack('" . $rackId . "')")
+        );
+        $actionBtns->addItem(
+            (new CTag('button', true, '🗑️'))
+                ->addClass('btn btn-sm btn-danger')
+                ->setAttribute('onclick', "RackManager.confirmDeleteRack('" . $rackId . "', '" . addslashes($rackName) . "')")
+        );
+        $actionCol = new CCol($actionBtns);
+
+        $rackTable->addRow([$nameCol, $roomCol, $heightCol, $usedCol, $descCol, $dateCol, $actionCol]);
     }
-    
-    $html .= '</tbody></table>';
+
+    $rackBody->addItem($rackTable);
 }
 
-$html .= '</div></div>';
-$html .= '</div>'; // manage-wrapper
+$rackSection->addItem($rackBody);
+$container->addItem($rackSection);
+
+$content->addItem($container);
 
 // ==================== 机房编辑弹窗 ====================
-$html .= '<div id="room-modal" class="modal-overlay">';
-$html .= '<div class="modal-content">';
-$html .= '<div class="modal-header">';
-$html .= '<h3 id="room-modal-title">🏢 ' . LanguageManager::t('add_room') . '</h3>';
-$html .= '<button class="modal-close" onclick="RackManager.closeRoomModal()">&times;</button>';
-$html .= '</div>';
-$html .= '<div class="modal-body">';
-$html .= '<form id="room-form" onsubmit="return false;">';
-$html .= '<input type="hidden" id="room-id" name="id">';
+$roomModal = (new CDiv())
+    ->setAttribute('id', 'room-modal')
+    ->addClass('modal-overlay');
 
-$html .= '<div class="form-group" id="room-name-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('room_name') . '<span class="required">*</span></label>';
-$html .= '<input type="text" id="room-name" name="name" class="form-control" placeholder="' . LanguageManager::t('enter_room_name') . '" maxlength="100" autocomplete="off">';
-$html .= '<div class="form-error">' . LanguageManager::t('room_name_required') . '</div>';
-$html .= '</div>';
+$roomModalContent = (new CDiv())->addClass('modal-content');
 
-$html .= '<div class="form-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('description') . '</label>';
-$html .= '<textarea id="room-description" name="description" class="form-control" placeholder="' . LanguageManager::t('enter_room_description') . '" maxlength="500"></textarea>';
-$html .= '</div>';
+// 弹窗头部
+$roomModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-header')
+        ->addItem(
+            (new CTag('h3', true))
+                ->setAttribute('id', 'room-modal-title')
+                ->addItem('🏢 ' . LanguageManager::t('add_room'))
+        )
+        ->addItem(
+            (new CTag('button', true, '×'))
+                ->addClass('modal-close')
+                ->setAttribute('onclick', 'RackManager.closeRoomModal()')
+        )
+);
 
-$html .= '</form>';
-$html .= '</div>';
-$html .= '<div class="modal-footer">';
-$html .= '<button class="btn btn-secondary" onclick="RackManager.closeRoomModal()">' . LanguageManager::t('cancel') . '</button>';
-$html .= '<button id="room-save-btn" class="btn btn-success" onclick="RackManager.saveRoom()">';
-$html .= '<span>✓</span> ' . LanguageManager::t('save') . '</button>';
-$html .= '</div>';
-$html .= '</div></div>';
+// 弹窗主体
+$roomForm = (new CTag('form', true))
+    ->setAttribute('id', 'room-form')
+    ->setAttribute('onsubmit', 'return false;');
+
+$roomForm->addItem(
+    (new CInput('hidden', 'id', ''))->setAttribute('id', 'room-id')
+);
+
+// 名称字段
+$nameGroup = (new CDiv())
+    ->addClass('form-group')
+    ->setAttribute('id', 'room-name-group');
+$nameGroup->addItem(
+    (new CTag('label', true))
+        ->addClass('form-label')
+        ->addItem(LanguageManager::t('room_name'))
+        ->addItem((new CSpan('*'))->addClass('required'))
+);
+$nameGroup->addItem(
+    (new CTextBox('name', ''))
+        ->setAttribute('id', 'room-name')
+        ->addClass('form-control')
+        ->setAttribute('placeholder', LanguageManager::t('enter_room_name'))
+        ->setAttribute('maxlength', '100')
+        ->setAttribute('autocomplete', 'off')
+);
+$nameGroup->addItem(
+    (new CDiv(LanguageManager::t('room_name_required')))->addClass('form-error')
+);
+$roomForm->addItem($nameGroup);
+
+// 描述字段
+$descGroup = (new CDiv())->addClass('form-group');
+$descGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('description')))->addClass('form-label')
+);
+$descGroup->addItem(
+    (new CTag('textarea', true, ''))
+        ->setAttribute('id', 'room-description')
+        ->setAttribute('name', 'description')
+        ->addClass('form-control')
+        ->setAttribute('placeholder', LanguageManager::t('enter_room_description'))
+        ->setAttribute('maxlength', '500')
+);
+$roomForm->addItem($descGroup);
+
+$roomModalBody = (new CDiv())->addClass('modal-body');
+$roomModalBody->addItem($roomForm);
+$roomModalContent->addItem($roomModalBody);
+
+// 弹窗底部
+$roomModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-footer')
+        ->addItem(
+            (new CTag('button', true, LanguageManager::t('cancel')))
+                ->addClass('btn btn-secondary')
+                ->setAttribute('onclick', 'RackManager.closeRoomModal()')
+        )
+        ->addItem(
+            (new CTag('button', true))
+                ->setAttribute('id', 'room-save-btn')
+                ->addClass('btn btn-success')
+                ->setAttribute('onclick', 'RackManager.saveRoom()')
+                ->addItem(new CSpan('✓'))
+                ->addItem(' ' . LanguageManager::t('save'))
+        )
+);
+
+$roomModal->addItem($roomModalContent);
+$content->addItem($roomModal);
 
 // ==================== 机柜编辑弹窗 ====================
-$html .= '<div id="rack-modal" class="modal-overlay">';
-$html .= '<div class="modal-content">';
-$html .= '<div class="modal-header">';
-$html .= '<h3 id="rack-modal-title">🗄️ ' . LanguageManager::t('add_rack') . '</h3>';
-$html .= '<button class="modal-close" onclick="RackManager.closeRackModal()">&times;</button>';
-$html .= '</div>';
-$html .= '<div class="modal-body">';
-$html .= '<form id="rack-form" onsubmit="return false;">';
-$html .= '<input type="hidden" id="rack-id" name="id">';
+$rackModal = (new CDiv())
+    ->setAttribute('id', 'rack-modal')
+    ->addClass('modal-overlay');
 
-$html .= '<div class="form-group" id="rack-name-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('rack_name') . '<span class="required">*</span></label>';
-$html .= '<input type="text" id="rack-name" name="name" class="form-control" placeholder="' . LanguageManager::t('enter_rack_name') . '" maxlength="100" autocomplete="off">';
-$html .= '<div class="form-error">' . LanguageManager::t('rack_name_required') . '</div>';
-$html .= '</div>';
+$rackModalContent = (new CDiv())->addClass('modal-content');
 
-$html .= '<div class="form-group" id="rack-room-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('room') . '<span class="required">*</span></label>';
-$html .= '<select id="rack-room-id" name="room_id" class="form-control">';
-$html .= '<option value="">-- ' . LanguageManager::t('select_room') . ' --</option>';
+// 弹窗头部
+$rackModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-header')
+        ->addItem(
+            (new CTag('h3', true))
+                ->setAttribute('id', 'rack-modal-title')
+                ->addItem('🗄️ ' . LanguageManager::t('add_rack'))
+        )
+        ->addItem(
+            (new CTag('button', true, '×'))
+                ->addClass('modal-close')
+                ->setAttribute('onclick', 'RackManager.closeRackModal()')
+        )
+);
+
+// 弹窗主体
+$rackForm = (new CTag('form', true))
+    ->setAttribute('id', 'rack-form')
+    ->setAttribute('onsubmit', 'return false;');
+
+$rackForm->addItem(
+    (new CInput('hidden', 'id', ''))->setAttribute('id', 'rack-id')
+);
+
+// 名称字段
+$rackNameGroup = (new CDiv())
+    ->addClass('form-group')
+    ->setAttribute('id', 'rack-name-group');
+$rackNameGroup->addItem(
+    (new CTag('label', true))
+        ->addClass('form-label')
+        ->addItem(LanguageManager::t('rack_name'))
+        ->addItem((new CSpan('*'))->addClass('required'))
+);
+$rackNameGroup->addItem(
+    (new CTextBox('name', ''))
+        ->setAttribute('id', 'rack-name')
+        ->addClass('form-control')
+        ->setAttribute('placeholder', LanguageManager::t('enter_rack_name'))
+        ->setAttribute('maxlength', '100')
+        ->setAttribute('autocomplete', 'off')
+);
+$rackNameGroup->addItem(
+    (new CDiv(LanguageManager::t('rack_name_required')))->addClass('form-error')
+);
+$rackForm->addItem($rackNameGroup);
+
+// 【关键】机房选择 - 使用 Zabbix CSelect（z-select），确保下拉框在 Zabbix 框架中正确渲染
+$roomSelectGroup = (new CDiv())
+    ->addClass('form-group')
+    ->setAttribute('id', 'rack-room-group');
+$roomSelectGroup->addItem(
+    (new CTag('label', true))
+        ->addClass('form-label')
+        ->addItem(LanguageManager::t('room'))
+        ->addItem((new CSpan('*'))->addClass('required'))
+);
+
+$roomSelect = (new CSelect('room_id'))
+    ->setAttribute('id', 'rack-room-id')
+    ->addOption(new CSelectOption('', '-- ' . LanguageManager::t('select_room') . ' --'));
+
 foreach ($rooms as $room) {
-    $html .= '<option value="' . htmlspecialchars($room['id']) . '">' . htmlspecialchars($room['name']) . '</option>';
+    $roomSelect->addOption(new CSelectOption($room['id'], $room['name']));
 }
-$html .= '</select>';
-$html .= '<div class="form-error">' . LanguageManager::t('room_required') . '</div>';
-$html .= '</div>';
 
-$html .= '<div class="form-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('height') . '</label>';
-$html .= '<div class="input-with-unit">';
-$html .= '<input type="number" id="rack-height" name="height" class="form-control" value="42" min="1" max="60">';
-$html .= '<span class="input-unit">U</span>';
-$html .= '</div>';
-$html .= '<div class="form-hint">' . LanguageManager::t('rack_height_hint') . '</div>';
-$html .= '</div>';
+$roomSelectGroup->addItem($roomSelect);
+$roomSelectGroup->addItem(
+    (new CDiv(LanguageManager::t('room_selection_required')))->addClass('form-error')
+);
+$rackForm->addItem($roomSelectGroup);
 
-$html .= '<div class="form-group">';
-$html .= '<label class="form-label">' . LanguageManager::t('description') . '</label>';
-$html .= '<textarea id="rack-description" name="description" class="form-control" placeholder="' . LanguageManager::t('enter_rack_description') . '" maxlength="500"></textarea>';
-$html .= '</div>';
+// 高度字段
+$heightGroup = (new CDiv())->addClass('form-group');
+$heightGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('height')))->addClass('form-label')
+);
+$heightInputWrapper = (new CDiv())->addClass('input-with-unit');
+$heightInputWrapper->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'number')
+        ->setAttribute('id', 'rack-height')
+        ->setAttribute('name', 'height')
+        ->addClass('form-control')
+        ->setAttribute('value', '42')
+        ->setAttribute('min', '1')
+        ->setAttribute('max', '60')
+);
+$heightInputWrapper->addItem(
+    (new CSpan('U'))->addClass('input-unit')
+);
+$heightGroup->addItem($heightInputWrapper);
+$heightGroup->addItem(
+    (new CDiv(LanguageManager::t('rack_height_hint')))->addClass('form-hint')
+);
+$rackForm->addItem($heightGroup);
 
-$html .= '</form>';
-$html .= '</div>';
-$html .= '<div class="modal-footer">';
-$html .= '<button class="btn btn-secondary" onclick="RackManager.closeRackModal()">' . LanguageManager::t('cancel') . '</button>';
-$html .= '<button id="rack-save-btn" class="btn btn-success" onclick="RackManager.saveRack()">';
-$html .= '<span>✓</span> ' . LanguageManager::t('save') . '</button>';
-$html .= '</div>';
-$html .= '</div></div>';
+// 描述字段
+$rackDescGroup = (new CDiv())->addClass('form-group');
+$rackDescGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('description')))->addClass('form-label')
+);
+$rackDescGroup->addItem(
+    (new CTag('textarea', true, ''))
+        ->setAttribute('id', 'rack-description')
+        ->setAttribute('name', 'description')
+        ->addClass('form-control')
+        ->setAttribute('placeholder', LanguageManager::t('enter_rack_description'))
+        ->setAttribute('maxlength', '500')
+);
+$rackForm->addItem($rackDescGroup);
+
+$rackModalBody = (new CDiv())->addClass('modal-body');
+$rackModalBody->addItem($rackForm);
+$rackModalContent->addItem($rackModalBody);
+
+// 弹窗底部
+$rackModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-footer')
+        ->addItem(
+            (new CTag('button', true, LanguageManager::t('cancel')))
+                ->addClass('btn btn-secondary')
+                ->setAttribute('onclick', 'RackManager.closeRackModal()')
+        )
+        ->addItem(
+            (new CTag('button', true))
+                ->setAttribute('id', 'rack-save-btn')
+                ->addClass('btn btn-success')
+                ->setAttribute('onclick', 'RackManager.saveRack()')
+                ->addItem(new CSpan('✓'))
+                ->addItem(' ' . LanguageManager::t('save'))
+        )
+);
+
+$rackModal->addItem($rackModalContent);
+$content->addItem($rackModal);
 
 // ==================== 删除确认弹窗 ====================
-$html .= '<div id="confirm-modal" class="modal-overlay confirm-modal">';
-$html .= '<div class="modal-content">';
-$html .= '<div class="modal-body" style="padding:30px;">';
-$html .= '<div class="confirm-icon">⚠️</div>';
-$html .= '<div class="confirm-title" id="confirm-title">' . LanguageManager::t('confirm_delete') . '</div>';
-$html .= '<div class="confirm-message" id="confirm-message"></div>';
-$html .= '<div class="confirm-item" id="confirm-item"></div>';
-$html .= '</div>';
-$html .= '<div class="modal-footer" style="justify-content:center;">';
-$html .= '<button class="btn btn-secondary" onclick="RackManager.closeConfirmModal()">' . LanguageManager::t('cancel') . '</button>';
-$html .= '<button id="confirm-btn" class="btn btn-danger">';
-$html .= '<span>🗑️</span> ' . LanguageManager::t('delete') . '</button>';
-$html .= '</div>';
-$html .= '</div></div>';
+$confirmModal = (new CDiv())
+    ->setAttribute('id', 'confirm-modal')
+    ->addClass('modal-overlay confirm-modal');
+
+$confirmModalContent = (new CDiv())->addClass('modal-content');
+
+$confirmBody = (new CDiv())
+    ->addClass('modal-body')
+    ->setAttribute('style', 'padding:30px;');
+$confirmBody->addItem((new CDiv('⚠️'))->addClass('confirm-icon'));
+$confirmBody->addItem(
+    (new CDiv(LanguageManager::t('confirm')))->addClass('confirm-title')->setAttribute('id', 'confirm-title')
+);
+$confirmBody->addItem(
+    (new CDiv())->addClass('confirm-message')->setAttribute('id', 'confirm-message')
+);
+$confirmBody->addItem(
+    (new CDiv())->addClass('confirm-item')->setAttribute('id', 'confirm-item')
+);
+$confirmModalContent->addItem($confirmBody);
+
+$confirmModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-footer')
+        ->setAttribute('style', 'justify-content:center;')
+        ->addItem(
+            (new CTag('button', true, LanguageManager::t('cancel')))
+                ->addClass('btn btn-secondary')
+                ->setAttribute('onclick', 'RackManager.closeConfirmModal()')
+        )
+        ->addItem(
+            (new CTag('button', true))
+                ->setAttribute('id', 'confirm-btn')
+                ->addClass('btn btn-danger')
+                ->addItem(new CSpan('🗑️'))
+                ->addItem(' ' . LanguageManager::t('delete'))
+        )
+);
+
+$confirmModal->addItem($confirmModalContent);
+$content->addItem($confirmModal);
 
 // ==================== JavaScript ====================
 $i18n = [
@@ -1009,22 +1260,23 @@ $i18n = [
     'save_success' => LanguageManager::t('save_success'),
     'delete_success' => LanguageManager::t('delete_success'),
     'operation_failed' => LanguageManager::t('operation_failed'),
+    'delete_room_title' => LanguageManager::t('delete_room_title'),
+    'delete_rack_title' => LanguageManager::t('delete_rack_title'),
 ];
 $i18nJson = json_encode($i18n, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-$js = <<<JS
-<script>
+$content->addItem(new CJsScript('<script>
 (function() {
-    'use strict';
+    "use strict";
     
     // 国际化文本
-    var i18n = {$i18nJson};
+    var i18n = ' . $i18nJson . ';
     
     // 机房数据（以 ID 为键的映射）
-    var roomsData = {$roomsJson};
+    var roomsData = ' . $roomsJson . ';
     
     // 机柜数据（以 ID 为键的映射）
-    var racksData = {$racksJson};
+    var racksData = ' . $racksJson . ';
     
     // 管理器对象
     var RackManager = {
@@ -1034,71 +1286,63 @@ $js = <<<JS
         
         // ==================== 机房相关 ====================
         openRoomModal: function() {
-            document.getElementById('room-modal-title').innerHTML = '🏢 ' + i18n.add_room;
-            document.getElementById('room-id').value = '';
-            document.getElementById('room-name').value = '';
-            document.getElementById('room-description').value = '';
-            this.clearFormErrors('room-form');
-            this.showModal('room-modal');
-            // 自动聚焦到名称输入框
+            document.getElementById("room-modal-title").innerHTML = "🏢 " + i18n.add_room;
+            document.getElementById("room-id").value = "";
+            document.getElementById("room-name").value = "";
+            document.getElementById("room-description").value = "";
+            this.clearFormErrors("room-form");
+            this.showModal("room-modal");
             setTimeout(function() {
-                document.getElementById('room-name').focus();
+                document.getElementById("room-name").focus();
             }, 100);
         },
         
         closeRoomModal: function() {
-            this.hideModal('room-modal');
+            this.hideModal("room-modal");
         },
         
         editRoom: function(roomId) {
-            // 从数据映射中获取机房信息
             var room = roomsData[roomId];
             if (!room) {
-                console.error('Room not found:', roomId);
+                console.error("Room not found:", roomId);
                 alert(i18n.operation_failed);
                 return;
             }
             
-            document.getElementById('room-modal-title').innerHTML = '🏢 ' + i18n.edit_room;
-            document.getElementById('room-id').value = room.id || '';
-            document.getElementById('room-name').value = room.name || '';
-            document.getElementById('room-description').value = room.description || '';
-            this.clearFormErrors('room-form');
-            this.showModal('room-modal');
+            document.getElementById("room-modal-title").innerHTML = "🏢 " + i18n.edit_room;
+            document.getElementById("room-id").value = room.id || "";
+            document.getElementById("room-name").value = room.name || "";
+            document.getElementById("room-description").value = room.description || "";
+            this.clearFormErrors("room-form");
+            this.showModal("room-modal");
         },
         
         saveRoom: function() {
             var self = this;
-            var name = document.getElementById('room-name').value.trim();
-            var description = document.getElementById('room-description').value.trim();
-            var id = document.getElementById('room-id').value;
+            var name = document.getElementById("room-name").value.trim();
+            var description = document.getElementById("room-description").value.trim();
+            var id = document.getElementById("room-id").value;
             
-            // 验证
-            this.clearFormErrors('room-form');
+            this.clearFormErrors("room-form");
             if (!name) {
-                this.showFormError('room-name-group');
-                document.getElementById('room-name').focus();
+                this.showFormError("room-name-group");
+                document.getElementById("room-name").focus();
                 return;
             }
             
-            // 显示加载状态
-            var saveBtn = document.getElementById('room-save-btn');
-            saveBtn.classList.add('loading');
+            var saveBtn = document.getElementById("room-save-btn");
+            saveBtn.classList.add("loading");
             
-            // 发送请求
             var formData = new FormData();
-            formData.append('action', 'room.save');
-            formData.append('id', id);
-            formData.append('name', name);
-            formData.append('description', description);
+            formData.append("action", "room.save");
+            formData.append("id", id);
+            formData.append("name", name);
+            formData.append("description", description);
             
-            fetch('zabbix.php', {
-                method: 'POST',
-                body: formData
-            })
+            fetch("zabbix.php", { method: "POST", body: formData })
             .then(function(response) { return response.json(); })
             .then(function(data) {
-                saveBtn.classList.remove('loading');
+                saveBtn.classList.remove("loading");
                 if (data.success) {
                     self.closeRoomModal();
                     location.reload();
@@ -1106,137 +1350,114 @@ $js = <<<JS
                     alert(data.error || data.message || i18n.operation_failed);
                 }
             })
-            .catch(function(error) {
-                saveBtn.classList.remove('loading');
+            .catch(function() {
+                saveBtn.classList.remove("loading");
                 alert(i18n.operation_failed);
             });
         },
         
         confirmDeleteRoom: function(roomId, roomName, rackCount) {
-            this.currentDeleteType = 'room';
+            this.currentDeleteType = "room";
             this.currentDeleteId = roomId;
             
             var message = i18n.confirm_delete_room;
             if (rackCount > 0) {
-                message += '<br><br><strong style="color:#dc3545;">' + i18n.room_has_racks_warning.replace('{count}', rackCount) + '</strong>';
+                message += "<br><br><strong style=\\"color:#dc3545;\\">" + i18n.room_has_racks_warning.replace("{count}", rackCount) + "</strong>";
             }
             
-            document.getElementById('confirm-title').textContent = '删除机房';
-            document.getElementById('confirm-message').innerHTML = message;
-            document.getElementById('confirm-item').textContent = roomName;
-            document.getElementById('confirm-btn').onclick = this.executeDelete.bind(this);
+            document.getElementById("confirm-title").textContent = i18n.delete_room_title;
+            document.getElementById("confirm-message").innerHTML = message;
+            document.getElementById("confirm-item").textContent = roomName;
+            document.getElementById("confirm-btn").onclick = this.executeDelete.bind(this);
             
-            this.showModal('confirm-modal');
+            this.showModal("confirm-modal");
         },
         
         // ==================== 机柜相关 ====================
         openRackModal: function() {
-            document.getElementById('rack-modal-title').innerHTML = '🗄️ ' + i18n.add_rack;
-            document.getElementById('rack-id').value = '';
-            document.getElementById('rack-name').value = '';
-            document.getElementById('rack-height').value = '42';
-            document.getElementById('rack-description').value = '';
+            document.getElementById("rack-modal-title").innerHTML = "🗄️ " + i18n.add_rack;
+            document.getElementById("rack-id").value = "";
+            document.getElementById("rack-name").value = "";
+            document.getElementById("rack-height").value = "42";
+            document.getElementById("rack-description").value = "";
             
-            // 重置下拉框为默认状态（无选中）
-            var targetSelect = document.getElementById('rack-room-id');
-            // 从任意一个隐藏 select 复制 options，但去掉 selected
-            var hiddenSelect = document.querySelector('.rack-room-options');
-            if (hiddenSelect) {
-                targetSelect.innerHTML = '';
-                for (var i = 0; i < hiddenSelect.options.length; i++) {
-                    var opt = document.createElement('option');
-                    opt.value = hiddenSelect.options[i].value;
-                    opt.textContent = hiddenSelect.options[i].textContent;
-                    targetSelect.appendChild(opt);
-                }
-            }
-            targetSelect.selectedIndex = 0; // 选中第一个（空选项）
+            // 重置机房下拉框为默认选项（z-select 通过 value 设置）
+            var targetSelect = document.getElementById("rack-room-id");
+            targetSelect.value = "";
             
-            this.clearFormErrors('rack-form');
-            this.showModal('rack-modal');
+            this.clearFormErrors("rack-form");
+            this.showModal("rack-modal");
             setTimeout(function() {
-                document.getElementById('rack-name').focus();
+                document.getElementById("rack-name").focus();
             }, 100);
         },
         
         closeRackModal: function() {
-            this.hideModal('rack-modal');
+            this.hideModal("rack-modal");
         },
         
         editRack: function(rackId) {
-            // 从数据映射中获取机柜信息
             var rack = racksData[rackId];
             if (!rack) {
-                console.error('Rack not found:', rackId);
+                console.error("Rack not found:", rackId);
                 alert(i18n.operation_failed);
                 return;
             }
             
-            document.getElementById('rack-modal-title').innerHTML = '🗄️ ' + i18n.edit_rack;
-            document.getElementById('rack-id').value = rack.id || '';
-            document.getElementById('rack-name').value = rack.name || '';
-            document.getElementById('rack-height').value = rack.height || 42;
-            document.getElementById('rack-description').value = rack.description || '';
+            document.getElementById("rack-modal-title").innerHTML = "🗄️ " + i18n.edit_rack;
+            document.getElementById("rack-id").value = rack.id || "";
+            document.getElementById("rack-name").value = rack.name || "";
+            document.getElementById("rack-height").value = rack.height || 42;
+            document.getElementById("rack-description").value = rack.description || "";
             
-            // 【关键】从 PHP 生成的隐藏 select 复制 options（已带 selected 属性）
-            var hiddenSelect = document.querySelector('.rack-room-options[data-rack-id="' + rackId + '"]');
-            var targetSelect = document.getElementById('rack-room-id');
+            // 【关键】直接通过 value 设置选中的机房（z-select 支持 .value 属性）
+            var targetSelect = document.getElementById("rack-room-id");
+            targetSelect.value = rack.room_id || "";
             
-            if (hiddenSelect) {
-                // 清空目标 select 并复制所有 options
-                targetSelect.innerHTML = hiddenSelect.innerHTML;
-            }
-            
-            this.clearFormErrors('rack-form');
-            this.showModal('rack-modal');
+            this.clearFormErrors("rack-form");
+            this.showModal("rack-modal");
         },
         
         saveRack: function() {
             var self = this;
-            var name = document.getElementById('rack-name').value.trim();
-            var roomId = document.getElementById('rack-room-id').value;
-            var height = document.getElementById('rack-height').value || 42;
-            var description = document.getElementById('rack-description').value.trim();
-            var id = document.getElementById('rack-id').value;
+            var name = document.getElementById("rack-name").value.trim();
+            var roomId = document.getElementById("rack-room-id").value;
+            var height = document.getElementById("rack-height").value || 42;
+            var description = document.getElementById("rack-description").value.trim();
+            var id = document.getElementById("rack-id").value;
             
-            // 验证
-            this.clearFormErrors('rack-form');
+            this.clearFormErrors("rack-form");
             var hasError = false;
             
             if (!name) {
-                this.showFormError('rack-name-group');
-                if (!hasError) document.getElementById('rack-name').focus();
+                this.showFormError("rack-name-group");
+                if (!hasError) document.getElementById("rack-name").focus();
                 hasError = true;
             }
             
             if (!roomId) {
-                this.showFormError('rack-room-group');
-                if (!hasError) document.getElementById('rack-room-id').focus();
+                this.showFormError("rack-room-group");
+                if (!hasError) document.getElementById("rack-room-id").focus();
                 hasError = true;
             }
             
             if (hasError) return;
             
-            // 显示加载状态
-            var saveBtn = document.getElementById('rack-save-btn');
-            saveBtn.classList.add('loading');
+            var saveBtn = document.getElementById("rack-save-btn");
+            saveBtn.classList.add("loading");
             
-            // 发送请求
             var formData = new FormData();
-            formData.append('action', 'rack.save');
-            formData.append('id', id);
-            formData.append('name', name);
-            formData.append('room_id', roomId);
-            formData.append('height', height);
-            formData.append('description', description);
+            formData.append("action", "rack.save");
+            formData.append("id", id);
+            formData.append("name", name);
+            formData.append("room_id", roomId);
+            formData.append("height", height);
+            formData.append("description", description);
             
-            fetch('zabbix.php', {
-                method: 'POST',
-                body: formData
-            })
+            fetch("zabbix.php", { method: "POST", body: formData })
             .then(function(response) { return response.json(); })
             .then(function(data) {
-                saveBtn.classList.remove('loading');
+                saveBtn.classList.remove("loading");
                 if (data.success) {
                     self.closeRackModal();
                     location.reload();
@@ -1244,43 +1465,40 @@ $js = <<<JS
                     alert(data.error || data.message || i18n.operation_failed);
                 }
             })
-            .catch(function(error) {
-                saveBtn.classList.remove('loading');
+            .catch(function() {
+                saveBtn.classList.remove("loading");
                 alert(i18n.operation_failed);
             });
         },
         
         confirmDeleteRack: function(rackId, rackName) {
-            this.currentDeleteType = 'rack';
+            this.currentDeleteType = "rack";
             this.currentDeleteId = rackId;
             
-            document.getElementById('confirm-title').textContent = '删除机柜';
-            document.getElementById('confirm-message').innerHTML = i18n.confirm_delete_rack;
-            document.getElementById('confirm-item').textContent = rackName;
-            document.getElementById('confirm-btn').onclick = this.executeDelete.bind(this);
+            document.getElementById("confirm-title").textContent = i18n.delete_rack_title;
+            document.getElementById("confirm-message").innerHTML = i18n.confirm_delete_rack;
+            document.getElementById("confirm-item").textContent = rackName;
+            document.getElementById("confirm-btn").onclick = this.executeDelete.bind(this);
             
-            this.showModal('confirm-modal');
+            this.showModal("confirm-modal");
         },
         
         // ==================== 删除操作 ====================
         executeDelete: function() {
             var self = this;
-            var action = this.currentDeleteType === 'room' ? 'room.delete' : 'rack.delete';
+            var action = this.currentDeleteType === "room" ? "room.delete" : "rack.delete";
             
-            var confirmBtn = document.getElementById('confirm-btn');
-            confirmBtn.classList.add('loading');
+            var confirmBtn = document.getElementById("confirm-btn");
+            confirmBtn.classList.add("loading");
             
             var formData = new FormData();
-            formData.append('action', action);
-            formData.append('id', this.currentDeleteId);
+            formData.append("action", action);
+            formData.append("id", this.currentDeleteId);
             
-            fetch('zabbix.php', {
-                method: 'POST',
-                body: formData
-            })
+            fetch("zabbix.php", { method: "POST", body: formData })
             .then(function(response) { return response.json(); })
             .then(function(data) {
-                confirmBtn.classList.remove('loading');
+                confirmBtn.classList.remove("loading");
                 if (data.success) {
                     self.closeConfirmModal();
                     location.reload();
@@ -1288,14 +1506,14 @@ $js = <<<JS
                     alert(data.error || data.message || i18n.operation_failed);
                 }
             })
-            .catch(function(error) {
-                confirmBtn.classList.remove('loading');
+            .catch(function() {
+                confirmBtn.classList.remove("loading");
                 alert(i18n.operation_failed);
             });
         },
         
         closeConfirmModal: function() {
-            this.hideModal('confirm-modal');
+            this.hideModal("confirm-modal");
             this.currentDeleteType = null;
             this.currentDeleteId = null;
         },
@@ -1303,34 +1521,34 @@ $js = <<<JS
         // ==================== 通用方法 ====================
         showModal: function(modalId) {
             var modal = document.getElementById(modalId);
-            modal.classList.add('visible');
-            document.body.style.overflow = 'hidden';
+            modal.classList.add("visible");
+            document.body.style.overflow = "hidden";
         },
         
         hideModal: function(modalId) {
             var modal = document.getElementById(modalId);
-            modal.classList.remove('visible');
-            document.body.style.overflow = '';
+            modal.classList.remove("visible");
+            document.body.style.overflow = "";
         },
         
         clearFormErrors: function(formId) {
             var form = document.getElementById(formId);
-            var groups = form.querySelectorAll('.form-group');
+            var groups = form.querySelectorAll(".form-group");
             groups.forEach(function(group) {
-                group.classList.remove('has-error');
+                group.classList.remove("has-error");
             });
-            var controls = form.querySelectorAll('.form-control');
+            var controls = form.querySelectorAll(".form-control, z-select");
             controls.forEach(function(control) {
-                control.classList.remove('error');
+                control.classList.remove("error");
             });
         },
         
         showFormError: function(groupId) {
             var group = document.getElementById(groupId);
             if (group) {
-                group.classList.add('has-error');
-                var control = group.querySelector('.form-control');
-                if (control) control.classList.add('error');
+                group.classList.add("has-error");
+                var control = group.querySelector(".form-control, z-select");
+                if (control) control.classList.add("error");
             }
         }
     };
@@ -1339,27 +1557,25 @@ $js = <<<JS
     window.RackManager = RackManager;
     
     // 绑定键盘事件
-    document.addEventListener('keydown', function(e) {
-        // ESC 关闭弹窗
-        if (e.key === 'Escape') {
-            var modals = document.querySelectorAll('.modal-overlay.visible');
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            var modals = document.querySelectorAll(".modal-overlay.visible");
             modals.forEach(function(modal) {
-                modal.classList.remove('visible');
+                modal.classList.remove("visible");
             });
-            document.body.style.overflow = '';
+            document.body.style.overflow = "";
         }
         
-        // Enter 提交表单
-        if (e.key === 'Enter' && !e.shiftKey) {
-            var roomModal = document.getElementById('room-modal');
-            var rackModal = document.getElementById('rack-modal');
+        if (e.key === "Enter" && !e.shiftKey) {
+            var roomModal = document.getElementById("room-modal");
+            var rackModal = document.getElementById("rack-modal");
             
-            if (roomModal.classList.contains('visible')) {
+            if (roomModal.classList.contains("visible")) {
                 e.preventDefault();
                 RackManager.saveRoom();
-            } else if (rackModal.classList.contains('visible')) {
+            } else if (rackModal.classList.contains("visible")) {
                 var activeElement = document.activeElement;
-                if (activeElement.tagName !== 'TEXTAREA') {
+                if (activeElement.tagName !== "TEXTAREA") {
                     e.preventDefault();
                     RackManager.saveRack();
                 }
@@ -1368,32 +1584,26 @@ $js = <<<JS
     });
     
     // 点击弹窗外部关闭
-    document.querySelectorAll('.modal-overlay').forEach(function(modal) {
-        modal.addEventListener('click', function(e) {
+    document.querySelectorAll(".modal-overlay").forEach(function(modal) {
+        modal.addEventListener("click", function(e) {
             if (e.target === this) {
-                this.classList.remove('visible');
-                document.body.style.overflow = '';
+                this.classList.remove("visible");
+                document.body.style.overflow = "";
             }
         });
     });
     
     // 输入框实时清除错误状态
-    document.querySelectorAll('.form-control').forEach(function(control) {
-        control.addEventListener('input', function() {
-            this.classList.remove('error');
-            var group = this.closest('.form-group');
-            if (group) group.classList.remove('has-error');
+    document.querySelectorAll(".form-control").forEach(function(control) {
+        control.addEventListener("input", function() {
+            this.classList.remove("error");
+            var group = this.closest(".form-group");
+            if (group) group.classList.remove("has-error");
         });
     });
     
 })();
-</script>
-JS;
+</script>'));
 
-$html .= $js;
-
-// 渲染页面
-$content = new CDiv();
-$content->addItem(new CJsScript($html));
-
+// 使用兼容渲染器显示页面
 ViewRenderer::render($pageTitle, $styleTag, $content);

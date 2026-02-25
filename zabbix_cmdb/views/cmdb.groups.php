@@ -391,7 +391,7 @@ if (empty($data['groups'])) {
 $content->addItem($table);
 
 // 添加JavaScript
-$content->addItem(new CTag('script', true, '
+$content->addItem(new CJsScript('<script>
 // 添加自动搜索功能
 // 全局变量用于防抖
 var searchTimeout;
@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // 可以在这里添加额外的初始化逻辑
     var searchInput = document.querySelector("input[name=\"search\"]");
 });
-'));
+</script>'));
 
 // 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
 ViewRenderer::render($pageTitle, $styleTag, $content);

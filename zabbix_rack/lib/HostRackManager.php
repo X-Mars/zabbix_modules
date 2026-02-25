@@ -6,6 +6,8 @@
 
 namespace Modules\ZabbixRack\Lib;
 
+require_once __DIR__ . '/ZabbixVersion.php';
+
 class HostRackManager {
     
     // 标签名称常量
@@ -13,6 +15,15 @@ class HostRackManager {
     const TAG_RACK = 'rack_name';
     const TAG_U_START = 'rack_u_start';
     const TAG_U_END = 'rack_u_end';
+    
+    /**
+     * 获取主机组查询参数名（兼容 Zabbix 6/7）
+     * Zabbix 7.0+: selectHostGroups
+     * Zabbix 6.x:  selectGroups
+     */
+    private static function getSelectGroupsParam(): string {
+        return ZabbixVersion::isVersion7() ? 'selectHostGroups' : 'selectGroups';
+    }
     
     /**
      * 获取标签操作符常量值（兼容不同Zabbix版本）
@@ -45,7 +56,7 @@ class HostRackManager {
         $hosts = \API::Host()->get([
             'output' => ['hostid', 'host', 'name', 'status'],
             'selectTags' => 'extend',
-            'selectHostGroups' => ['groupid', 'name'],
+            self::getSelectGroupsParam() => ['groupid', 'name'],
             'selectInterfaces' => ['ip', 'dns', 'type', 'main'],
             'tags' => [
                 ['tag' => self::TAG_ROOM, 'value' => $roomName, 'operator' => self::getTagsOperatorEqual()],
@@ -206,7 +217,7 @@ class HostRackManager {
     public static function getAvailableHosts(?string $groupId = null, ?string $search = null): array {
         $options = [
             'output' => ['hostid', 'host', 'name', 'status'],
-            'selectHostGroups' => ['groupid', 'name'],
+            self::getSelectGroupsParam() => ['groupid', 'name'],
             'selectInterfaces' => ['ip', 'dns', 'type', 'main'],
             'selectTags' => 'extend',
             'sortfield' => 'name',
@@ -524,12 +535,19 @@ class HostRackManager {
             
             $result = [];
             foreach ($problems as $problem) {
-                $severityNames = ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster'];
+                $severityNames = [
+                    LanguageManager::t('severity_not_classified'),
+                    LanguageManager::t('severity_information'),
+                    LanguageManager::t('severity_warning'),
+                    LanguageManager::t('severity_average'),
+                    LanguageManager::t('severity_high'),
+                    LanguageManager::t('severity_disaster'),
+                ];
                 $result[] = [
                     'eventid' => $problem['eventid'],
                     'name' => $problem['name'],
                     'severity' => $problem['severity'],
-                    'severity_name' => $severityNames[$problem['severity']] ?? 'Unknown',
+                    'severity_name' => $severityNames[$problem['severity']] ?? LanguageManager::t('severity_unknown'),
                     'clock' => $problem['clock'],
                     'time' => date('Y-m-d H:i:s', $problem['clock']),
                     'acknowledged' => $problem['acknowledged']

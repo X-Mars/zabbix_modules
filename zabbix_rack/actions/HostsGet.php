@@ -6,7 +6,6 @@
 namespace Modules\ZabbixRack\Actions;
 
 use CController;
-use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';

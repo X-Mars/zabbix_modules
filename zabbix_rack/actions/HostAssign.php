@@ -6,7 +6,6 @@
 namespace Modules\ZabbixRack\Actions;
 
 use CController;
-use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
@@ -42,7 +41,7 @@ class HostAssign extends CController {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'error' => 'Invalid input'
+                'error' => LanguageManager::t('invalid_input')
             ]);
             exit;
         }

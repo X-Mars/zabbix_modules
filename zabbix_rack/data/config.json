@@ -1,4 +1,1 @@
-{
-    "rooms": [],
-    "racks": []
-}
+{"rooms":[{"id":"room1","name":"Room 1","description":"Test Room"}],"racks":[{"id":"rack1","name":"Rack 1","room_id":"room1","height":42,"description":"Test Rack"}]}

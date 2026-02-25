@@ -153,6 +153,350 @@ class ItemFinder {
     }
     
     /**
+     * 批量获取多台主机的监控项数据（高性能三阶段版本）
+     *
+     * 阶段1：使用 filter.key_ 精确匹配标准 key（单次 API 调用，覆盖绝大部分场景）
+     * 阶段2：对阶段1未命中的主机/类别，使用 search 模糊匹配兜底
+     * 阶段3：对 lastvalue 为空的 item，批量查询 History API 获取最近的值
+     *
+     * 性能对比：
+     * - 原方案：N 台主机 × 8 类别 × 3-6 模式/类别 = 24N~48N 次 API 调用
+     * - 新方案：1 次精确匹配 + 0~8 次模糊兜底 + 1~3 次 History = 最多 12 次 API 调用
+     *
+     * @param array $hostIds 主机ID数组
+     * @return array 按主机ID索引的监控项数据 [hostid => [category => [value, key, value_type]|null]]
+     */
+    public static function batchGetHostItems(array $hostIds): array {
+        if (empty($hostIds)) {
+            return [];
+        }
+
+        // 初始化结果结构
+        $result = [];
+        foreach ($hostIds as $hostid) {
+            $result[$hostid] = [
+                'cpu_count'        => null,
+                'cpu_usage'        => null,
+                'memory_total'     => null,
+                'memory_usage'     => null,
+                'kernel_version'   => null,
+                'system_name'      => null,
+                'operating_system' => null,
+                'os_architecture'  => null,
+            ];
+        }
+
+        // ═══════════════════════════════════════════
+        //  阶段1：精确 Key 匹配（单次 API 调用）
+        // ═══════════════════════════════════════════
+
+        // 定义所有已知的监控项 key，按类别和优先级排列（索引越小优先级越高）
+        $keyMap = [
+            'cpu_count' => [
+                'system.cpu.num',
+                'system.cpu.num[online]',
+                'system.hw.cpu.num',
+            ],
+            'cpu_usage' => [
+                'system.cpu.util',
+                'system.cpu.util[,avg1]',
+                'system.cpu.util[,idle]',
+                'system.cpu.util[]',
+                'system.cpu.load[avg1]',
+                'system.cpu.load[all,avg1]',
+                'system.cpu.load[percpu,avg1]',
+            ],
+            'memory_total' => [
+                'vm.memory.size[total]',
+                'vm.memory.total',
+            ],
+            'memory_usage' => [
+                'vm.memory.utilization',
+                'vm.memory.util',
+                'vm.memory.util[]',
+                'vm.memory.size[pused]',
+                'vm.memory.size[pavailable]',
+                'vm.memory.pused',
+            ],
+            'kernel_version' => [
+                'system.uname',
+                'system.sw.os[uname]',
+            ],
+            'system_name' => [
+                'system.hostname',
+                'system.hostname[host]',
+                'system.sw.os[hostname]',
+                'agent.hostname',
+            ],
+            'operating_system' => [
+                'system.sw.os',
+                'system.sw.os[full]',
+                'system.sw.os[name]',
+                'system.sw.os[short]',
+            ],
+            'os_architecture' => [
+                'system.sw.arch',
+                'system.hw.arch',
+            ],
+        ];
+
+        // 收集所有 key 并构建反向索引：key → [category, priority]
+        $allKeys = [];
+        $keyIndex = [];
+        foreach ($keyMap as $category => $keys) {
+            foreach ($keys as $priority => $key) {
+                $allKeys[] = $key;
+                $keyIndex[$key] = ['category' => $category, 'priority' => $priority];
+            }
+        }
+
+        // 跨阶段共享：追踪需要 History API 回退的 item
+        $needsHistory = [];
+
+        // 单次 API 调用获取所有精确匹配的监控项
+        try {
+            $items = API::Item()->get([
+                'output'       => ['itemid', 'hostid', 'key_', 'lastvalue', 'value_type'],
+                'hostids'      => $hostIds,
+                'filter'       => [
+                    'key_'   => $allKeys,
+                    'status' => ITEM_STATUS_ACTIVE,
+                ],
+                'preservekeys' => false,
+            ]);
+
+            // 按 hostid + category 追踪当前已选的最高优先级
+            $currentPriority = [];
+
+            foreach ($items as $item) {
+                $hostid = $item['hostid'];
+                $key    = $item['key_'];
+
+                if (!isset($result[$hostid]) || !isset($keyIndex[$key])) {
+                    continue;
+                }
+
+                $category = $keyIndex[$key]['category'];
+                $priority = $keyIndex[$key]['priority'];
+                $prioKey  = $hostid . ':' . $category;
+                $hasValue = isset($item['lastvalue']) && $item['lastvalue'] !== '';
+
+                if ($hasValue) {
+                    // 有值的 item — 最高优先级
+                    if (!isset($currentPriority[$prioKey]) || $priority < $currentPriority[$prioKey]) {
+                        $result[$hostid][$category] = [
+                            'value'      => $item['lastvalue'],
+                            'key'        => $key,
+                            'value_type' => $item['value_type'],
+                        ];
+                        $currentPriority[$prioKey] = $priority;
+                        unset($needsHistory[$prioKey]);
+                    }
+                } else {
+                    // lastvalue 为空 — 先记录（低优先级），等 History API 回退
+                    if (!isset($currentPriority[$prioKey])) {
+                        $result[$hostid][$category] = [
+                            'value'      => '',
+                            'key'        => $key,
+                            'value_type' => $item['value_type'],
+                        ];
+                        $currentPriority[$prioKey] = $priority + 10000;
+                        $needsHistory[$prioKey] = [
+                            'hostid'     => $hostid,
+                            'category'   => $category,
+                            'itemid'     => $item['itemid'],
+                            'value_type' => $item['value_type'],
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            error_log('CMDB batchGetHostItems phase1: ' . $e->getMessage());
+        }
+
+        // ═══════════════════════════════════════════
+        //  阶段2：搜索兜底（仅针对阶段1未命中的主机/类别）
+        //  搜索模式与原始 findXxx() 方法保持一致
+        // ═══════════════════════════════════════════
+
+        $searchPatterns = [
+            'cpu_count' => [
+                ['search' => ['key_' => 'cpu.num'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Number of CPUs'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Number of cores'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'CPU cores'], 'searchWildcardsEnabled' => true],
+            ],
+            'cpu_usage' => [
+                ['search' => ['key_' => 'cpu.util'], 'searchWildcardsEnabled' => true],
+                ['search' => ['key_' => 'cpu.load'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'CPU utilization'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'CPU usage'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Processor load'], 'searchWildcardsEnabled' => true],
+            ],
+            'memory_total' => [
+                ['search' => ['key_' => 'vm.memory.size'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Total memory'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Memory total'], 'searchWildcardsEnabled' => true],
+            ],
+            'memory_usage' => [
+                ['search' => ['key_' => 'memory.util'], 'searchWildcardsEnabled' => true],
+                ['search' => ['key_' => 'memory.pused'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Memory utilization'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Memory usage'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Used memory'], 'searchWildcardsEnabled' => true],
+            ],
+            'kernel_version' => [
+                ['search' => ['key_' => 'system.uname'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'System uname'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Kernel version'], 'searchWildcardsEnabled' => true],
+            ],
+            'system_name' => [
+                ['search' => ['key_' => 'hostname'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'System name'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Hostname'], 'searchWildcardsEnabled' => true],
+            ],
+            'operating_system' => [
+                ['search' => ['key_' => 'system.sw.os'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Operating system'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'OS name'], 'searchWildcardsEnabled' => true],
+            ],
+            'os_architecture' => [
+                ['search' => ['key_' => '.arch'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'Operating system architecture'], 'searchWildcardsEnabled' => true],
+                ['search' => ['name' => 'System architecture'], 'searchWildcardsEnabled' => true],
+            ],
+        ];
+
+        foreach ($searchPatterns as $category => $patterns) {
+            // 找出该类别缺失数据的主机
+            $missingHostIds = [];
+            foreach ($hostIds as $hostid) {
+                if ($result[$hostid][$category] === null) {
+                    $missingHostIds[] = $hostid;
+                }
+            }
+            if (empty($missingHostIds)) {
+                continue;
+            }
+
+            // 按模式依次搜索（每个模式只搜索仍缺失的主机）
+            foreach ($patterns as $pattern) {
+                if (empty($missingHostIds)) {
+                    break;
+                }
+
+                try {
+                    $searchParams = array_merge([
+                        'output'  => ['itemid', 'hostid', 'key_', 'lastvalue', 'value_type'],
+                        'hostids' => $missingHostIds,
+                        'filter'  => ['status' => ITEM_STATUS_ACTIVE],
+                    ], $pattern);
+
+                    $foundItems = API::Item()->get($searchParams);
+
+                    foreach ($foundItems as $item) {
+                        $hostid = $item['hostid'];
+                        if (isset($result[$hostid]) && $result[$hostid][$category] === null) {
+                            $hasVal = isset($item['lastvalue']) && $item['lastvalue'] !== '';
+                            $result[$hostid][$category] = [
+                                'value'      => $item['lastvalue'] ?? '',
+                                'key'        => $item['key_'],
+                                'value_type' => $item['value_type'],
+                            ];
+                            if (!$hasVal) {
+                                $prioKey2 = $hostid . ':' . $category;
+                                $needsHistory[$prioKey2] = [
+                                    'hostid'     => $hostid,
+                                    'category'   => $category,
+                                    'itemid'     => $item['itemid'],
+                                    'value_type' => $item['value_type'],
+                                ];
+                            }
+                        }
+                    }
+
+                    // 更新缺失主机列表
+                    $newMissing = [];
+                    foreach ($missingHostIds as $hid) {
+                        if ($result[$hid][$category] === null) {
+                            $newMissing[] = $hid;
+                        }
+                    }
+                    $missingHostIds = $newMissing;
+                } catch (\Exception $e) {
+                    error_log('CMDB batchSearchFallback ' . $category . ': ' . $e->getMessage());
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        //  阶段3：History API 回退
+        //  对 lastvalue 为空的 item，查询历史表获取最近的值
+        //  与原始 findItemByPatterns() 的 History 回退逻辑一致
+        // ═══════════════════════════════════════════
+
+        if (!empty($needsHistory)) {
+            // 按 history 表类型分组
+            $byHistType = [];
+            foreach ($needsHistory as $prioKey => $info) {
+                $histType = self::getHistoryType($info['value_type']);
+                $byHistType[$histType][$prioKey] = $info;
+            }
+
+            foreach ($byHistType as $histType => $items) {
+                $itemIds = array_column($items, 'itemid');
+
+                try {
+                    $historyRecords = API::History()->get([
+                        'output'    => ['itemid', 'value'],
+                        'itemids'   => $itemIds,
+                        'sortfield' => 'clock',
+                        'sortorder' => 'DESC',
+                        'limit'     => count($itemIds) * 3,
+                        'history'   => $histType,
+                    ]);
+
+                    // 按 itemid 去重，只保留每个 item 最近一条
+                    $latestByItem = [];
+                    foreach ($historyRecords as $rec) {
+                        if (!isset($latestByItem[$rec['itemid']])) {
+                            $latestByItem[$rec['itemid']] = $rec['value'];
+                        }
+                    }
+
+                    // 更新结果
+                    foreach ($items as $prioKey => $info) {
+                        if (isset($latestByItem[$info['itemid']]) && $latestByItem[$info['itemid']] !== '') {
+                            $result[$info['hostid']][$info['category']]['value'] = $latestByItem[$info['itemid']];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    error_log('CMDB batchGetHostItems phase3: ' . $e->getMessage());
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * 根据 item 的 value_type 确定 History API 的 history 参数
+     */
+    private static function getHistoryType($valueType): int {
+        switch ((string)$valueType) {
+            case (string)ITEM_VALUE_TYPE_FLOAT:   // 0
+                return 0;
+            case (string)ITEM_VALUE_TYPE_UINT64:  // 3
+                return 3;
+            case (string)ITEM_VALUE_TYPE_STR:     // 1
+            case (string)ITEM_VALUE_TYPE_TEXT:    // 4
+            case (string)ITEM_VALUE_TYPE_LOG:     // 2
+            default:
+                return 1;
+        }
+    }
+
+    /**
      * 根据模式列表查找监控项并获取值
      */
     private static function findItemByPatterns($hostid, $patterns) {

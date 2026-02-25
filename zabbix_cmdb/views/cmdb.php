@@ -9,7 +9,31 @@ use Modules\ZabbixCmdb\Lib\ItemFinder;
 use Modules\ZabbixCmdb\Lib\ViewRenderer;
 
 /**
- * 创建排序链接
+ * 构建保留所有筛选和分页参数的 URL
+ */
+function buildCmdbUrl($params, $data) {
+    $url = 'zabbix.php?action=cmdb';
+    foreach ($params as $key => $value) {
+        $url .= '&' . $key . '=' . urlencode($value);
+    }
+    // 保留搜索条件
+    if (!isset($params['search']) && !empty($data['search'])) {
+        $url .= '&search=' . urlencode($data['search']);
+    }
+    if (!isset($params['groupid']) && !empty($data['selected_groupid'])) {
+        $url .= '&groupid=' . $data['selected_groupid'];
+    }
+    if (!isset($params['interface_type']) && !empty($data['interface_type'])) {
+        $url .= '&interface_type=' . $data['interface_type'];
+    }
+    if (!isset($params['page_size']) && isset($data['page_size'])) {
+        $url .= '&page_size=' . $data['page_size'];
+    }
+    return $url;
+}
+
+/**
+ * 创建排序链接（切换排序后重置到第1页）
  */
 function createSortLink($title, $field, $data) {
     $currentSort = isset($data['sort']) ? $data['sort'] : '';
@@ -22,16 +46,39 @@ function createSortLink($title, $field, $data) {
         $icon = $currentOrder === 'ASC' ? ' ↑' : ' ↓';
     }
 
-    // 构建URL，包含搜索参数
-    $url = 'zabbix.php?action=cmdb&sort=' . $field . '&sortorder=' . $newOrder;
-    if (!empty($data['search'])) {
-        $url .= '&search=' . urlencode($data['search']);
-    }
-    if (!empty($data['selected_groupid'])) {
-        $url .= '&groupid=' . $data['selected_groupid'];
-    }
+    $url = buildCmdbUrl([
+        'sort'      => $field,
+        'sortorder' => $newOrder,
+        'page'      => 1,
+    ], $data);
 
     return new CLink($title . $icon, $url);
+}
+
+/**
+ * 创建分页链接
+ */
+function createPaginationLink($pageNum, $data, $text = null, $disabled = false) {
+    $label = $text ?? (string)$pageNum;
+
+    if ($disabled || $pageNum == $data['page']) {
+        $span = (new CSpan($label))->addClass('page-link');
+        if ($pageNum == $data['page'] && $text === null) {
+            $span->addClass('page-current');
+        }
+        if ($disabled) {
+            $span->addClass('page-disabled');
+        }
+        return $span;
+    }
+
+    $url = buildCmdbUrl([
+        'sort'      => $data['sort'] ?? 'name',
+        'sortorder' => $data['sortorder'] ?? 'ASC',
+        'page'      => $pageNum,
+    ], $data);
+
+    return (new CLink($label, $url))->addClass('page-link');
 }
 
 /**
@@ -255,7 +302,7 @@ $styleTag = new CTag('style', true, '
     background-color: #fff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    table-layout: fixed;
+    table-layout: auto;
     overflow: visible;
 }
 
@@ -267,12 +314,8 @@ $styleTag = new CTag('style', true, '
     text-align: left;
     font-size: 13px;
     border-bottom: 1px solid #dee2e6;
-    max-width: 300px;
-    word-break: break-all;
-    overflow-wrap: break-word;
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
-    min-height: 20px;
     line-height: 1.4;
 }
 
@@ -281,15 +324,14 @@ $styleTag = new CTag('style', true, '
     border-bottom: 1px solid #dee2e6;
     font-size: 13px;
     vertical-align: top;
-    max-width: 300px;
-    word-break: break-all;
+    word-break: break-word;
     overflow-wrap: break-word;
     white-space: normal;
     overflow: hidden;
-    min-height: 20px;
     line-height: 1.4;
-    max-height: 55px; /* 3行文字高度 */
+    max-height: 55px;
     position: relative;
+    max-width: 200px;
 }
 
 .hosts-table tbody td:hover {
@@ -410,6 +452,96 @@ $styleTag = new CTag('style', true, '
     color: #856404;
     border: 1px solid #ffeaa7;
 }
+
+/* ── 分页组件样式 ── */
+.pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+.pagination-info {
+    font-size: 13px;
+    color: #495057;
+}
+.pagination-info strong {
+    color: #212529;
+}
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 13px;
+    color: #007bff;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+.page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    text-decoration: none;
+}
+.page-link.page-current {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+    cursor: default;
+    font-weight: 600;
+}
+.page-link.page-disabled {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+.page-link.page-disabled:hover {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+}
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    font-size: 13px;
+    color: #6c757d;
+}
+.pagination-size {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #495057;
+}
+.pagination-size select {
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    background-color: #fff;
+    cursor: pointer;
+}
 ');
 
 // 创建主体内容
@@ -501,7 +633,8 @@ $content = (new CDiv())
     );
 
 // 如果有主机数据，添加统计卡片
-if (!empty($data['hosts'])) {
+$totalCount = $data['total_count'] ?? count($data['hosts']);
+if (!empty($data['hosts']) || $totalCount > 0) {
     $content->addItem(
         (new CDiv())
             ->addClass('stats-container')
@@ -534,7 +667,7 @@ if (!empty($data['hosts'])) {
                     ->addItem(
                         (new CDiv())
                             ->addClass('stat-content')
-                            ->addItem((new CDiv(count($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv($totalCount))->addClass('stat-number'))
                             ->addItem((new CDiv(LanguageManager::t('Total Hosts')))->addClass('stat-label'))
                     )
             )
@@ -556,7 +689,7 @@ if (!empty($data['hosts'])) {
                     ->addItem(
                         (new CDiv())
                             ->addClass('stat-content')
-                            ->addItem((new CDiv(countActiveHosts($data['hosts'])))->addClass('stat-number'))
+                            ->addItem((new CDiv($data['active_hosts'] ?? 0))->addClass('stat-number'))
                             ->addItem((new CDiv(LanguageManager::t('Active Hosts')))->addClass('stat-label'))
                     )
             )
@@ -569,6 +702,7 @@ $table->addClass('hosts-table');
 
 // 添加表头（带排序链接）
 $header = [
+    LanguageManager::t('#'),
     createSortLink(LanguageManager::t('Host Name'), 'name', $data),
     createSortLink(LanguageManager::t('System Name'), 'system_name', $data),
     createSortLink(LanguageManager::t('IP Address'), 'ip', $data),
@@ -588,11 +722,15 @@ if (empty($data['hosts'])) {
     $table->addRow([
         (new CCol(LanguageManager::t('No hosts found')))
             ->addClass('no-data')
-            ->setAttribute('colspan', 11)
+            ->setAttribute('colspan', 12)
     ]);
 } else {
+    // 序号起始值：基于分页偏移量
+    $rowNum = (($data['page'] ?? 1) - 1) * ($data['page_size'] ?? 50);
+
     // 添加主机数据行
     foreach ($data['hosts'] as $host) {
+        $rowNum++;
         // 获取主要IP地址
         $mainIp = '';
         $interfaceTypes = [];
@@ -795,6 +933,7 @@ if (empty($data['hosts'])) {
         $groupCol->addItem($groupContainer);
 
         $table->addRow([
+            (new CCol($rowNum))->setAttribute('style', 'text-align: center; color: #6c757d; font-size: 12px;'),
             $hostNameCol,
             $systemNameCol,
             $ipCol,
@@ -810,11 +949,114 @@ if (empty($data['hosts'])) {
     }
 }
 
+// ── 分页组件（表格上方 + 下方各一份） ──
+$page       = $data['page'] ?? 1;
+$pageSize   = $data['page_size'] ?? 50;
+$totalCount = $data['total_count'] ?? count($data['hosts']);
+$totalPages = $data['total_pages'] ?? 1;
+
+/**
+ * 构建分页容器（可多次调用以在不同位置插入）
+ */
+function buildPaginationContainer($page, $pageSize, $totalCount, $totalPages, $data, $idSuffix = '') {
+    $startRow = ($page - 1) * $pageSize + 1;
+    $endRow   = min($page * $pageSize, $totalCount);
+
+    $paginationContainer = (new CDiv())->addClass('pagination-container');
+
+    // 左侧：分页信息
+    $paginationContainer->addItem(
+        (new CDiv(
+            LanguageManager::tf('Showing %d to %d of %d hosts', $startRow, $endRow, $totalCount)
+        ))->addClass('pagination-info')
+    );
+
+    // 中间：页码导航
+    if ($totalPages > 1) {
+        $nav = (new CDiv())->addClass('pagination-nav');
+
+        // « 首页
+        $nav->addItem(createPaginationLink(1, $data, '« ' . LanguageManager::t('First'), $page <= 1));
+        // ‹ 上一页
+        $nav->addItem(createPaginationLink(max(1, $page - 1), $data, '‹ ' . LanguageManager::t('Prev'), $page <= 1));
+
+        // 页码按钮（最多显示 7 个）
+        $maxVisible = 7;
+        if ($totalPages <= $maxVisible) {
+            $startPage = 1;
+            $endPage   = $totalPages;
+        } else {
+            $half = intdiv($maxVisible, 2);
+            $startPage = max(1, $page - $half);
+            $endPage   = $startPage + $maxVisible - 1;
+            if ($endPage > $totalPages) {
+                $endPage   = $totalPages;
+                $startPage = $endPage - $maxVisible + 1;
+            }
+        }
+
+        if ($startPage > 1) {
+            $nav->addItem(createPaginationLink(1, $data));
+            if ($startPage > 2) {
+                $nav->addItem((new CSpan('…'))->addClass('page-ellipsis'));
+            }
+        }
+
+        for ($i = $startPage; $i <= $endPage; $i++) {
+            $nav->addItem(createPaginationLink($i, $data));
+        }
+
+        if ($endPage < $totalPages) {
+            if ($endPage < $totalPages - 1) {
+                $nav->addItem((new CSpan('…'))->addClass('page-ellipsis'));
+            }
+            $nav->addItem(createPaginationLink($totalPages, $data));
+        }
+
+        // › 下一页
+        $nav->addItem(createPaginationLink(min($totalPages, $page + 1), $data, LanguageManager::t('Next') . ' ›', $page >= $totalPages));
+        // » 末页
+        $nav->addItem(createPaginationLink($totalPages, $data, LanguageManager::t('Last') . ' »', $page >= $totalPages));
+
+        $paginationContainer->addItem($nav);
+    }
+
+    // 右侧：每页条数选择
+    $sizeSelector = (new CDiv())->addClass('pagination-size');
+    $sizeSelector->addItem(new CSpan(LanguageManager::t('Per page')));
+
+    $sizeSelect = new CTag('select', true);
+    $sizeSelect->setAttribute('id', 'page-size-select' . $idSuffix);
+    $sizeSelect->setAttribute('onchange', 'handlePageSizeChange(this)');
+
+    foreach ([10, 20, 50, 100] as $size) {
+        $opt = new CTag('option', true, (string)$size);
+        $opt->setAttribute('value', (string)$size);
+        if ($size == $pageSize) {
+            $opt->setAttribute('selected', 'selected');
+        }
+        $sizeSelect->addItem($opt);
+    }
+    $sizeSelector->addItem($sizeSelect);
+
+    $paginationContainer->addItem($sizeSelector);
+    return $paginationContainer;
+}
+
+// 表格上方分页
+if ($totalCount > 0) {
+    $content->addItem(buildPaginationContainer($page, $pageSize, $totalCount, $totalPages, $data, '-top'));
+}
+
 $content->addItem($table);
 
+// 表格下方分页
+if ($totalCount > 0) {
+    $content->addItem(buildPaginationContainer($page, $pageSize, $totalCount, $totalPages, $data, '-bottom'));
+}
+
 // 添加JavaScript
-$content->addItem(new CTag('script', true, '
-// 添加自动搜索功能
+$content->addItem(new CJsScript('<script>
 // 全局变量用于防抖
 var searchTimeout;
 
@@ -831,7 +1073,6 @@ function handleSearchInput(input) {
 
 function handleGroupChange(select) {
     var form = select.closest("form");
-
     if (form) {
         form.submit();
     }
@@ -839,19 +1080,30 @@ function handleGroupChange(select) {
 
 function handleInterfaceTypeChange(select) {
     var form = select.closest("form");
-
     if (form) {
         form.submit();
     }
 }
 
+/**
+ * 每页条数切换 — 保留当前搜索条件，重置到第 1 页
+ */
+function handlePageSizeChange(select) {
+    var newSize = select.value;
+    var params = new URLSearchParams(window.location.search);
+    params.set("page_size", newSize);
+    params.set("page", "1");            // 切换条数后回到第 1 页
+    params.set("action", "cmdb");
+    window.location.href = "zabbix.php?" + params.toString();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
-    // 可以在这里添加额外的初始化逻辑
-    var searchInput = document.querySelector("input[name=\"search\"]");
+    // 初始化
+    var searchInput = document.querySelector("input[name=\\"search\\"]");
     var groupSelect = document.getElementById("groupid-select");
     var interfaceTypeSelect = document.getElementById("interface-type-select");
 });
-'));
+</script>'));
 
 // 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
 ViewRenderer::render($pageTitle, $styleTag, $content);
