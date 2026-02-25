@@ -1056,7 +1056,7 @@ if ($totalCount > 0) {
 }
 
 // 添加JavaScript
-$content->addItem(new CTag('script', true, '
+$content->addItem(new CJsScript('<script>
 // 全局变量用于防抖
 var searchTimeout;
 
@@ -1103,7 +1103,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var groupSelect = document.getElementById("groupid-select");
     var interfaceTypeSelect = document.getElementById("interface-type-select");
 });
-'));
+</script>'));
 
 // 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
 ViewRenderer::render($pageTitle, $styleTag, $content);

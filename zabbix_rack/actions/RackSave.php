@@ -6,7 +6,6 @@
 namespace Modules\ZabbixRack\Actions;
 
 use CController;
-use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
@@ -40,7 +39,7 @@ class RackSave extends CController {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'error' => 'Invalid input'
+                'error' => LanguageManager::t('invalid_input')
             ]);
             exit;
         }
@@ -63,10 +62,19 @@ class RackSave extends CController {
         
         $success = RackConfig::saveRack($rack);
         
+        $message = LanguageManager::t('save_success');
+        if (!$success) {
+            if (!RackConfig::isDataDirWritable()) {
+                $message = str_replace('{path}', RackConfig::getDataDir(), LanguageManager::t('save_permission_hint'));
+            } else {
+                $message = LanguageManager::t('save_failed');
+            }
+        }
+        
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $success,
-            'message' => $success ? LanguageManager::t('save_success') : LanguageManager::t('save_failed')
+            'message' => $message
         ]);
         exit;
     }

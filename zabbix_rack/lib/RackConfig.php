@@ -66,6 +66,21 @@ class RackConfig {
     }
     
     /**
+     * 检查数据目录是否可写
+     */
+    public static function isDataDirWritable(): bool {
+        $dataDir = dirname(self::getConfigFile());
+        return is_dir($dataDir) && is_writable($dataDir);
+    }
+    
+    /**
+     * 获取数据目录路径
+     */
+    public static function getDataDir(): string {
+        return dirname(self::getConfigFile());
+    }
+    
+    /**
      * 获取默认配置
      */
     private static function getDefaultConfig(): array {

@@ -107,6 +107,8 @@ class LanguageManager {
             'assign_failed' => '分配失败',
             'remove_success' => '移除成功',
             'remove_failed' => '移除失败',
+            'operation_failed' => '操作失败',
+            'save_permission_hint' => "保存失败，请检查 data 目录权限。\n\n可尝试执行：\n\nchown -R apache.apache {path} \n\n或 \n\nchmod -R 777 {path}",
             
             // 错误消息
             'room_not_found' => '机房不存在',
@@ -145,8 +147,40 @@ class LanguageManager {
             'problems' => '告警',
             'no_problems' => '无告警',
             'host_problems' => '主机告警',
-            'loading' => '加载中...',
             'problem_count' => '告警数',
+            'no_active_problems' => '✅ 当前无活跃告警',
+            'fetch_problems_failed' => '获取告警失败',
+            
+            // 严重程度名称
+            'severity_not_classified' => '未分类',
+            'severity_information' => '信息',
+            'severity_warning' => '警告',
+            'severity_average' => '一般严重',
+            'severity_high' => '严重',
+            'severity_disaster' => '灾难',
+            'severity_unknown' => '未知',
+            
+            // 机柜视图 JS 国际化
+            'host_name_label' => '主机名:',
+            'ip_label' => 'IP:',
+            'host_group_label' => '主机组:',
+            'position_label' => '位置:',
+            'status_label' => '状态:',
+            'unnamed_host' => '未命名主机',
+            'edit_host_position' => '编辑主机位置',
+            'no_matching_hosts' => '无匹配主机',
+            'select_a_host' => '请选择一个主机',
+            'invalid_u_range' => '请输入有效的U位范围',
+            'confirm_remove_host' => '确定要从机柜中移除此主机吗？',
+            
+            // 机柜管理 JS 国际化
+            'delete_room_title' => '删除机房',
+            'delete_rack_title' => '删除机柜',
+            'room_has_racks_warning' => '该机房下还有 {count} 个机柜，将一并删除！',
+            'rack_height_hint' => '有效范围：1-60U，默认42U',
+            
+            // 后端验证
+            'invalid_input' => '输入参数无效',
         ],
         'en_US' => [
             // 模块和菜单（用于 Module.php）
@@ -244,6 +278,8 @@ class LanguageManager {
             'assign_failed' => 'Assign failed',
             'remove_success' => 'Remove successful',
             'remove_failed' => 'Remove failed',
+            'operation_failed' => 'Operation failed',
+            'save_permission_hint' => "Save failed. Please check the permissions of the data directory.\n\nYou may try: \n\nchown -R apache.apache {path} \n\nor \n\nchmod -R 777 {path}",
             
             // 错误消息
             'room_not_found' => 'Room not found',
@@ -283,6 +319,39 @@ class LanguageManager {
             'no_problems' => 'No Problems',
             'host_problems' => 'Host Problems',
             'problem_count' => 'Problem Count',
+            'no_active_problems' => '✅ No active problems',
+            'fetch_problems_failed' => 'Failed to fetch problems',
+            
+            // 严重程度名称
+            'severity_not_classified' => 'Not classified',
+            'severity_information' => 'Information',
+            'severity_warning' => 'Warning',
+            'severity_average' => 'Average',
+            'severity_high' => 'High',
+            'severity_disaster' => 'Disaster',
+            'severity_unknown' => 'Unknown',
+            
+            // 机柜视图 JS 国际化
+            'host_name_label' => 'Host:',
+            'ip_label' => 'IP:',
+            'host_group_label' => 'Group:',
+            'position_label' => 'Position:',
+            'status_label' => 'Status:',
+            'unnamed_host' => 'Unnamed Host',
+            'edit_host_position' => 'Edit Host Position',
+            'no_matching_hosts' => 'No matching hosts',
+            'select_a_host' => 'Please select a host',
+            'invalid_u_range' => 'Please enter a valid U range',
+            'confirm_remove_host' => 'Are you sure to remove this host from the rack?',
+            
+            // 机柜管理 JS 国际化
+            'delete_room_title' => 'Delete Room',
+            'delete_rack_title' => 'Delete Rack',
+            'room_has_racks_warning' => 'This room has {count} rack(s), which will also be deleted!',
+            'rack_height_hint' => 'Valid range: 1-60U, default 42U',
+            
+            // 后端验证
+            'invalid_input' => 'Invalid input',
         ]
     ];
 

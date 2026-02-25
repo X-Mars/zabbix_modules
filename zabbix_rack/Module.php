@@ -51,7 +51,7 @@ class Module extends ModuleBase {
             }
         } catch (\Exception $e) {
             // 记录错误但不中断执行
-            error_log('Zabbix Rock Module: Failed to register menu - ' . $e->getMessage());
+            error_log('Zabbix Rack Module: Failed to register menu - ' . $e->getMessage());
         }
     }
 }

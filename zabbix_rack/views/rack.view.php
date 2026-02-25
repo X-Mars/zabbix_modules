@@ -78,7 +78,7 @@ $styleTag = new CTag('style', true, '
     font-size: 13px;
     white-space: nowrap;
 }
-.rack-top-filter select, 
+.rack-top-filter z-select, 
 .rack-top-filter input[type="text"] {
     min-width: 200px;
     padding: 10px 14px;
@@ -90,13 +90,24 @@ $styleTag = new CTag('style', true, '
     height: 42px;
     box-sizing: border-box;
 }
-.rack-top-filter select:focus, 
+.rack-top-filter z-select {
+    min-width: 200px !important;
+}
+/* z-select 圆角样式 */
+z-select button.focusable {
+    border-radius: 6px !important;
+}
+z-select .list {
+    border-radius: 6px !important;
+    overflow: hidden;
+}
+.rack-top-filter z-select:focus, 
 .rack-top-filter input[type="text"]:focus {
     outline: none;
     border-color: #80bdff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
-.rack-top-filter select:hover, 
+.rack-top-filter z-select:hover, 
 .rack-top-filter input[type="text"]:hover {
     border-color: #adb5bd;
 }
@@ -404,7 +415,6 @@ $styleTag = new CTag('style', true, '
     background: rgba(0,0,0,0.6);
     z-index: 2000;
     display: none;
-    backdrop-filter: blur(4px);
 }
 .modal-overlay.visible {
     display: flex;
@@ -416,20 +426,17 @@ $styleTag = new CTag('style', true, '
     border-radius: 12px;
     width: 520px;
     max-height: 85vh;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    animation: modalSlideIn 0.3s ease;
 }
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 .modal-header {
@@ -465,6 +472,7 @@ $styleTag = new CTag('style', true, '
 .modal-body {
     padding: 24px;
     overflow-y: auto;
+    overflow-x: visible;
     flex: 1;
 }
 .modal-footer {
@@ -487,7 +495,7 @@ $styleTag = new CTag('style', true, '
     color: #495057;
     font-size: 13px;
 }
-.form-group select, 
+.form-group z-select, 
 .form-group input {
     width: 100%;
     padding: 10px 14px;
@@ -499,18 +507,17 @@ $styleTag = new CTag('style', true, '
     background: #fff;
     color: #212529;
 }
-.form-group select {
-    appearance: auto;
-    -webkit-appearance: menulist;
-    -moz-appearance: menulist;
-    cursor: pointer;
+.form-group z-select {
+    width: 100% !important;
 }
-.form-group select option {
-    padding: 8px 12px;
-    color: #212529;
-    background: #fff;
+.form-group z-select button.focusable {
+    border-radius: 6px !important;
 }
-.form-group select:focus, 
+.form-group z-select .list {
+    border-radius: 6px !important;
+    overflow: hidden;
+}
+.form-group z-select:focus, 
 .form-group input:focus {
     outline: none;
     border-color: #80bdff;
@@ -1168,9 +1175,12 @@ $styleTag = new CTag('style', true, '
         gap: 15px;
     }
     
-    .rack-top-filter select, 
+    .rack-top-filter z-select, 
     .rack-top-filter input[type="text"] {
         min-width: 160px;
+    }
+    .rack-top-filter z-select {
+        min-width: 160px !important;
     }
     
     .rack-overview-grid {
@@ -1197,10 +1207,14 @@ $styleTag = new CTag('style', true, '
         width: 100%;
     }
     
-    .rack-top-filter select, 
+    .rack-top-filter z-select, 
     .rack-top-filter input[type="text"] {
         width: 100%;
         min-width: auto;
+    }
+    .rack-top-filter z-select {
+        width: 100% !important;
+        min-width: auto !important;
     }
     
     .rack-top-filter .btn {
@@ -1273,54 +1287,87 @@ $styleTag = new CTag('style', true, '
 
 ');
 
-// 页面容器开始
-$html = '<div class="rack-page-wrapper">';
-$html .= '<div class="rack-page-container">';
 
-// 顶部筛选栏 - 水平布局
-$html .= '<div class="rack-top-filter">';
-$html .= '<form id="filter-form" method="get" action="zabbix.php">';
-$html .= '<input type="hidden" name="action" value="rack.view">';
+// ==================== 构建页面内容（CTag 模式，与 rack.manage.php 保持一致） ====================
+
+$content = (new CDiv())->addClass('rack-page-wrapper');
+$container = (new CDiv())->addClass('rack-page-container');
+
+// ── 顶部筛选栏 ──
+$filterBar = (new CDiv())->addClass('rack-top-filter');
+$filterForm = (new CTag('form', true))
+    ->setAttribute('id', 'filter-form')
+    ->setAttribute('method', 'get')
+    ->setAttribute('action', 'zabbix.php');
+$filterForm->addItem(
+    (new CInput('hidden', 'action', 'rack.view'))
+);
 
 // 搜索框
-$html .= '<div class="filter-item">';
-$html .= '<label>🔍 ' . LanguageManager::t('search') . '</label>';
-$html .= '<input type="text" name="search" id="search-input" value="' . htmlspecialchars($search) . '" placeholder="' . LanguageManager::t('search_placeholder') . '">';
-$html .= '</div>';
+$searchItem = (new CDiv())->addClass('filter-item');
+$searchItem->addItem(
+    (new CTag('label', true, '🔍 ' . LanguageManager::t('search')))
+);
+$searchItem->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'text')
+        ->setAttribute('name', 'search')
+        ->setAttribute('id', 'search-input')
+        ->setAttribute('value', htmlspecialchars($search))
+        ->setAttribute('placeholder', LanguageManager::t('search_placeholder'))
+);
+$filterForm->addItem($searchItem);
 
-// 机房选择
-$html .= '<div class="filter-item">';
-$html .= '<label>🏢 ' . LanguageManager::t('room') . '</label>';
-$html .= '<select name="room_id" id="room-select">';
-$html .= '<option value="">' . LanguageManager::t('select_room') . '</option>';
+// 机房选择 - 使用 CSelect（z-select）
+$roomFilterItem = (new CDiv())->addClass('filter-item');
+$roomFilterItem->addItem(
+    (new CTag('label', true, '🏢 ' . LanguageManager::t('room')))
+);
+$roomFilterSelect = (new CSelect('room_id'))
+    ->setAttribute('id', 'room-select')
+    ->addOption(new CSelectOption('', LanguageManager::t('select_room')));
 foreach ($rooms as $room) {
-    $selected = ($room['id'] === $currentRoomId) ? ' selected' : '';
-    $html .= '<option value="' . htmlspecialchars($room['id']) . '"' . $selected . '>' . htmlspecialchars($room['name']) . '</option>';
+    $roomFilterSelect->addOption(new CSelectOption($room['id'], $room['name']));
 }
-$html .= '</select>';
-$html .= '</div>';
+if ($currentRoomId) {
+    $roomFilterSelect->setValue($currentRoomId);
+}
+$roomFilterItem->addItem($roomFilterSelect);
+$filterForm->addItem($roomFilterItem);
 
-// 机柜选择
-$html .= '<div class="filter-item">';
-$html .= '<label>🗄️ ' . LanguageManager::t('rack') . '</label>';
-$html .= '<select name="rack_id" id="rack-select">';
-$html .= '<option value="">' . LanguageManager::t('select_rack') . '</option>';
+// 机柜选择 - 使用 CSelect（z-select）
+$rackFilterItem = (new CDiv())->addClass('filter-item');
+$rackFilterItem->addItem(
+    (new CTag('label', true, '🗄️ ' . LanguageManager::t('rack')))
+);
+$rackFilterSelect = (new CSelect('rack_id'))
+    ->setAttribute('id', 'rack-select')
+    ->addOption(new CSelectOption('', LanguageManager::t('select_rack')));
 foreach ($racks as $rack) {
-    $selected = ($rack['id'] === $currentRackId) ? ' selected' : '';
-    $html .= '<option value="' . htmlspecialchars($rack['id']) . '"' . $selected . '>' . htmlspecialchars($rack['name']) . '</option>';
+    $rackFilterSelect->addOption(new CSelectOption($rack['id'], $rack['name']));
 }
-$html .= '</select>';
-$html .= '</div>';
+if ($currentRackId) {
+    $rackFilterSelect->setValue($currentRackId);
+}
+$rackFilterItem->addItem($rackFilterSelect);
+$filterForm->addItem($rackFilterItem);
 
-$html .= '<div class="filter-item">';
-$html .= '<label>&nbsp;</label>';
-$html .= '<button type="submit" class="btn btn-primary">🔎 ' . LanguageManager::t('filter') . '</button>';
-$html .= '</div>';
+// 筛选按钮
+$filterBtnItem = (new CDiv())->addClass('filter-item');
+$filterBtnItem->addItem(
+    (new CTag('label', true, '&nbsp;'))
+);
+$filterBtnItem->addItem(
+    (new CTag('button', true, '🔎 ' . LanguageManager::t('filter')))
+        ->setAttribute('type', 'submit')
+        ->addClass('btn btn-primary')
+);
+$filterForm->addItem($filterBtnItem);
 
-$html .= '</form>';
-$html .= '</div>'; // rack-top-filter
+$filterBar->addItem($filterForm);
+$container->addItem($filterBar);
 
-// 统计卡片
+// ── 统计卡片 ──
 $totalHosts = count($hosts);
 $usedU = 0;
 foreach ($hosts as $host) {
@@ -1329,7 +1376,8 @@ foreach ($hosts as $host) {
 $rackHeight = $currentRack ? ($currentRack['height'] ?? 42) : 42;
 $usagePercent = $rackHeight > 0 ? round(($usedU / $rackHeight) * 100, 1) : 0;
 
-$html .= '<div class="stats-row">';
+$statsRow = (new CDiv())->addClass('stats-row');
+
 if ($showOverview) {
     // 概览模式下显示整个机房统计
     $totalRackCount = count($racks);
@@ -1339,158 +1387,265 @@ if ($showOverview) {
         $totalHostsInRoom += $rackData['host_count'];
         $totalProblemsInRoom += $rackData['problem_count'];
     }
-    $html .= '<div class="stat-card"><span class="stat-icon">🗄️</span><div class="stat-content"><span class="stat-number">' . $totalRackCount . '</span><span class="stat-label">' . LanguageManager::t('total_racks') . '</span></div></div>';
-    $html .= '<div class="stat-card"><span class="stat-icon">🖥️</span><div class="stat-content"><span class="stat-number">' . $totalHostsInRoom . '</span><span class="stat-label">' . LanguageManager::t('total_hosts') . '</span></div></div>';
-    $html .= '<div class="stat-card"><span class="stat-icon">🚨</span><div class="stat-content"><span class="stat-number">' . $totalProblemsInRoom . '</span><span class="stat-label">' . LanguageManager::t('total_problems') . '</span></div></div>';
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('🗄️'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan((string)$totalRackCount))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('total_racks')))->addClass('stat-label'))
+            )
+    );
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan((string)$totalHostsInRoom))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('total_hosts')))->addClass('stat-label'))
+            )
+    );
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('🚨'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan((string)$totalProblemsInRoom))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('total_problems')))->addClass('stat-label'))
+            )
+    );
 } else {
     // 单机柜模式下显示机柜统计
-    $html .= '<div class="stat-card"><span class="stat-icon">🖥️</span><div class="stat-content"><span class="stat-number">' . $totalHosts . '</span><span class="stat-label">' . LanguageManager::t('total_hosts') . '</span></div></div>';
-    $html .= '<div class="stat-card"><span class="stat-icon">📊</span><div class="stat-content"><span class="stat-number">' . $usedU . 'U / ' . $rackHeight . 'U</span><span class="stat-label">' . LanguageManager::t('space_usage') . '</span></div></div>';
-    $html .= '<div class="stat-card"><span class="stat-icon">📈</span><div class="stat-content"><span class="stat-number">' . $usagePercent . '%</span><span class="stat-label">' . LanguageManager::t('usage_rate') . '</span></div></div>';
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('🖥️'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan((string)$totalHosts))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('total_hosts')))->addClass('stat-label'))
+            )
+    );
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('📊'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan($usedU . 'U / ' . $rackHeight . 'U'))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('space_usage')))->addClass('stat-label'))
+            )
+    );
+    $statsRow->addItem(
+        (new CDiv())
+            ->addClass('stat-card')
+            ->addItem((new CSpan('📈'))->addClass('stat-icon'))
+            ->addItem(
+                (new CDiv())
+                    ->addClass('stat-content')
+                    ->addItem((new CSpan($usagePercent . '%'))->addClass('stat-number'))
+                    ->addItem((new CSpan(LanguageManager::t('usage_rate')))->addClass('stat-label'))
+            )
+    );
 }
-$html .= '</div>';
+$container->addItem($statsRow);
 
-// 主容器
-$html .= '<div class="rack-container">';
+// ── 主容器 ──
+$rackContainer = (new CDiv())->addClass('rack-container');
 
 if ($showOverview) {
     // ===== 概览模式：显示多个机柜 =====
-    $html .= '<div class="rack-main" style="width:100%;margin:0;">';
-    
+    $rackMain = (new CDiv())
+        ->addClass('rack-main')
+        ->setAttribute('style', 'width:100%;margin:0;');
+
     if (empty($allRacksData)) {
-        $html .= '<div class="no-data">📭 ' . LanguageManager::t('no_racks') . '</div>';
+        $rackMain->addItem(
+            (new CDiv('📭 ' . LanguageManager::t('no_racks')))->addClass('no-data')
+        );
     } else {
-        $html .= '<div class="racks-grid">';
-        
+        $racksGrid = (new CDiv())->addClass('racks-grid');
+
         foreach ($allRacksData as $rackData) {
-            // 确定卡片的告警等级和样式
             $severityClass = '';
             $hasAlert = $rackData['problem_count'] > 0;
-            
             if ($hasAlert) {
                 $severityClass = 'severity-' . $rackData['max_severity'];
             }
-            
-            $cardClasses = ['rack-card'];
+
+            $cardClasses = 'rack-card';
             if ($hasAlert) {
-                $cardClasses[] = 'has-alert';
-                $cardClasses[] = $severityClass;
+                $cardClasses .= ' has-alert ' . $severityClass;
             }
-            
-            $rackJson = htmlspecialchars(json_encode($rackData), ENT_QUOTES);
-            
-            $html .= '<div class="' . implode(' ', $cardClasses) . '" onclick="openRackDetail(\'' . htmlspecialchars($rackData['id']) . '\')">';
-            
+
+            $rackCard = (new CDiv())
+                ->addClass($cardClasses)
+                ->setAttribute('onclick', "openRackDetail('" . htmlspecialchars($rackData['id']) . "')");
+
             // 卡片头部
-            $html .= '<div class="rack-card-header">';
-            $html .= '<div class="rack-card-title">🗄️ ' . htmlspecialchars($rackData['name']) . '</div>';
+            $cardHeader = (new CDiv())->addClass('rack-card-header');
+            $cardHeader->addItem(
+                (new CDiv('🗄️ ' . htmlspecialchars($rackData['name'])))->addClass('rack-card-title')
+            );
             if ($hasAlert) {
-                $html .= '<div class="rack-alert-badge" title="' . $rackData['problem_count'] . ' ' . LanguageManager::t('problems') . '">' . $rackData['problem_count'] . '</div>';
+                $cardHeader->addItem(
+                    (new CDiv((string)$rackData['problem_count']))
+                        ->addClass('rack-alert-badge')
+                        ->setAttribute('title', $rackData['problem_count'] . ' ' . LanguageManager::t('problems'))
+                );
             }
-            $html .= '</div>';
-            
+            $rackCard->addItem($cardHeader);
+
             // 卡片内容
-            $html .= '<div class="rack-card-body">';
-            $html .= '<div class="rack-card-stat">';
-            $html .= '<span class="rack-card-stat-label">🖥️ ' . LanguageManager::t('hosts') . ':</span>';
-            $html .= '<span class="rack-card-stat-value">' . $rackData['host_count'] . '</span>';
-            $html .= '</div>';
-            
-            $html .= '<div class="rack-card-stat">';
-            $html .= '<span class="rack-card-stat-label">📏 ' . LanguageManager::t('usage') . ':</span>';
-            $usagePercent = $rackData['height'] > 0 ? round(($rackData['used_u'] / $rackData['height']) * 100, 1) : 0;
-            $html .= '<span class="rack-card-stat-value">' . $rackData['used_u'] . 'U / ' . $rackData['height'] . 'U (' . $usagePercent . '%)</span>';
-            $html .= '</div>';
-            
+            $cardBody = (new CDiv())->addClass('rack-card-body');
+
+            $hostStat = (new CDiv())->addClass('rack-card-stat');
+            $hostStat->addItem(
+                (new CSpan('🖥️ ' . LanguageManager::t('hosts') . ':'))->addClass('rack-card-stat-label')
+            );
+            $hostStat->addItem(
+                (new CSpan((string)$rackData['host_count']))->addClass('rack-card-stat-value')
+            );
+            $cardBody->addItem($hostStat);
+
+            $usageStat = (new CDiv())->addClass('rack-card-stat');
+            $usageStat->addItem(
+                (new CSpan('📏 ' . LanguageManager::t('usage') . ':'))->addClass('rack-card-stat-label')
+            );
+            $cardUsagePercent = $rackData['height'] > 0 ? round(($rackData['used_u'] / $rackData['height']) * 100, 1) : 0;
+            $usageStat->addItem(
+                (new CSpan($rackData['used_u'] . 'U / ' . $rackData['height'] . 'U (' . $cardUsagePercent . '%)'))->addClass('rack-card-stat-value')
+            );
+            $cardBody->addItem($usageStat);
+
             // 迷你机柜可视化
-            $html .= '<div class="rack-mini-visual">';
+            $miniVisual = (new CDiv())->addClass('rack-mini-visual');
             for ($i = 0; $i < $rackData['height']; $i++) {
                 $unitClass = 'rack-mini-unit';
-                
-                // 检查此U位是否被占用及其告警等级
                 $isOccupied = false;
                 $unitSeverity = -1;
-                foreach ($rackData['hosts'] as $host) {
-                    $u = $rackData['height'] - $i;
-                    if ($u >= $host['u_start'] && $u <= $host['u_end']) {
+                foreach ($rackData['hosts'] as $rhost) {
+                    $uPos = $rackData['height'] - $i;
+                    if ($uPos >= $rhost['u_start'] && $uPos <= $rhost['u_end']) {
                         $isOccupied = true;
-                        if (isset($host['max_severity']) && $host['max_severity'] >= 0) {
-                            $unitSeverity = $host['max_severity'];
+                        if (isset($rhost['max_severity']) && $rhost['max_severity'] >= 0) {
+                            $unitSeverity = $rhost['max_severity'];
                         }
                         break;
                     }
                 }
-                
                 if ($isOccupied) {
                     $unitClass .= ' occupied';
                     if ($unitSeverity >= 0) {
                         $unitClass .= ' severity-' . $unitSeverity;
                     }
                 }
-                
-                $html .= '<div class="' . $unitClass . '"></div>';
+                $miniVisual->addItem(
+                    (new CDiv())->addClass($unitClass)
+                );
             }
-            $html .= '</div>';
-            
-            $html .= '</div>'; // rack-card-body
-            
+            $cardBody->addItem($miniVisual);
+            $rackCard->addItem($cardBody);
+
             // 卡片页脚
-            $html .= '<div class="rack-card-footer">';
-            $html .= '<button class="rack-card-btn" onclick="event.stopPropagation();viewRackDetail(\'' . htmlspecialchars($rackData['id']) . '\')">' . LanguageManager::t('view_details') . ' →</button>';
-            $html .= '</div>';
-            
-            $html .= '</div>'; // rack-card
+            $cardFooter = (new CDiv())->addClass('rack-card-footer');
+            $cardFooter->addItem(
+                (new CTag('button', true, LanguageManager::t('view_details') . ' →'))
+                    ->addClass('rack-card-btn')
+                    ->setAttribute('onclick', "event.stopPropagation();viewRackDetail('" . htmlspecialchars($rackData['id']) . "')")
+            );
+            $rackCard->addItem($cardFooter);
+
+            $racksGrid->addItem($rackCard);
         }
-        
-        $html .= '</div>'; // racks-grid
+
+        $rackMain->addItem($racksGrid);
     }
-    
-    $html .= '</div>'; // rack-main
+
+    $rackContainer->addItem($rackMain);
 } else {
     // ===== 单机柜详情模式 =====
-    // 左侧边栏 - 搜索结果和主机列表
-    $html .= '<div class="rack-sidebar">';
-    
+
+    // 左侧边栏
+    $sidebar = (new CDiv())->addClass('rack-sidebar');
+
     // 搜索结果
     if (!empty($searchResults)) {
-        $html .= '<div class="sidebar-card">';
-        $html .= '<div class="sidebar-card-header">🔍 ' . LanguageManager::t('search_results') . ' (' . count($searchResults) . ')</div>';
-        $html .= '<div class="sidebar-card-body"><div class="host-list">';
+        $searchCard = (new CDiv())->addClass('sidebar-card');
+        $searchCard->addItem(
+            (new CDiv('🔍 ' . LanguageManager::t('search_results') . ' (' . count($searchResults) . ')'))
+                ->addClass('sidebar-card-header')
+        );
+        $searchCardBody = (new CDiv())->addClass('sidebar-card-body');
+        $searchHostList = (new CDiv())->addClass('host-list');
         foreach ($searchResults as $result) {
-            $html .= '<div class="host-list-item">';
-            $html .= '<div class="host-name">🖥️ ' . htmlspecialchars($result['name']) . '</div>';
-            $html .= '<div class="host-ip">📍 ' . htmlspecialchars($result['main_ip']) . '</div>';
-            $html .= '<div class="host-position">📦 ' . htmlspecialchars($result['room_name']) . ' / ' . htmlspecialchars($result['rack_name']) . ' (U' . $result['u_start'] . '-U' . $result['u_end'] . ')</div>';
-            $html .= '</div>';
+            $searchItem = (new CDiv())->addClass('host-list-item');
+            $searchItem->addItem(
+                (new CDiv('🖥️ ' . htmlspecialchars($result['name'])))->addClass('host-name')
+            );
+            $searchItem->addItem(
+                (new CDiv('📍 ' . htmlspecialchars($result['main_ip'])))->addClass('host-ip')
+            );
+            $searchItem->addItem(
+                (new CDiv('📦 ' . htmlspecialchars($result['room_name']) . ' / ' . htmlspecialchars($result['rack_name']) . ' (U' . $result['u_start'] . '-U' . $result['u_end'] . ')'))
+                    ->addClass('host-position')
+            );
+            $searchHostList->addItem($searchItem);
         }
-        $html .= '</div></div>';
-        $html .= '</div>';
+        $searchCardBody->addItem($searchHostList);
+        $searchCard->addItem($searchCardBody);
+        $sidebar->addItem($searchCard);
     }
-    
+
     // 当前机柜主机列表
     if (!empty($hosts)) {
-        $html .= '<div class="sidebar-card">';
-        $html .= '<div class="sidebar-card-header">📋 ' . LanguageManager::t('hosts_in_rack') . ' (' . count($hosts) . ')</div>';
-        $html .= '<div class="sidebar-card-body"><div class="host-list">';
+        $hostCard = (new CDiv())->addClass('sidebar-card');
+        $hostCard->addItem(
+            (new CDiv('📋 ' . LanguageManager::t('hosts_in_rack') . ' (' . count($hosts) . ')'))
+                ->addClass('sidebar-card-header')
+        );
+        $hostCardBody = (new CDiv())->addClass('sidebar-card-body');
+        $hostList = (new CDiv())->addClass('host-list');
         foreach ($hosts as $host) {
-            $html .= '<div class="host-list-item">';
-            $html .= '<div class="host-name">🖥️ ' . htmlspecialchars($host['name']);
-            $html .= '<button class="btn-remove" onclick="removeHost(\'' . $host['hostid'] . '\')">🗑️ ' . LanguageManager::t('remove') . '</button>';
-            $html .= '</div>';
-            $html .= '<div class="host-ip">📍 ' . htmlspecialchars($host['main_ip']) . '</div>';
-            $html .= '<div class="host-position">📦 U' . $host['u_start'] . '-U' . $host['u_end'] . ' (' . $host['u_height'] . 'U)</div>';
-            $html .= '</div>';
+            $hostItem = (new CDiv())->addClass('host-list-item');
+
+            $hostNameDiv = (new CDiv())->addClass('host-name');
+            $hostNameDiv->addItem('🖥️ ' . htmlspecialchars($host['name']));
+            $hostNameDiv->addItem(
+                (new CTag('button', true, '🗑️ ' . LanguageManager::t('remove')))
+                    ->addClass('btn-remove')
+                    ->setAttribute('onclick', "removeHost('" . $host['hostid'] . "')")
+            );
+            $hostItem->addItem($hostNameDiv);
+
+            $hostItem->addItem(
+                (new CDiv('📍 ' . htmlspecialchars($host['main_ip'])))->addClass('host-ip')
+            );
+            $hostItem->addItem(
+                (new CDiv('📦 U' . $host['u_start'] . '-U' . $host['u_end'] . ' (' . $host['u_height'] . 'U)'))
+                    ->addClass('host-position')
+            );
+            $hostList->addItem($hostItem);
         }
-        $html .= '</div></div>';
-        $html .= '</div>';
+        $hostCardBody->addItem($hostList);
+        $hostCard->addItem($hostCardBody);
+        $sidebar->addItem($hostCard);
     }
-    
-    $html .= '</div>'; // rack-sidebar
-    
+
+    $rackContainer->addItem($sidebar);
+
     // 主区域 - 机柜可视化
-    $html .= '<div class="rack-main">';
-    
-    // 构建机柜占用映射
+    $rackMainDiv = (new CDiv())->addClass('rack-main');
+
+    // 重新构建机柜占用映射
     $occupiedSlots = [];
     foreach ($hosts as $host) {
         if ($host['u_start'] && $host['u_end']) {
@@ -1499,68 +1654,58 @@ if ($showOverview) {
             }
         }
     }
-    
+
     if ($currentRack) {
         $rackHeight = $currentRack['height'] ?? 42;
-        
-        $html .= '<div class="rack-visual">';
-        $html .= '<div class="rack-header">🗄️ ' . htmlspecialchars($currentRack['name']) . ' (' . $rackHeight . 'U)</div>';
-        $html .= '<div class="rack-units">';
-        
+
+        $rackVisual = (new CDiv())->addClass('rack-visual');
+        $rackVisual->addItem(
+            (new CDiv('🗄️ ' . htmlspecialchars($currentRack['name']) . ' (' . $rackHeight . 'U)'))
+                ->addClass('rack-header')
+        );
+
+        $rackUnits = (new CDiv())->addClass('rack-units');
+
         // 从上到下渲染U位（U42到U1）
         for ($u = $rackHeight; $u >= 1; $u--) {
-            $html .= '<div class="rack-unit">';
-            $html .= '<div class="rack-unit-number">U' . $u . '</div>';
-            
+            $unitRow = (new CDiv())->addClass('rack-unit');
+            $unitRow->addItem(
+                (new CDiv('U' . $u))->addClass('rack-unit-number')
+            );
+
             if (isset($occupiedSlots[$u])) {
                 $host = $occupiedSlots[$u];
                 $isStart = ($u == $host['u_end']);
                 $isEnd = ($u == $host['u_start']);
                 $isMiddle = !$isStart && !$isEnd;
-                
-                // 获取告警数量和严重程度
+
                 $problemCount = $host['problem_count'] ?? 0;
                 $maxSeverity = $host['max_severity'] ?? -1;
                 $hasProblem = $problemCount > 0;
-                
-                $classes = ['rack-unit-slot', 'occupied'];
-                
-                // 根据告警严重程度和主机状态设置颜色
+
+                $slotClasses = ['rack-unit-slot', 'occupied'];
+
                 if ($host['status'] == 1) {
-                    $classes[] = 'status-disabled';
+                    $slotClasses[] = 'status-disabled';
                 } elseif ($hasProblem && $maxSeverity >= 0) {
-                    // 根据Zabbix告警等级设置颜色
                     switch ($maxSeverity) {
-                        case 5: // 灾难 - 红色
-                            $classes[] = 'severity-disaster';
-                            break;
-                        case 4: // 严重 - 浅红
-                            $classes[] = 'severity-high';
-                            break;
-                        case 3: // 一般 - 橙色
-                            $classes[] = 'severity-average';
-                            break;
-                        case 2: // 警告 - 黄色
-                            $classes[] = 'severity-warning';
-                            break;
-                        case 1: // 信息 - 蓝色
-                            $classes[] = 'severity-info';
-                            break;
-                        case 0: // 未分类 - 灰色
-                            $classes[] = 'severity-not-classified';
-                            break;
-                        default:
-                            $classes[] = 'has-problem';
+                        case 5: $slotClasses[] = 'severity-disaster'; break;
+                        case 4: $slotClasses[] = 'severity-high'; break;
+                        case 3: $slotClasses[] = 'severity-average'; break;
+                        case 2: $slotClasses[] = 'severity-warning'; break;
+                        case 1: $slotClasses[] = 'severity-info'; break;
+                        case 0: $slotClasses[] = 'severity-not-classified'; break;
+                        default: $slotClasses[] = 'has-problem';
                     }
                 } else {
-                    $classes[] = 'no-problem';
+                    $slotClasses[] = 'no-problem';
                 }
-                
-                if ($isStart) $classes[] = 'occupied-start';
-                if ($isEnd) $classes[] = 'occupied-end';
-                if ($isMiddle) $classes[] = 'occupied-middle';
-                
-                $hostData = htmlspecialchars(json_encode([
+
+                if ($isStart) $slotClasses[] = 'occupied-start';
+                if ($isEnd) $slotClasses[] = 'occupied-end';
+                if ($isMiddle) $slotClasses[] = 'occupied-middle';
+
+                $hostDataJson = json_encode([
                     'hostid' => $host['hostid'],
                     'name' => $host['name'],
                     'host' => $host['host'],
@@ -1570,525 +1715,694 @@ if ($showOverview) {
                     'u_end' => $host['u_end'],
                     'status' => $host['status'] == 0 ? LanguageManager::t('enabled') : LanguageManager::t('disabled'),
                     'problem_count' => $problemCount
-                ]), ENT_QUOTES);
-                
-                $html .= '<div class="' . implode(' ', $classes) . '" data-host=\'' . $hostData . '\' onclick="openEditModal(this)">';
+                ]);
+
+                $slotDiv = (new CDiv())
+                    ->addClass(implode(' ', $slotClasses))
+                    ->setAttribute('data-host', $hostDataJson)
+                    ->setAttribute('onclick', 'openEditModal(this)');
+
                 if ($isStart) {
-                    $html .= '<div class="host-slot-content">';
-                    $html .= '<span class="host-name">' . htmlspecialchars($host['name']) . '</span>';
+                    $slotContent = (new CDiv())->addClass('host-slot-content');
+                    $slotContent->addItem(
+                        (new CSpan(htmlspecialchars($host['name'])))->addClass('host-name')
+                    );
                     if ($hasProblem) {
-                        $html .= '<span class="problem-badge" onclick="event.stopPropagation();showProblems(\'' . $host['hostid'] . '\',\'' . htmlspecialchars(addslashes($host['name'])) . '\')" title="' . $problemCount . ' ' . LanguageManager::t('problems') . '">' . $problemCount . '</span>';
+                        $slotContent->addItem(
+                            (new CSpan((string)$problemCount))
+                                ->addClass('problem-badge')
+                                ->setAttribute('onclick', "event.stopPropagation();showProblems('" . $host['hostid'] . "','" . htmlspecialchars(addslashes($host['name'])) . "')")
+                                ->setAttribute('title', $problemCount . ' ' . LanguageManager::t('problems'))
+                        );
                     }
-                    $html .= '</div>';
+                    $slotDiv->addItem($slotContent);
                 }
-                $html .= '</div>';
+
+                $unitRow->addItem($slotDiv);
             } else {
-                $html .= '<div class="rack-unit-slot" data-u="' . $u . '" onclick="openAssignModal(' . $u . ')">';
-                $html .= '</div>';
+                $unitRow->addItem(
+                    (new CDiv())
+                        ->addClass('rack-unit-slot')
+                        ->setAttribute('data-u', (string)$u)
+                        ->setAttribute('onclick', 'openAssignModal(' . $u . ')')
+                );
             }
-            
-            $html .= '</div>';
+
+            $rackUnits->addItem($unitRow);
         }
-        
-        $html .= '</div>'; // rack-units
-        $html .= '</div>'; // rack-visual
+
+        $rackVisual->addItem($rackUnits);
+        $rackMainDiv->addItem($rackVisual);
     } else {
-        $html .= '<div class="no-data">📭 ' . LanguageManager::t('no_rack_selected') . '</div>';
+        $rackMainDiv->addItem(
+            (new CDiv('📭 ' . LanguageManager::t('no_rack_selected')))->addClass('no-data')
+        );
     }
-    
-    $html .= '</div>'; // rack-main
+
+    $rackContainer->addItem($rackMainDiv);
 }
 
-$html .= '</div>'; // rack-container
-$html .= '</div>'; // rack-page-container
-$html .= '</div>'; // rack-page-wrapper
+$container->addItem($rackContainer);
+$content->addItem($container);
 
-// 主机信息提示框
-$html .= '<div id="host-tooltip" class="host-tooltip"></div>';
+// ==================== 主机信息提示框 ====================
+$content->addItem(
+    (new CDiv())
+        ->setAttribute('id', 'host-tooltip')
+        ->addClass('host-tooltip')
+);
 
-// 大型机柜弹窗（点击卡片时显示）
-$html .= '<div id="rack-detail-modal" class="rack-detail-modal">';
-$html .= '<div class="rack-detail-content">';
-$html .= '<div class="rack-detail-header">';
-$html .= '<div class="rack-detail-title">🗄️ <span id="detail-rack-name"></span></div>';
-$html .= '<button class="rack-detail-close" onclick="closeRackDetail()">&times;</button>';
-$html .= '</div>';
-$html .= '<div class="rack-detail-body">';
-$html .= '<div id="detail-rack-visual" class="rack-detail-visual"></div>';
-$html .= '</div>';
-$html .= '</div>';
-$html .= '</div>';
+// ==================== 大型机柜弹窗（概览模式下点击卡片时显示） ====================
+$rackDetailModal = (new CDiv())
+    ->setAttribute('id', 'rack-detail-modal')
+    ->addClass('rack-detail-modal');
 
-// 添加主机弹窗
-$html .= '<div id="assign-modal" class="modal-overlay">';
-$html .= '<div class="modal-content">';
-$html .= '<div class="modal-header">';
-$html .= '<h3 id="modal-title">📌 ' . LanguageManager::t('assign_host') . '</h3>';
-$html .= '<button class="modal-close" onclick="closeAssignModal()">&times;</button>';
-$html .= '</div>';
-$html .= '<div class="modal-body">';
+$rackDetailContent = (new CDiv())->addClass('rack-detail-content');
+
+$rackDetailHeader = (new CDiv())->addClass('rack-detail-header');
+$rackDetailTitle = (new CDiv())->addClass('rack-detail-title');
+$rackDetailTitle->addItem('🗄️ ');
+$rackDetailTitle->addItem(
+    (new CSpan())->setAttribute('id', 'detail-rack-name')
+);
+$rackDetailHeader->addItem($rackDetailTitle);
+$rackDetailHeader->addItem(
+    (new CTag('button', true, '×'))
+        ->addClass('rack-detail-close')
+        ->setAttribute('onclick', 'closeRackDetail()')
+);
+$rackDetailContent->addItem($rackDetailHeader);
+
+$rackDetailBody = (new CDiv())->addClass('rack-detail-body');
+$rackDetailBody->addItem(
+    (new CDiv())
+        ->setAttribute('id', 'detail-rack-visual')
+        ->addClass('rack-detail-visual')
+);
+$rackDetailContent->addItem($rackDetailBody);
+
+$rackDetailModal->addItem($rackDetailContent);
+$content->addItem($rackDetailModal);
+
+// ==================== 分配/编辑主机弹窗 ====================
+$assignModal = (new CDiv())
+    ->setAttribute('id', 'assign-modal')
+    ->addClass('modal-overlay');
+
+$assignModalContent = (new CDiv())->addClass('modal-content');
+
+// 弹窗头部
+$assignModalContent->addItem(
+    (new CDiv())
+        ->addClass('modal-header')
+        ->addItem(
+            (new CTag('h3', true))
+                ->setAttribute('id', 'modal-title')
+                ->addItem('📌 ' . LanguageManager::t('assign_host'))
+        )
+        ->addItem(
+            (new CTag('button', true, '×'))
+                ->addClass('modal-close')
+                ->setAttribute('onclick', 'closeAssignModal()')
+        )
+);
+
+// 弹窗主体
+$assignModalBody = (new CDiv())->addClass('modal-body');
 
 // 编辑模式下显示当前主机信息
-$html .= '<div id="edit-host-info" class="form-group" style="display:none;background:linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);padding:12px 16px;border-radius:8px;margin-bottom:18px;border-left:4px solid #007bff;">';
-$html .= '<div><strong id="edit-host-name" style="font-size:15px;"></strong></div>';
-$html .= '<div style="font-size:12px;color:#6c757d;margin-top:4px;" id="edit-host-ip"></div>';
-$html .= '</div>';
+$editHostInfo = (new CDiv())
+    ->setAttribute('id', 'edit-host-info')
+    ->addClass('form-group')
+    ->setAttribute('style', 'display:none;background:linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);padding:12px 16px;border-radius:8px;margin-bottom:18px;border-left:4px solid #007bff;');
+$editHostInfo->addItem(
+    (new CDiv())
+        ->addItem(
+            (new CTag('strong', true, ''))
+                ->setAttribute('id', 'edit-host-name')
+                ->setAttribute('style', 'font-size:15px;')
+        )
+);
+$editHostInfo->addItem(
+    (new CDiv())
+        ->setAttribute('style', 'font-size:12px;color:#6c757d;margin-top:4px;')
+        ->setAttribute('id', 'edit-host-ip')
+);
+$assignModalBody->addItem($editHostInfo);
 
-$html .= '<div id="host-select-section">';
-$html .= '<div class="form-group">';
-$html .= '<label>📂 ' . LanguageManager::t('host_group') . '</label>';
-$html .= '<select id="modal-group-select" onchange="loadHosts()">';
-$html .= '<option value="">' . LanguageManager::t('all_groups') . '</option>';
+// 主机选择区域
+$hostSelectSection = (new CDiv())->setAttribute('id', 'host-select-section');
+
+// 主机组选择 - 使用 CSelect（z-select）
+$groupSelectGroup = (new CDiv())->addClass('form-group');
+$groupSelectGroup->addItem(
+    (new CTag('label', true, '📂 ' . LanguageManager::t('host_group')))
+);
+$groupSelect = (new CSelect('group'))
+    ->setAttribute('id', 'modal-group-select')
+    ->addOption(new CSelectOption('', LanguageManager::t('all_groups')));
 foreach ($hostGroups as $group) {
-    $html .= '<option value="' . htmlspecialchars($group['groupid']) . '">' . htmlspecialchars($group['name']) . '</option>';
+    $groupSelect->addOption(new CSelectOption($group['groupid'], $group['name']));
 }
-$html .= '</select>';
-$html .= '</div>';
+$groupSelectGroup->addItem($groupSelect);
+$hostSelectSection->addItem($groupSelectGroup);
 
-$html .= '<div class="form-group">';
-$html .= '<label>🔍 ' . LanguageManager::t('search_host') . '</label>';
-$html .= '<input type="text" id="modal-host-search" placeholder="' . LanguageManager::t('search_host_placeholder') . '" onkeyup="debounceLoadHosts()">';
-$html .= '</div>';
+// 搜索主机
+$hostSearchGroup = (new CDiv())->addClass('form-group');
+$hostSearchGroup->addItem(
+    (new CTag('label', true, '🔍 ' . LanguageManager::t('search_host')))
+);
+$hostSearchGroup->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'text')
+        ->setAttribute('id', 'modal-host-search')
+        ->setAttribute('placeholder', LanguageManager::t('search_host_placeholder'))
+        ->setAttribute('onkeyup', 'debounceLoadHosts()')
+);
+$hostSelectSection->addItem($hostSearchGroup);
 
-$html .= '<div class="form-group">';
-$html .= '<label>' . LanguageManager::t('select_host') . '</label>';
-$html .= '<div id="host-select-list" class="host-select-list"></div>';
-$html .= '</div>';
-$html .= '</div>'; // host-select-section
+// 主机列表
+$hostListGroup = (new CDiv())->addClass('form-group');
+$hostListGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('select_host')))
+);
+$hostListGroup->addItem(
+    (new CDiv())
+        ->setAttribute('id', 'host-select-list')
+        ->addClass('host-select-list')
+);
+$hostSelectSection->addItem($hostListGroup);
+$assignModalBody->addItem($hostSelectSection);
 
-$html .= '<div class="form-row">';
-$html .= '<div class="form-group">';
-$html .= '<label>⬆️ ' . LanguageManager::t('u_start') . '</label>';
-$html .= '<input type="number" id="modal-u-start" min="1" max="' . ($currentRack['height'] ?? 42) . '">';
-$html .= '</div>';
-$html .= '<div class="form-group">';
-$html .= '<label>⬇️ ' . LanguageManager::t('u_end') . '</label>';
-$html .= '<input type="number" id="modal-u-end" min="1" max="' . ($currentRack['height'] ?? 42) . '">';
-$html .= '</div>';
-$html .= '</div>';
+// U位范围
+$maxU = $currentRack['height'] ?? 42;
+$formRow = (new CDiv())->addClass('form-row');
 
-$html .= '</div>'; // modal-body
+$uStartGroup = (new CDiv())->addClass('form-group');
+$uStartGroup->addItem(
+    (new CTag('label', true, '⬆️ ' . LanguageManager::t('u_start')))
+);
+$uStartGroup->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'number')
+        ->setAttribute('id', 'modal-u-start')
+        ->setAttribute('min', '1')
+        ->setAttribute('max', (string)$maxU)
+);
+$formRow->addItem($uStartGroup);
 
-$html .= '<div class="modal-footer">';
-$html .= '<button id="btn-remove-host" class="btn btn-danger" style="display:none;" onclick="removeHostFromModal()">🗑️ ' . LanguageManager::t('remove') . '</button>';
-$html .= '<div style="flex:1;"></div>';
-$html .= '<button class="btn btn-secondary" onclick="closeAssignModal()">❌ ' . LanguageManager::t('cancel') . '</button>';
-$html .= '<button class="btn btn-success" onclick="saveHost()">✅ ' . LanguageManager::t('confirm') . '</button>';
-$html .= '</div>';
+$uEndGroup = (new CDiv())->addClass('form-group');
+$uEndGroup->addItem(
+    (new CTag('label', true, '⬇️ ' . LanguageManager::t('u_end')))
+);
+$uEndGroup->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'number')
+        ->setAttribute('id', 'modal-u-end')
+        ->setAttribute('min', '1')
+        ->setAttribute('max', (string)$maxU)
+);
+$formRow->addItem($uEndGroup);
+$assignModalBody->addItem($formRow);
 
-$html .= '</div>'; // modal-content
-$html .= '</div>'; // modal-overlay
+$assignModalContent->addItem($assignModalBody);
 
-// 告警弹窗
-$html .= '<div id="problem-modal" class="problem-modal">';
-$html .= '<div class="problem-modal-content">';
-$html .= '<div class="problem-modal-header">';
-$html .= '<h3>🚨 <span id="problem-host-name"></span> - ' . LanguageManager::t('problems') . '</h3>';
-$html .= '<button class="problem-modal-close" onclick="closeProblemModal()">&times;</button>';
-$html .= '</div>';
-$html .= '<div class="problem-modal-body">';
-$html .= '<ul class="problem-list" id="problem-list"></ul>';
-$html .= '</div>';
-$html .= '</div>';
-$html .= '</div>';
+// 弹窗底部
+$assignModalFooter = (new CDiv())->addClass('modal-footer');
+$assignModalFooter->addItem(
+    (new CTag('button', true, '🗑️ ' . LanguageManager::t('remove')))
+        ->setAttribute('id', 'btn-remove-host')
+        ->addClass('btn btn-danger')
+        ->setAttribute('style', 'display:none;')
+        ->setAttribute('onclick', 'removeHostFromModal()')
+);
+$assignModalFooter->addItem(
+    (new CDiv())->setAttribute('style', 'flex:1;')
+);
+$assignModalFooter->addItem(
+    (new CTag('button', true, '❌ ' . LanguageManager::t('cancel')))
+        ->addClass('btn btn-secondary')
+        ->setAttribute('onclick', 'closeAssignModal()')
+);
+$assignModalFooter->addItem(
+    (new CTag('button', true, '✅ ' . LanguageManager::t('confirm')))
+        ->addClass('btn btn-success')
+        ->setAttribute('onclick', 'saveHost()')
+);
+$assignModalContent->addItem($assignModalFooter);
 
-// JavaScript
+$assignModal->addItem($assignModalContent);
+$content->addItem($assignModal);
+
+// ==================== 告警弹窗 ====================
+$problemModal = (new CDiv())
+    ->setAttribute('id', 'problem-modal')
+    ->addClass('problem-modal');
+
+$problemModalContent = (new CDiv())->addClass('problem-modal-content');
+
+// 告警弹窗头部
+$problemHeader = (new CDiv())->addClass('problem-modal-header');
+$problemH3 = (new CTag('h3', true));
+$problemH3->addItem('🚨 ');
+$problemH3->addItem((new CSpan())->setAttribute('id', 'problem-host-name'));
+$problemH3->addItem(' - ' . LanguageManager::t('problems'));
+$problemHeader->addItem($problemH3);
+$problemHeader->addItem(
+    (new CTag('button', true, '×'))
+        ->addClass('problem-modal-close')
+        ->setAttribute('onclick', 'closeProblemModal()')
+);
+$problemModalContent->addItem($problemHeader);
+
+// 告警弹窗主体
+$problemBody = (new CDiv())->addClass('problem-modal-body');
+$problemBody->addItem(
+    (new CTag('ul', true))
+        ->addClass('problem-list')
+        ->setAttribute('id', 'problem-list')
+);
+$problemModalContent->addItem($problemBody);
+
+$problemModal->addItem($problemModalContent);
+$content->addItem($problemModal);
+
+// ==================== JavaScript ====================
 $roomId = htmlspecialchars($currentRoomId);
 $rackId = htmlspecialchars($currentRackId);
-
-// 为JavaScript准备的数据 - 使用JSON_HEX_*标志确保安全嵌入HTML/JS
-// 这些标志会将特殊字符转换为Unicode转义序列，避免XSS并保持JS语法正确
 $allRacksDataJson = json_encode($allRacksData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-$js = <<<JS
-<script>
-var allRacksData = {$allRacksDataJson};
+$i18n = [
+    'host_name_label' => LanguageManager::t('host_name_label'),
+    'ip_label' => LanguageManager::t('ip_label'),
+    'host_group_label' => LanguageManager::t('host_group_label'),
+    'position_label' => LanguageManager::t('position_label'),
+    'status_label' => LanguageManager::t('status_label'),
+    'unnamed_host' => LanguageManager::t('unnamed_host'),
+    'enabled' => LanguageManager::t('enabled'),
+    'disabled' => LanguageManager::t('disabled'),
+    'edit_host_position' => LanguageManager::t('edit_host_position'),
+    'assign_host' => LanguageManager::t('assign_host'),
+    'no_matching_hosts' => LanguageManager::t('no_matching_hosts'),
+    'select_a_host' => LanguageManager::t('select_a_host'),
+    'invalid_u_range' => LanguageManager::t('invalid_u_range'),
+    'operation_failed' => LanguageManager::t('operation_failed'),
+    'confirm_remove_host' => LanguageManager::t('confirm_remove_host'),
+    'loading' => LanguageManager::t('loading'),
+    'no_active_problems' => LanguageManager::t('no_active_problems'),
+    'fetch_problems_failed' => LanguageManager::t('fetch_problems_failed'),
+];
+$i18nJson = json_encode($i18n, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
-document.addEventListener('DOMContentLoaded', function() {
+$content->addItem(new CJsScript('<script>
+(function() {
+    "use strict";
+
+    var allRacksData = ' . $allRacksDataJson . ';
+    var i18n = ' . $i18nJson . ';
+
     var selectedHostId = null;
     var debounceTimer = null;
-    var currentRoomId = '{$roomId}';
-    var currentRackId = '{$rackId}';
+    var currentRoomId = "' . $roomId . '";
+    var currentRackId = "' . $rackId . '";
     var isEditMode = false;
     var editingHostId = null;
-    
-    // 机房选择变化时加载机柜
-    var roomSelect = document.getElementById('room-select');
+    var detailRackData = null;
+
+    // HTML 转义
+    function escapeHtml(text) {
+        if (!text) return "";
+        var div = document.createElement("div");
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+
+    // ============ 筛选栏联动（z-select 事件监听） ============
+    var roomSelect = document.getElementById("room-select");
     if (roomSelect) {
-        roomSelect.addEventListener('change', function() {
+        roomSelect.addEventListener("change", function() {
             var roomId = this.value;
             if (roomId) {
-                window.location.href = 'zabbix.php?action=rack.view&room_id=' + encodeURIComponent(roomId);
+                window.location.href = "zabbix.php?action=rack.view&room_id=" + encodeURIComponent(roomId);
             }
         });
     }
-    
-    // 机柜选择变化时加载
-    var rackSelect = document.getElementById('rack-select');
+
+    var rackSelect = document.getElementById("rack-select");
     if (rackSelect) {
-        rackSelect.addEventListener('change', function() {
+        rackSelect.addEventListener("change", function() {
             var rackId = this.value;
             if (rackId) {
-                window.location.href = 'zabbix.php?action=rack.view&room_id=' + encodeURIComponent(currentRoomId) + '&rack_id=' + encodeURIComponent(rackId);
+                window.location.href = "zabbix.php?action=rack.view&room_id=" + encodeURIComponent(currentRoomId) + "&rack_id=" + encodeURIComponent(rackId);
             }
         });
     }
-    
-    // 主机悬停提示
-    var tooltip = document.getElementById('host-tooltip');
-    var occupiedSlots = document.querySelectorAll('.rack-unit-slot.occupied');
-    
+
+    // 主机组下拉框（z-select）change 事件 → 替代原来的 onchange="loadHosts()"
+    var groupSelect = document.getElementById("modal-group-select");
+    if (groupSelect) {
+        groupSelect.addEventListener("change", function() {
+            loadHosts();
+        });
+    }
+
+    // ============ 主机悬停提示 ============
+    var tooltip = document.getElementById("host-tooltip");
+    var occupiedSlots = document.querySelectorAll(".rack-unit-slot.occupied");
+
     occupiedSlots.forEach(function(slot) {
-        slot.addEventListener('mouseenter', function(e) {
-            var hostData = JSON.parse(this.getAttribute('data-host'));
-            tooltip.innerHTML = '<h4>' + escapeHtml(hostData.name) + '</h4>' +
-                '<p><span class="label">主机名:</span> ' + escapeHtml(hostData.host) + '</p>' +
-                '<p><span class="label">IP:</span> ' + escapeHtml(hostData.ip) + '</p>' +
-                '<p><span class="label">主机组:</span> ' + escapeHtml(hostData.groups) + '</p>' +
-                '<p><span class="label">位置:</span> U' + hostData.u_start + '-U' + hostData.u_end + '</p>' +
-                '<p><span class="label">状态:</span> ' + escapeHtml(hostData.status) + '</p>';
-            tooltip.classList.add('visible');
+        slot.addEventListener("mouseenter", function(e) {
+            var hostData = JSON.parse(this.getAttribute("data-host"));
+            tooltip.innerHTML = "<h4>" + escapeHtml(hostData.name) + "</h4>" +
+                "<p><span class=\\"label\\">" + i18n.host_name_label + "</span> " + escapeHtml(hostData.host) + "</p>" +
+                "<p><span class=\\"label\\">" + i18n.ip_label + "</span> " + escapeHtml(hostData.ip) + "</p>" +
+                "<p><span class=\\"label\\">" + i18n.host_group_label + "</span> " + escapeHtml(hostData.groups) + "</p>" +
+                "<p><span class=\\"label\\">" + i18n.position_label + "</span> U" + hostData.u_start + "-U" + hostData.u_end + "</p>" +
+                "<p><span class=\\"label\\">" + i18n.status_label + "</span> " + escapeHtml(hostData.status) + "</p>";
+            tooltip.classList.add("visible");
         });
-        
-        slot.addEventListener('mousemove', function(e) {
-            tooltip.style.left = (e.pageX + 15) + 'px';
-            tooltip.style.top = (e.pageY + 15) + 'px';
+
+        slot.addEventListener("mousemove", function(e) {
+            tooltip.style.left = (e.clientX + 15) + "px";
+            tooltip.style.top = (e.clientY + 15) + "px";
         });
-        
-        slot.addEventListener('mouseleave', function() {
-            tooltip.classList.remove('visible');
+
+        slot.addEventListener("mouseleave", function() {
+            tooltip.classList.remove("visible");
         });
     });
-    
-    // ============ 多机柜展示相关函数 ============
+
+    // ============ 概览模式 - 多机柜展示 ============
     window.openRackDetail = function(rackId) {
         viewRackDetail(rackId);
     };
-    
-    // 当前详情弹窗中显示的机柜数据
-    var detailRackData = null;
-    
+
     window.viewRackDetail = function(rackId) {
-        var rackData = allRacksData.find(function(r) { return r.id === rackId; });
+        var rackData = null;
+        for (var i = 0; i < allRacksData.length; i++) {
+            if (allRacksData[i].id === rackId) {
+                rackData = allRacksData[i];
+                break;
+            }
+        }
         if (!rackData) {
-            console.error('viewRackDetail: rackData not found for id:', rackId);
+            console.error("viewRackDetail: rackData not found for id:", rackId);
             return;
         }
-        
-        // 确保 hosts 是数组
+
         var hosts = rackData.hosts || [];
         if (!Array.isArray(hosts)) {
-            console.error('viewRackDetail: hosts is not an array:', hosts);
+            console.error("viewRackDetail: hosts is not an array:", hosts);
             hosts = [];
         }
-        
-        // 【关键】先构建 U 位映射，与 PHP 单机柜模式相同的处理方式
-        var occupiedSlots = {};
+
+        // 构建 U 位映射
+        var occupiedMap = {};
         for (var i = 0; i < hosts.length; i++) {
             var host = hosts[i];
             var uStart = parseInt(host.u_start);
             var uEnd = parseInt(host.u_end);
             if (uStart > 0 && uEnd > 0) {
                 for (var u = uStart; u <= uEnd; u++) {
-                    occupiedSlots[u] = host;
+                    occupiedMap[u] = host;
                 }
             }
         }
-        
-        console.log('viewRackDetail: occupiedSlots =', occupiedSlots);
-        
-        // 保存当前详情弹窗的机柜数据，供后续操作使用
+
         detailRackData = rackData;
-        
-        // 设置当前操作的机柜上下文
         currentRackId = rackData.id;
         currentRoomId = rackData.room_id;
-        
-        document.getElementById('detail-rack-name').textContent = rackData.name;
-        
-        // 生成详细的机柜可视化
+
+        document.getElementById("detail-rack-name").textContent = rackData.name;
+
         var rackHeight = parseInt(rackData.height) || 42;
-        var html = '<div class="rack-visual" style="max-width:600px;margin:0 auto;">';
-        html += '<div class="rack-header">🗄️ ' + escapeHtml(rackData.name) + ' (' + rackHeight + 'U)</div>';
-        html += '<div class="rack-units">';
-        
-        // 从上到下渲染U位（与PHP代码完全一致）
+        var html = "<div class=\\"rack-visual\\" style=\\"max-width:600px;margin:0 auto;\\">";
+        html += "<div class=\\"rack-header\\">🗄️ " + escapeHtml(rackData.name) + " (" + rackHeight + "U)</div>";
+        html += "<div class=\\"rack-units\\">";
+
         for (var u = rackHeight; u >= 1; u--) {
-            html += '<div class="rack-unit">';
-            html += '<div class="rack-unit-number">U' + u + '</div>';
-            
-            if (occupiedSlots[u]) {
-                var host = occupiedSlots[u];
+            html += "<div class=\\"rack-unit\\">";
+            html += "<div class=\\"rack-unit-number\\">U" + u + "</div>";
+
+            if (occupiedMap[u]) {
+                var host = occupiedMap[u];
                 var uStart = parseInt(host.u_start);
                 var uEnd = parseInt(host.u_end);
-                var isStart = (u == uEnd);   // 使用 == 而非 === 避免类型问题
+                var isStart = (u == uEnd);
                 var isEnd = (u == uStart);
                 var isMiddle = !isStart && !isEnd;
                 var hostUHeight = uEnd - uStart + 1;
-                
-                // 获取主机名称
-                var hostName = host.name || host.host || '未命名主机';
-                var hostId = host.hostid || '';
+
+                var hostName = host.name || host.host || i18n.unnamed_host;
+                var hostId = host.hostid || "";
                 var problemCount = parseInt(host.problem_count) || 0;
                 var maxSeverity = parseInt(host.max_severity);
                 if (isNaN(maxSeverity)) maxSeverity = -1;
-                
-                var classes = ['rack-unit-slot', 'occupied'];
-                
-                // 根据告警严重程度和主机状态设置颜色
+
+                var classes = ["rack-unit-slot", "occupied"];
+
                 var hostStatus = parseInt(host.status);
                 if (hostStatus === 1) {
-                    classes.push('status-disabled');
+                    classes.push("status-disabled");
                 } else if (problemCount > 0 && maxSeverity >= 0) {
                     switch (maxSeverity) {
-                        case 5: classes.push('severity-disaster'); break;
-                        case 4: classes.push('severity-high'); break;
-                        case 3: classes.push('severity-average'); break;
-                        case 2: classes.push('severity-warning'); break;
-                        case 1: classes.push('severity-info'); break;
-                        case 0: classes.push('severity-not-classified'); break;
-                        default: classes.push('has-problem');
+                        case 5: classes.push("severity-disaster"); break;
+                        case 4: classes.push("severity-high"); break;
+                        case 3: classes.push("severity-average"); break;
+                        case 2: classes.push("severity-warning"); break;
+                        case 1: classes.push("severity-info"); break;
+                        case 0: classes.push("severity-not-classified"); break;
+                        default: classes.push("has-problem");
                     }
                 } else {
-                    classes.push('no-problem');
+                    classes.push("no-problem");
                 }
-                
-                if (isStart) classes.push('occupied-start');
-                if (isEnd) classes.push('occupied-end');
-                if (isMiddle) classes.push('occupied-middle');
-                
-                // 构建主机数据JSON
+
+                if (isStart) classes.push("occupied-start");
+                if (isEnd) classes.push("occupied-end");
+                if (isMiddle) classes.push("occupied-middle");
+
                 var hostDataJson = JSON.stringify({
                     hostid: hostId,
                     name: hostName,
                     host: host.host || hostName,
-                    ip: host.ip || host.main_ip || '',
-                    groups: host.groups || '',
+                    ip: host.ip || host.main_ip || "",
+                    groups: host.groups || "",
                     u_start: uStart,
                     u_end: uEnd,
-                    status: hostStatus === 0 ? '已启用' : '已禁用',
+                    status: hostStatus === 0 ? i18n.enabled : i18n.disabled,
                     problem_count: problemCount
-                }).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                
-                html += '<div class="' + classes.join(' ') + '" data-host="' + hostDataJson + '" onclick="openEditModalFromDetail(this)" style="cursor:pointer;">';
-                
-                // 只在顶部U位显示主机名（与PHP代码一致）
+                }).replace(/\x27/g, "\\\x27").replace(/"/g, "&quot;");
+
+                html += "<div class=\\"" + classes.join(" ") + "\\" data-host=\\"" + hostDataJson + "\\" onclick=\\"openEditModalFromDetail(this)\\" style=\\"cursor:pointer;\\">";
+
                 if (isStart) {
-                    html += '<div class="host-slot-content">';
+                    html += "<div class=\\"host-slot-content\\">";
                     var displayName = escapeHtml(hostName);
                     if (hostUHeight > 1) {
-                        displayName += ' <span style="font-size:10px;opacity:0.8;">(' + hostUHeight + 'U)</span>';
+                        displayName += " <span style=\\"font-size:10px;opacity:0.8;\\">(" + hostUHeight + "U)</span>";
                     }
-                    html += '<span class="host-name">' + displayName + '</span>';
+                    html += "<span class=\\"host-name\\">" + displayName + "</span>";
                     if (problemCount > 0) {
-                        html += '<span class="problem-badge" onclick="event.stopPropagation();showProblemsFromDetail(\'' + hostId + '\',\'' + escapeHtml(hostName).replace(/'/g, "\\'") + '\')">' + problemCount + '</span>';
+                        html += "<span class=\\"problem-badge\\" onclick=\\"event.stopPropagation();showProblemsFromDetail(\x27" + hostId + "\x27,\x27" + escapeHtml(hostName).replace(/\x27/g, "\\\x27") + "\x27)\\">" + problemCount + "</span>";
                     }
-                    html += '</div>';
+                    html += "</div>";
                 }
-                html += '</div>';
+                html += "</div>";
             } else {
-                // 空槽位
-                html += '<div class="rack-unit-slot" data-u="' + u + '" onclick="openAssignModalFromDetail(' + u + ')" style="cursor:pointer;"></div>';
+                html += "<div class=\\"rack-unit-slot\\" data-u=\\"" + u + "\\" onclick=\\"openAssignModalFromDetail(" + u + ")\\" style=\\"cursor:pointer;\\"></div>";
             }
-            
-            html += '</div>';
+
+            html += "</div>";
         }
-        
-        html += '</div></div>';
-        document.getElementById('detail-rack-visual').innerHTML = html;
-        document.getElementById('rack-detail-modal').classList.add('visible');
+
+        html += "</div></div>";
+        document.getElementById("detail-rack-visual").innerHTML = html;
+        document.getElementById("rack-detail-modal").classList.add("visible");
     };
-    
-    // 从详情弹窗中打开分配主机对话框
+
     window.openAssignModalFromDetail = function(u) {
-        // 先关闭详情弹窗
         closeRackDetail();
-        // 然后打开分配对话框
         openAssignModal(u);
     };
-    
-    // 从详情弹窗中打开编辑主机对话框
+
     window.openEditModalFromDetail = function(elem) {
-        // 先关闭详情弹窗
         closeRackDetail();
-        // 解析主机数据（需要先还原HTML实体）
-        var hostDataStr = elem.getAttribute('data-host').replace(/&quot;/g, '"');
-        var hostData = JSON.parse(hostDataStr);
-        
-        // 设置编辑模式
+        var hostData = JSON.parse(elem.getAttribute("data-host"));
+
         isEditMode = true;
         editingHostId = hostData.hostid;
         selectedHostId = hostData.hostid;
-        
-        document.getElementById('modal-title').textContent = '编辑主机位置';
-        document.getElementById('edit-host-name').textContent = hostData.name;
-        document.getElementById('edit-host-ip').textContent = (hostData.ip || '-') + ' | ' + (hostData.groups || '-');
-        document.getElementById('modal-u-start').value = hostData.u_start;
-        document.getElementById('modal-u-end').value = hostData.u_end;
-        document.getElementById('host-select-section').style.display = 'none';
-        document.getElementById('edit-host-info').style.display = 'block';
-        document.getElementById('btn-remove-host').style.display = 'inline-block';
-        document.getElementById('assign-modal').classList.add('visible');
+
+        document.getElementById("modal-title").textContent = i18n.edit_host_position;
+        document.getElementById("edit-host-name").textContent = hostData.name;
+        document.getElementById("edit-host-ip").textContent = (hostData.ip || "-") + " | " + (hostData.groups || "-");
+        document.getElementById("modal-u-start").value = hostData.u_start;
+        document.getElementById("modal-u-end").value = hostData.u_end;
+        document.getElementById("host-select-section").style.display = "none";
+        document.getElementById("edit-host-info").style.display = "block";
+        document.getElementById("btn-remove-host").style.display = "inline-block";
+        document.getElementById("assign-modal").classList.add("visible");
     };
-    
-    // 从详情弹窗中显示主机问题
+
     window.showProblemsFromDetail = function(hostId, hostName) {
-        // 如果存在showProblems函数则调用它
-        if (typeof showProblems === 'function') {
+        if (typeof showProblems === "function") {
             showProblems(hostId, hostName);
         }
     };
-    
+
     window.closeRackDetail = function() {
-        document.getElementById('rack-detail-modal').classList.remove('visible');
+        document.getElementById("rack-detail-modal").classList.remove("visible");
     };
-    
-    // 点击弹窗外部关闭
-    document.getElementById('rack-detail-modal').addEventListener('click', function(e) {
+
+    document.getElementById("rack-detail-modal").addEventListener("click", function(e) {
         if (e.target === this) {
             closeRackDetail();
         }
     });
-    
-    // ============ 单机柜管理相关函数 ============
-    // 绑定全局函数
+
+    // ============ 单机柜管理函数 ============
     window.openAssignModal = function(u) {
         isEditMode = false;
         editingHostId = null;
         selectedHostId = null;
-        document.getElementById('modal-title').textContent = '分配主机';
-        document.getElementById('modal-u-start').value = u;
-        document.getElementById('modal-u-end').value = u;
-        document.getElementById('modal-group-select').value = '';
-        document.getElementById('modal-host-search').value = '';
-        document.getElementById('host-select-list').innerHTML = '';
-        document.getElementById('host-select-section').style.display = 'block';
-        document.getElementById('edit-host-info').style.display = 'none';
-        document.getElementById('btn-remove-host').style.display = 'none';
-        document.getElementById('assign-modal').classList.add('visible');
+        document.getElementById("modal-title").textContent = i18n.assign_host;
+        document.getElementById("modal-u-start").value = u;
+        document.getElementById("modal-u-end").value = u;
+        document.getElementById("modal-group-select").value = "";
+        document.getElementById("modal-host-search").value = "";
+        document.getElementById("host-select-list").innerHTML = "";
+        document.getElementById("host-select-section").style.display = "block";
+        document.getElementById("edit-host-info").style.display = "none";
+        document.getElementById("btn-remove-host").style.display = "none";
+        document.getElementById("assign-modal").classList.add("visible");
         loadHosts();
     };
-    
+
     window.openEditModal = function(elem) {
-        var hostData = JSON.parse(elem.getAttribute('data-host'));
+        var hostData = JSON.parse(elem.getAttribute("data-host"));
         isEditMode = true;
         editingHostId = hostData.hostid;
         selectedHostId = hostData.hostid;
-        
-        document.getElementById('modal-title').textContent = '编辑主机位置';
-        document.getElementById('edit-host-name').textContent = hostData.name;
-        document.getElementById('edit-host-ip').textContent = hostData.ip + ' | ' + hostData.groups;
-        document.getElementById('modal-u-start').value = hostData.u_start;
-        document.getElementById('modal-u-end').value = hostData.u_end;
-        document.getElementById('host-select-section').style.display = 'none';
-        document.getElementById('edit-host-info').style.display = 'block';
-        document.getElementById('btn-remove-host').style.display = 'inline-block';
-        document.getElementById('assign-modal').classList.add('visible');
+
+        document.getElementById("modal-title").textContent = i18n.edit_host_position;
+        document.getElementById("edit-host-name").textContent = hostData.name;
+        document.getElementById("edit-host-ip").textContent = hostData.ip + " | " + hostData.groups;
+        document.getElementById("modal-u-start").value = hostData.u_start;
+        document.getElementById("modal-u-end").value = hostData.u_end;
+        document.getElementById("host-select-section").style.display = "none";
+        document.getElementById("edit-host-info").style.display = "block";
+        document.getElementById("btn-remove-host").style.display = "inline-block";
+        document.getElementById("assign-modal").classList.add("visible");
     };
-    
+
     window.closeAssignModal = function() {
-        document.getElementById('assign-modal').classList.remove('visible');
+        document.getElementById("assign-modal").classList.remove("visible");
     };
-    
+
     window.loadHosts = function() {
-        var groupId = document.getElementById('modal-group-select').value;
-        var search = document.getElementById('modal-host-search').value;
-        
-        var url = 'zabbix.php?action=hosts.get';
-        if (groupId) url += '&groupid=' + encodeURIComponent(groupId);
-        if (search) url += '&search=' + encodeURIComponent(search);
-        
+        var groupId = document.getElementById("modal-group-select").value;
+        var search = document.getElementById("modal-host-search").value;
+
+        var url = "zabbix.php?action=hosts.get";
+        if (groupId) url += "&groupid=" + encodeURIComponent(groupId);
+        if (search) url += "&search=" + encodeURIComponent(search);
+
         fetch(url)
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {
                     renderHostList(data.hosts);
                 }
+            })
+            .catch(function() {
+                document.getElementById("host-select-list").innerHTML = "<div style=\\"padding:20px;text-align:center;color:#dc3545\\">" + i18n.operation_failed + "</div>";
             });
     };
-    
+
     window.debounceLoadHosts = function() {
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(loadHosts, 300);
     };
-    
+
     function renderHostList(hosts) {
-        var html = '';
+        var html = "";
         hosts.forEach(function(host) {
-            var statusClass = host.in_rack ? ' in-rack' : '';
-            var statusText = host.in_rack ? '(' + host.current_room + '/' + host.current_rack + ')' : '';
-            html += '<div class="host-select-item" data-hostid="' + host.hostid + '" onclick="selectHost(this, \'' + host.hostid + '\')">';
-            html += '<div class="host-info">';
-            html += '<div>' + escapeHtml(host.name) + '</div>';
-            html += '<div style="font-size:11px;color:#666">' + escapeHtml(host.main_ip) + '</div>';
-            html += '</div>';
+            var statusClass = host.in_rack ? " in-rack" : "";
+            var statusText = host.in_rack ? "(" + host.current_room + "/" + host.current_rack + ")" : "";
+            html += "<div class=\\"host-select-item\\" data-hostid=\\"" + host.hostid + "\\" onclick=\\"selectHost(this, \x27" + host.hostid + "\x27)\\">";
+            html += "<div class=\\"host-info\\">";
+            html += "<div>" + escapeHtml(host.name) + "</div>";
+            html += "<div style=\\"font-size:11px;color:#666\\">" + escapeHtml(host.main_ip) + "</div>";
+            html += "</div>";
             if (host.in_rack) {
-                html += '<span class="host-status in-rack">' + statusText + '</span>';
+                html += "<span class=\\"host-status in-rack\\">" + statusText + "</span>";
             }
-            html += '</div>';
+            html += "</div>";
         });
-        document.getElementById('host-select-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:#666">无匹配主机</div>';
+        document.getElementById("host-select-list").innerHTML = html || "<div style=\\"padding:20px;text-align:center;color:#666\\">" + i18n.no_matching_hosts + "</div>";
     }
-    
+
     window.selectHost = function(elem, hostId) {
-        document.querySelectorAll('.host-select-item').forEach(function(item) {
-            item.classList.remove('selected');
+        document.querySelectorAll(".host-select-item").forEach(function(item) {
+            item.classList.remove("selected");
         });
-        elem.classList.add('selected');
+        elem.classList.add("selected");
         selectedHostId = hostId;
     };
-    
+
     window.saveHost = function() {
         var hostId = isEditMode ? editingHostId : selectedHostId;
-        
+
         if (!hostId) {
-            alert('请选择一个主机');
+            alert(i18n.select_a_host);
             return;
         }
-        
-        var uStart = parseInt(document.getElementById('modal-u-start').value);
-        var uEnd = parseInt(document.getElementById('modal-u-end').value);
-        
+
+        var uStart = parseInt(document.getElementById("modal-u-start").value);
+        var uEnd = parseInt(document.getElementById("modal-u-end").value);
+
         if (!uStart || !uEnd || uStart > uEnd) {
-            alert('请输入有效的U位范围');
+            alert(i18n.invalid_u_range);
             return;
         }
-        
-        // 如果是编辑模式，先移除再重新分配
+
         if (isEditMode) {
             var removeFormData = new FormData();
-            removeFormData.append('action', 'host.remove');
-            removeFormData.append('hostid', hostId);
-            
-            fetch('zabbix.php', {
-                method: 'POST',
+            removeFormData.append("action", "host.remove");
+            removeFormData.append("hostid", hostId);
+
+            fetch("zabbix.php", {
+                method: "POST",
                 body: removeFormData
             })
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {
-                    // 移除成功后重新分配
                     doAssignHost(hostId, uStart, uEnd);
                 } else {
-                    alert(data.error || data.message || '操作失败');
+                    alert(data.error || data.message || i18n.operation_failed);
                 }
+            })
+            .catch(function() {
+                alert(i18n.operation_failed);
             });
         } else {
             doAssignHost(hostId, uStart, uEnd);
         }
     };
-    
+
     function doAssignHost(hostId, uStart, uEnd) {
         var formData = new FormData();
-        formData.append('action', 'host.assign');
-        formData.append('hostid', hostId);
-        formData.append('room_id', currentRoomId);
-        formData.append('rack_id', currentRackId);
-        formData.append('u_start', uStart);
-        formData.append('u_end', uEnd);
-        
-        fetch('zabbix.php', {
-            method: 'POST',
+        formData.append("action", "host.assign");
+        formData.append("hostid", hostId);
+        formData.append("room_id", currentRoomId);
+        formData.append("rack_id", currentRackId);
+        formData.append("u_start", uStart);
+        formData.append("u_end", uEnd);
+
+        fetch("zabbix.php", {
+            method: "POST",
             body: formData
         })
         .then(function(response) { return response.json(); })
@@ -2096,24 +2410,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 location.reload();
             } else {
-                alert(data.error || data.message || '操作失败');
+                alert(data.error || data.message || i18n.operation_failed);
             }
+        })
+        .catch(function() {
+            alert(i18n.operation_failed);
         });
     }
-    
+
     window.removeHostFromModal = function() {
         if (!editingHostId) return;
-        
-        if (!confirm('确定要从机柜中移除此主机吗？')) {
+
+        if (!confirm(i18n.confirm_remove_host)) {
             return;
         }
-        
+
         var formData = new FormData();
-        formData.append('action', 'host.remove');
-        formData.append('hostid', editingHostId);
-        
-        fetch('zabbix.php', {
-            method: 'POST',
+        formData.append("action", "host.remove");
+        formData.append("hostid", editingHostId);
+
+        fetch("zabbix.php", {
+            method: "POST",
             body: formData
         })
         .then(function(response) { return response.json(); })
@@ -2121,22 +2438,25 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 location.reload();
             } else {
-                alert(data.error || data.message || '操作失败');
+                alert(data.error || data.message || i18n.operation_failed);
             }
+        })
+        .catch(function() {
+            alert(i18n.operation_failed);
         });
     };
-    
+
     window.removeHost = function(hostId) {
-        if (!confirm('确定要从机柜中移除此主机吗？')) {
+        if (!confirm(i18n.confirm_remove_host)) {
             return;
         }
-        
+
         var formData = new FormData();
-        formData.append('action', 'host.remove');
-        formData.append('hostid', hostId);
-        
-        fetch('zabbix.php', {
-            method: 'POST',
+        formData.append("action", "host.remove");
+        formData.append("hostid", hostId);
+
+        fetch("zabbix.php", {
+            method: "POST",
             body: formData
         })
         .then(function(response) { return response.json(); })
@@ -2144,74 +2464,80 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 location.reload();
             } else {
-                alert(data.error || data.message || '操作失败');
+                alert(data.error || data.message || i18n.operation_failed);
             }
+        })
+        .catch(function() {
+            alert(i18n.operation_failed);
         });
     };
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(text));
-        return div.innerHTML;
-    }
-    
-    // 告警相关函数
+
+    // ============ 告警相关函数 ============
     window.showProblems = function(hostId, hostName) {
-        document.getElementById('problem-host-name').textContent = hostName;
-        document.getElementById('problem-list').innerHTML = '<li class="problem-item" style="justify-content:center;"><span>加载中...</span></li>';
-        document.getElementById('problem-modal').classList.add('visible');
-        
-        // 获取告警详情
+        document.getElementById("problem-host-name").textContent = hostName;
+        document.getElementById("problem-list").innerHTML = "<li class=\\"problem-item\\" style=\\"justify-content:center;\\"><span>" + i18n.loading + "</span></li>";
+        document.getElementById("problem-modal").classList.add("visible");
+
         var formData = new FormData();
-        formData.append('action', 'host.problems');
-        formData.append('hostid', hostId);
-        
-        fetch('zabbix.php', {
-            method: 'POST',
+        formData.append("action", "host.problems");
+        formData.append("hostid", hostId);
+
+        fetch("zabbix.php", {
+            method: "POST",
             body: formData
         })
         .then(function(response) { return response.json(); })
         .then(function(data) {
-            var listHtml = '';
+            var listHtml = "";
             if (data.success && data.problems && data.problems.length > 0) {
                 data.problems.forEach(function(problem) {
-                    listHtml += '<li class="problem-item">';
-                    listHtml += '<span class="problem-severity severity-' + problem.severity + '"></span>';
-                    listHtml += '<div class="problem-info">';
-                    listHtml += '<div class="problem-name">' + escapeHtml(problem.name) + '</div>';
-                    listHtml += '<div class="problem-time">🕐 ' + escapeHtml(problem.time) + ' | ' + escapeHtml(problem.severity_name) + '</div>';
-                    listHtml += '</div>';
-                    listHtml += '</li>';
+                    listHtml += "<li class=\\"problem-item\\">";
+                    listHtml += "<span class=\\"problem-severity severity-" + problem.severity + "\\"></span>";
+                    listHtml += "<div class=\\"problem-info\\">";
+                    listHtml += "<div class=\\"problem-name\\">" + escapeHtml(problem.name) + "</div>";
+                    listHtml += "<div class=\\"problem-time\\">🕐 " + escapeHtml(problem.time) + " | " + escapeHtml(problem.severity_name) + "</div>";
+                    listHtml += "</div>";
+                    listHtml += "</li>";
                 });
             } else {
-                listHtml = '<li class="no-problems">✅ 当前无活跃告警</li>';
+                listHtml = "<li class=\\"no-problems\\">" + i18n.no_active_problems + "</li>";
             }
-            document.getElementById('problem-list').innerHTML = listHtml;
+            document.getElementById("problem-list").innerHTML = listHtml;
         })
         .catch(function(error) {
-            document.getElementById('problem-list').innerHTML = '<li class="problem-item" style="color:#dc3545;">获取告警失败</li>';
+            document.getElementById("problem-list").innerHTML = "<li class=\\"problem-item\\" style=\\"color:#dc3545;\\">" + i18n.fetch_problems_failed + "</li>";
         });
     };
-    
+
     window.closeProblemModal = function() {
-        document.getElementById('problem-modal').classList.remove('visible');
+        document.getElementById("problem-modal").classList.remove("visible");
     };
-    
-    // 点击弹窗外部关闭
-    document.getElementById('problem-modal').addEventListener('click', function(e) {
+
+    // ============ 键盘事件与弹窗外部关闭 ============
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") {
+            document.querySelectorAll(".modal-overlay.visible, .problem-modal.visible, .rack-detail-modal.visible").forEach(function(modal) {
+                modal.classList.remove("visible");
+            });
+        }
+    });
+
+    document.querySelectorAll(".modal-overlay").forEach(function(modal) {
+        modal.addEventListener("click", function(e) {
+            if (e.target === this) {
+                this.classList.remove("visible");
+            }
+        });
+    });
+
+    document.getElementById("problem-modal").addEventListener("click", function(e) {
         if (e.target === this) {
             closeProblemModal();
         }
     });
-});
-</script>
-JS;
 
-$html .= $js;
+})();
+</script>'));
 
 // 使用兼容渲染器显示页面
-$content = new CDiv();
-$content->addItem(new CJsScript($html));
-
 ViewRenderer::render($pageTitle, $styleTag, $content);

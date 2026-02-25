@@ -7,7 +7,6 @@
 namespace Modules\ZabbixRack\Actions;
 
 use CController;
-use CControllerResponseData;
 use API;
 
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
@@ -42,8 +41,7 @@ class HostProblems extends CController {
         $response = ['success' => false, 'problems' => []];
         
         try {
-            $hostRackManager = new HostRackManager();
-            $problems = $hostRackManager->getHostProblemDetails($hostId);
+            $problems = HostRackManager::getHostProblemDetails($hostId);
             
             $response['success'] = true;
             $response['problems'] = $problems;
