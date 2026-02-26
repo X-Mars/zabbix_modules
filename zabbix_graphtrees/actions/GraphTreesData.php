@@ -63,7 +63,7 @@ class GraphTreesData extends CController {
         try {
             // 获取主机所有活跃监控项及其标签
             $items = API::Item()->get([
-                'output' => ['itemid', 'name', 'value_type'],
+                'output' => ['itemid', 'name', 'value_type', 'units'],
                 'hostids' => [$hostid],
                 'filter' => ['status' => ITEM_STATUS_ACTIVE],
                 'selectTags' => ['tag', 'value'],
@@ -78,10 +78,12 @@ class GraphTreesData extends CController {
                 'sortfield' => 'name'
             ]);
 
-            // 构建监控项→标签值映射
+            // 构建监控项→标签值映射 & 监控项信息索引
             $itemTagValues = [];
+            $itemInfo = [];
             foreach ($items as $item) {
                 $itemTagValues[$item['itemid']] = [];
+                $itemInfo[$item['itemid']] = $item;
                 if (!empty($item['tags'])) {
                     foreach ($item['tags'] as $tag) {
                         if (!empty($tag['value'])) {
@@ -91,13 +93,24 @@ class GraphTreesData extends CController {
                 }
             }
 
+            // 构建已被预配置图表覆盖的监控项集合
+            $graphItemIds = [];
+            foreach ($graphs as $graph) {
+                foreach ($graph['items'] as $gItem) {
+                    $graphItemIds[$gItem['itemid']] = true;
+                }
+            }
+
             // 按标签值分组统计
             $categories = [];
             $uncategorizedCount = 0;
+            $uncategorizedNumericCount = 0;
             foreach ($items as $item) {
                 $tagValues = $itemTagValues[$item['itemid']];
+                $isNumeric = in_array((int)$item['value_type'], [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64]);
                 if (empty($tagValues)) {
                     $uncategorizedCount++;
+                    if ($isNumeric) $uncategorizedNumericCount++;
                 } else {
                     foreach ($tagValues as $tagValue) {
                         if (!isset($categories[$tagValue])) {
@@ -105,15 +118,17 @@ class GraphTreesData extends CController {
                                 'key' => $tagValue,
                                 'name' => $tagValue,
                                 'itemCount' => 0,
+                                'numericItemCount' => 0,
                                 'graphCount' => 0
                             ];
                         }
                         $categories[$tagValue]['itemCount']++;
+                        if ($isNumeric) $categories[$tagValue]['numericItemCount']++;
                     }
                 }
             }
 
-            // 统计每个分类的图表数量（包括未分类图表）
+            // 统计每个分类的预配置图表数量
             $otherGraphCount = 0;
             foreach ($graphs as $graph) {
                 $graphCategories = [];
@@ -138,6 +153,40 @@ class GraphTreesData extends CController {
                 }
             }
 
+            // 统计每个分类的 adhoc 图表卡片数（孤立数值型监控项按单位合并，每8个一张）
+            foreach ($categories as $catName => &$cat) {
+                $orphanUnits = [];
+                foreach ($items as $item) {
+                    $inCat = in_array($catName, $itemTagValues[$item['itemid']] ?? []);
+                    if ($inCat
+                        && !isset($graphItemIds[$item['itemid']])
+                        && in_array((int)$item['value_type'], [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64])
+                    ) {
+                        $u = $item['units'] ?? '';
+                        $orphanUnits[$u] = ($orphanUnits[$u] ?? 0) + 1;
+                    }
+                }
+                foreach ($orphanUnits as $cnt) {
+                    $cat['graphCount'] += (int)ceil($cnt / 8);
+                }
+            }
+            unset($cat);
+
+            // 统计"其他"分类的 adhoc 图表卡片数
+            $otherOrphanUnits = [];
+            foreach ($items as $item) {
+                if (empty($itemTagValues[$item['itemid']])
+                    && !isset($graphItemIds[$item['itemid']])
+                    && in_array((int)$item['value_type'], [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64])
+                ) {
+                    $u = $item['units'] ?? '';
+                    $otherOrphanUnits[$u] = ($otherOrphanUnits[$u] ?? 0) + 1;
+                }
+            }
+            foreach ($otherOrphanUnits as $cnt) {
+                $otherGraphCount += (int)ceil($cnt / 8);
+            }
+
             ksort($categories);
 
             // 未分类的监控项归入"其他"
@@ -146,14 +195,30 @@ class GraphTreesData extends CController {
                     'key' => '__other__',
                     'name' => LanguageManager::t('Other'),
                     'itemCount' => $uncategorizedCount,
+                    'numericItemCount' => $uncategorizedNumericCount,
                     'graphCount' => $otherGraphCount
                 ];
+            }
+
+            // 计算"所有图表"的总卡片数
+            $totalCards = count($graphs);
+            $allOrphanUnits = [];
+            foreach ($items as $item) {
+                if (!isset($graphItemIds[$item['itemid']])
+                    && in_array((int)$item['value_type'], [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64])
+                ) {
+                    $u = $item['units'] ?? '';
+                    $allOrphanUnits[$u] = ($allOrphanUnits[$u] ?? 0) + 1;
+                }
+            }
+            foreach ($allOrphanUnits as $cnt) {
+                $totalCards += (int)ceil($cnt / 8);
             }
 
             return [
                 'success' => true,
                 'categories' => array_values($categories),
-                'totalGraphs' => count($graphs),
+                'totalGraphs' => $totalCards,
                 'totalItems' => count($items)
             ];
         } catch (\Exception $e) {

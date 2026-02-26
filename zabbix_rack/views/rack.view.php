@@ -1355,9 +1355,6 @@ $filterForm->addItem($rackFilterItem);
 // 筛选按钮
 $filterBtnItem = (new CDiv())->addClass('filter-item');
 $filterBtnItem->addItem(
-    (new CTag('label', true, '&nbsp;'))
-);
-$filterBtnItem->addItem(
     (new CTag('button', true, '🔎 ' . LanguageManager::t('filter')))
         ->setAttribute('type', 'submit')
         ->addClass('btn btn-primary')
