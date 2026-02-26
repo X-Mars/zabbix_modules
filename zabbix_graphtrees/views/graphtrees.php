@@ -28,40 +28,6 @@ $styleTag = new CTag('style', true, '
     overflow: hidden;
 }
 
-.tree-header {
-    padding: 12px 15px;
-    border-bottom: 2px solid #007bff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.tree-header h3 {
-    margin: 0;
-    font-size: 15px;
-    color: #495057;
-}
-
-.tree-controls {
-    display: flex;
-    gap: 4px;
-}
-
-.tree-controls button {
-    font-size: 11px;
-    padding: 4px 8px;
-    border: 1px solid #dee2e6;
-    border-radius: 3px;
-    background: #f8f9fa;
-    cursor: pointer;
-    color: #495057;
-}
-
-.tree-controls button:hover {
-    background: #e9ecef;
-}
-
 .tree-search {
     padding: 10px 15px;
     border-bottom: 1px solid #eee;
@@ -508,26 +474,6 @@ $styleTag = new CTag('style', true, '
 // ===== 构建树形面板 =====
 $treePanel = (new CDiv())->addClass('tree-panel');
 
-// 树头部
-$treeHeader = (new CDiv())
-    ->addClass('tree-header')
-    ->addItem(new CTag('h3', true, LanguageManager::t('Resource Tree')))
-    ->addItem(
-        (new CDiv())
-            ->addClass('tree-controls')
-            ->addItem(
-                (new CButton('expand-all', LanguageManager::t('Expand All')))
-                    ->setAttribute('style', 'font-size:11px;padding:4px 8px;border:1px solid #dee2e6;border-radius:3px;background:#f8f9fa;cursor:pointer;color:#495057;')
-                    ->setAttribute('onclick', 'expandAllGroups()')
-            )
-            ->addItem(
-                (new CButton('collapse-all', LanguageManager::t('Collapse All')))
-                    ->setAttribute('style', 'font-size:11px;padding:4px 8px;border:1px solid #dee2e6;border-radius:3px;background:#f8f9fa;cursor:pointer;color:#495057;')
-                    ->setAttribute('onclick', 'collapseAllGroups()')
-            )
-    );
-$treePanel->addItem($treeHeader);
-
 // 搜索框
 $treeSearch = (new CDiv())
     ->addClass('tree-search')
@@ -668,7 +614,7 @@ $refreshOptions = [
 
 foreach ($refreshOptions as $value => $label) {
     $opt = (new CTag('option', true, $label))->setAttribute('value', $value);
-    if ($value === '60') {
+    if ($value === '0') {
         $opt->setAttribute('selected', 'selected');
     }
     $refreshSelect->addItem($opt);
@@ -750,7 +696,7 @@ var state = {
     timeTo: "now",
     columns: 2,
     autoRefreshTimer: null,
-    autoRefreshSeconds: 60,
+    autoRefreshSeconds: 0,
     loadedCategories: {}, // hostid -> categories data cache
     currentGraphs: []     // 当前显示的图表数据
 };
@@ -1106,6 +1052,7 @@ function onAutoRefreshChange(value) {
     if (seconds > 0) {
         startAutoRefresh(seconds);
     }
+    try { localStorage.setItem('graphtrees_auto_refresh', seconds); } catch(e) {}
 }
 
 function startAutoRefresh(seconds) {
@@ -1171,7 +1118,20 @@ document.addEventListener("DOMContentLoaded", function() {
         grid.style.setProperty("--graph-cols", state.columns);
     }
 
-    // 启动默认自动刷新
+    // 恢复上次选择的自动刷新间隔
+    try {
+        var saved = localStorage.getItem('graphtrees_auto_refresh');
+        if (saved !== null) {
+            var seconds = parseInt(saved);
+            if (!isNaN(seconds)) {
+                state.autoRefreshSeconds = seconds;
+                var sel = document.getElementById('auto-refresh-select');
+                if (sel) sel.value = String(seconds);
+            }
+        }
+    } catch(e) {}
+
+    // 启动自动刷新
     if (state.autoRefreshSeconds > 0) {
         startAutoRefresh(state.autoRefreshSeconds);
     }
