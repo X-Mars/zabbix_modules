@@ -751,7 +751,8 @@ var state = {
     columns: 2,
     autoRefreshTimer: null,
     autoRefreshSeconds: 60,
-    loadedCategories: {} // hostid -> categories data cache
+    loadedCategories: {}, // hostid -> categories data cache
+    currentGraphs: []     // 当前显示的图表数据
 };
 
 // ===== 树形面板交互 =====
@@ -890,6 +891,10 @@ function renderCategories(hostid, data) {
     // 各分类
     if (data.categories && data.categories.length > 0) {
         data.categories.forEach(function(cat) {
+            // 隐藏没有图表且没有数值型监控项的分类
+            if ((cat.graphCount || 0) === 0 && (cat.numericItemCount || 0) === 0) {
+                return;
+            }
             var catDiv = document.createElement("div");
             var catKey = cat.key || cat.name;
             catDiv.className = "tree-category" + (state.selectedCategory === catKey ? " active" : "");
@@ -915,6 +920,7 @@ function loadGraphs(hostid, category) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success && data.graphs && data.graphs.length > 0) {
+                state.currentGraphs = data.graphs;
                 renderGraphs(data.graphs);
                 updateToolbarInfo(data.graphs.length);
             } else {
@@ -923,6 +929,7 @@ function loadGraphs(hostid, category) {
                 empty.style.display = "";
                 empty.querySelector(".empty-state-text").textContent = i18n.noData;
                 empty.querySelector(".empty-state-icon").textContent = "\u{1F4CA}";
+                state.currentGraphs = [];
                 updateToolbarInfo(0);
             }
         })
@@ -974,6 +981,7 @@ function renderGraphs(graphs) {
         img.src = imgSrc;
         img.loading = "lazy";
         img.alt = g.name;
+        img.dataset.graphJson = JSON.stringify(g);
         img.onerror = function() {
             this.style.display = "none";
             var errDiv = document.createElement("div");
@@ -996,11 +1004,15 @@ function buildGraphUrl(g, width, height) {
         return "chart2.php?graphid=" + g.graphid +
             "&from=" + encodeURIComponent(state.timeFrom) +
             "&to=" + encodeURIComponent(state.timeTo) +
+            "&profileIdx=web.graphtrees.filter" +
+            "&profileIdx2=0" +
             "&width=" + width + "&height=" + height +
             "&_=" + ts;
     } else {
         var url = "chart.php?from=" + encodeURIComponent(state.timeFrom) +
             "&to=" + encodeURIComponent(state.timeTo) +
+            "&profileIdx=web.graphtrees.filter" +
+            "&profileIdx2=0" +
             "&type=0&width=" + width + "&height=" + height;
         g.itemids.forEach(function(id, i) {
             url += "&itemids%5B" + i + "%5D=" + id;
@@ -1039,8 +1051,10 @@ function openZoomModal(g) {
     body.className = "graph-modal-body";
 
     var img = document.createElement("img");
+    img.id = "graph-modal-img";
     img.src = buildGraphUrl(g, 1800, 500);
     img.alt = g.name;
+    img.dataset.graphJson = JSON.stringify(g);
     body.appendChild(img);
     modal.appendChild(body);
 
@@ -1071,7 +1085,10 @@ function closeZoomModal() {
 function onTimeRangeChange(value) {
     state.timeFrom = value;
     state.timeTo = "now";
-    refreshGraphImages();
+    // 直接重新渲染当前图表（URL会使用最新的timeFrom）
+    if (state.currentGraphs.length > 0) {
+        renderGraphs(state.currentGraphs);
+    }
 }
 
 function onColumnsChange(value) {
@@ -1117,19 +1134,19 @@ function refreshGraphs() {
 }
 
 function refreshGraphImages() {
-    // 只更新图片URL（改变时间戳参数强制刷新）
-    var imgs = document.querySelectorAll("#graphs-grid .graph-card-body img");
-    var ts = Date.now();
-    imgs.forEach(function(img) {
-        var src = img.src;
-        // 替换 _= 参数
-        src = src.replace(/[&?]_=\d+/, "");
-        src += (src.indexOf("?") !== -1 ? "&" : "?") + "_=" + ts;
-        // 更新时间范围
-        src = src.replace(/from=[^&]+/, "from=" + encodeURIComponent(state.timeFrom));
-        src = src.replace(/to=[^&]+/, "to=" + encodeURIComponent(state.timeTo));
-        img.src = src;
-    });
+    // 自动刷新：直接重新渲染当前图表（buildGraphUrl会生成新的时间戳）
+    if (state.currentGraphs.length > 0) {
+        renderGraphs(state.currentGraphs);
+    }
+
+    // 同时刷新放大弹窗中的图片
+    var modalImg = document.getElementById("graph-modal-img");
+    if (modalImg && modalImg.dataset.graphJson) {
+        try {
+            var g = JSON.parse(modalImg.dataset.graphJson);
+            modalImg.src = buildGraphUrl(g, 1800, 500);
+        } catch (e) {}
+    }
 }
 
 function updateToolbarInfo(count) {
