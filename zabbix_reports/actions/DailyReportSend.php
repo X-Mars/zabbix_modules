@@ -67,7 +67,10 @@ class DailyReportSend extends CController {
             
             foreach ($events as $event) {
                 $host = isset($triggerHosts[$event['objectid']]) ? $triggerHosts[$event['objectid']] : null;
-                $hostName = $host ? $host['name'] : 'Unknown Host';
+                if (!$host) {
+                    continue; // 主机已删除，跳过
+                }
+                $hostName = $host['name'];
                 $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
             }
         }

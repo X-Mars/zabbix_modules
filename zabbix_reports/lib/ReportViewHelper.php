@@ -790,7 +790,7 @@ class ReportViewHelper {
     /**
      * 构建告警信息区域（含搜索）
      */
-    public static function buildAlertSection(array $alerts, int $limit = 50): \CDiv {
+    public static function buildAlertSection(array $alerts, int $limit = 200): \CDiv {
         $section = (new \CDiv())->addClass('rpt-section rpt-animate');
         $alertCount = count($alerts);
 
