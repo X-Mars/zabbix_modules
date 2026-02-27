@@ -82,110 +82,214 @@ class PdfGenerator {
     }
     
     private function generateHTML() {
-        // 简单的HTML格式，可以被浏览器打印为PDF
+        // 现代仪表盘风格 HTML（与 ReportViewHelper 保持一致）
         $html = '<!DOCTYPE html><html><head>';
         $html .= '<meta charset="UTF-8">';
-        $html .= '<title>' . $this->title . '</title>';
+        $html .= '<title>' . htmlspecialchars($this->title) . '</title>';
         $html .= '<style>';
-        $html .= 'body { font-family: Arial, sans-serif; margin: 20px; }';
-        $html .= 'h1 { color: #333; text-align: center; }';
-        $html .= 'table { width: 100%; border-collapse: collapse; margin: 20px 0; }';
-        $html .= 'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }';
-        $html .= 'th { background-color: #f2f2f2; }';
-        $html .= '.summary { background-color: #f9f9f9; padding: 15px; margin: 10px 0; }';
+        $html .= '
+:root {
+    --rpt-primary: #4361ee; --rpt-primary-light: #eef1ff;
+    --rpt-success: #2ec4b6; --rpt-success-light: #e8f8f5;
+    --rpt-warning: #ff9f1c; --rpt-warning-light: #fff8ee;
+    --rpt-danger: #e63946;  --rpt-danger-light: #fdebed;
+    --rpt-info: #457b9d;    --rpt-info-light: #eaf2f7;
+    --rpt-text: #2b2d42;    --rpt-text-secondary: #6c757d;
+    --rpt-bg: #f8f9fc;      --rpt-card-bg: #ffffff;
+    --rpt-border: #e9ecef;  --rpt-radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif; background: var(--rpt-bg); color: var(--rpt-text); padding: 30px; }
+.rpt-container { max-width: 1100px; margin: 0 auto; }
+h1.rpt-title { font-size: 22px; font-weight: 700; color: var(--rpt-text); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--rpt-primary); }
+.rpt-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.rpt-stat-card { background: var(--rpt-card-bg); border-radius: var(--rpt-radius); padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid var(--rpt-border); transition: all 0.25s ease; }
+.rpt-stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.rpt-stat-icon.danger { background: var(--rpt-danger-light); color: var(--rpt-danger); }
+.rpt-stat-icon.success { background: var(--rpt-success-light); color: var(--rpt-success); }
+.rpt-stat-icon.warning { background: var(--rpt-warning-light); color: var(--rpt-warning); }
+.rpt-stat-icon.info { background: var(--rpt-info-light); color: var(--rpt-info); }
+.rpt-stat-icon.primary { background: var(--rpt-primary-light); color: var(--rpt-primary); }
+.rpt-stat-body { flex: 1; min-width: 0; }
+.rpt-stat-value { font-size: 24px; font-weight: 700; color: var(--rpt-text); line-height: 1.2; }
+.rpt-stat-label { font-size: 12px; color: var(--rpt-text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.rpt-section { background: var(--rpt-card-bg); border-radius: var(--rpt-radius); margin-bottom: 20px; border: 1px solid var(--rpt-border); overflow: hidden; }
+.rpt-section-header { padding: 14px 20px; border-bottom: 1px solid var(--rpt-border); background: linear-gradient(135deg, var(--rpt-card-bg), var(--rpt-bg)); }
+.rpt-section-title { font-size: 14px; font-weight: 700; color: var(--rpt-text); }
+.rpt-section-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--rpt-primary-light); color: var(--rpt-primary); margin-left: 8px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--rpt-bg); color: var(--rpt-text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--rpt-border); }
+td { padding: 9px 14px; border-bottom: 1px solid var(--rpt-border); font-size: 12px; }
+tr:hover { background-color: var(--rpt-primary-light); }
+.rpt-sev-not-classified { background: #97AAB3; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-sev-information { background: #7499FF; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-sev-warning { background: #FFC859; color: #333; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-sev-average { background: #FFA059; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-sev-high { background: #E97659; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-sev-disaster { background: #E45959; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.rpt-host-name { font-weight: 600; }
+.rpt-time { font-family: "SF Mono", "Menlo", monospace; font-size: 11px; color: var(--rpt-text-secondary); }
+.rpt-time-recovered { color: var(--rpt-success); }
+.rpt-rank { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 700; }
+.rpt-rank-1 { background: linear-gradient(135deg, #FFD700, #FFA000); color: #fff; }
+.rpt-rank-2 { background: linear-gradient(135deg, #C0C0C0, #9E9E9E); color: #fff; }
+.rpt-rank-3 { background: linear-gradient(135deg, #CD7F32, #A0522D); color: #fff; }
+.rpt-rank-n { background: var(--rpt-bg); color: var(--rpt-text-secondary); }
+.rpt-progress-bar { display: inline-block; width: 100px; height: 7px; background: var(--rpt-border); border-radius: 4px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.rpt-progress-fill { display: block; height: 100%; border-radius: 4px; }
+.level-low { background: var(--rpt-success); } .level-mid { background: var(--rpt-warning); } .level-high { background: var(--rpt-danger); }
+.rpt-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.rpt-problem-tags { padding: 14px 20px; }
+.rpt-problem-tag { display: inline-block; background: var(--rpt-warning-light); color: #e67700; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.rpt-footer { text-align: center; padding: 16px; font-size: 11px; color: var(--rpt-text-secondary); border-top: 1px solid var(--rpt-border); margin-top: 24px; }
+@media print { body { padding: 10px; background: #fff; } .rpt-stat-card, .rpt-section { box-shadow: none; } }
+@media (max-width: 768px) { .rpt-stats-grid { grid-template-columns: repeat(2, 1fr); } .rpt-grid-2 { grid-template-columns: 1fr; } }
+';
         $html .= '</style></head><body>';
-        
-        $html .= '<h1>' . $this->title . '</h1>';
-        
-        if (isset($this->data['date'])) {
-            $html .= '<p><strong>' . LanguageManager::t('Report Date') . ':</strong> ' . $this->data['date'] . '</p>';
-        }
-        
-        $html .= '<div class="summary">';
-        $html .= '<table>';
-        if (isset($this->data['problemCount'])) {
-            $html .= '<tr><td><strong>' . LanguageManager::t('Problem Count') . ':</strong></td><td>' . $this->data['problemCount'] . '</td></tr>';
-        }
-        if (isset($this->data['resolvedCount'])) {
-            $html .= '<tr><td><strong>' . LanguageManager::t('Resolved Count') . ':</strong></td><td>' . $this->data['resolvedCount'] . '</td></tr>';
-        }
-        if (isset($this->data['topHosts'])) {
-            $html .= '<tr><td><strong>' . LanguageManager::t('Top Problem Hosts') . ':</strong></td><td>' . implode(', ', array_keys($this->data['topHosts'])) . '</td></tr>';
-        }
-        $html .= '</table>';
+        $html .= '<div class="rpt-container">';
+
+        // 标题
+        $html .= '<h1 class="rpt-title">' . htmlspecialchars($this->title) . '</h1>';
+
+        // 统计摘要卡片（与 ReportViewHelper::buildStatCard 结构完全一致）
+        $html .= '<div class="rpt-stats-grid">';
+        $html .= '<div class="rpt-stat-card rpt-animate rpt-animate-delay-1"><div class="rpt-stat-icon danger">' . "\u{26A0}" . '</div><div class="rpt-stat-body"><div class="rpt-stat-value">' . ($this->data['problemCount'] ?? 0) . '</div><div class="rpt-stat-label">' . LanguageManager::t('Problem Count') . '</div></div></div>';
+        $html .= '<div class="rpt-stat-card rpt-animate rpt-animate-delay-2"><div class="rpt-stat-icon success">' . "\u{2705}" . '</div><div class="rpt-stat-body"><div class="rpt-stat-value">' . ($this->data['resolvedCount'] ?? 0) . '</div><div class="rpt-stat-label">' . LanguageManager::t('Resolved Count') . '</div></div></div>';
+        $groupCount = !empty($this->data['hostsByGroup']) ? count($this->data['hostsByGroup']) : 0;
+        $html .= '<div class="rpt-stat-card rpt-animate rpt-animate-delay-3"><div class="rpt-stat-icon info">' . "\u{1F5C2}" . '</div><div class="rpt-stat-body"><div class="rpt-stat-value">' . $groupCount . '</div><div class="rpt-stat-label">' . LanguageManager::t('Host Groups') . '</div></div></div>';
+        $hostCount = 0;
+        if (!empty($this->data['hostsByGroup'])) { foreach ($this->data['hostsByGroup'] as $hosts) { $hostCount += count($hosts); } }
+        $html .= '<div class="rpt-stat-card rpt-animate rpt-animate-delay-4"><div class="rpt-stat-icon primary">' . "\u{1F5A5}" . '</div><div class="rpt-stat-body"><div class="rpt-stat-value">' . $hostCount . '</div><div class="rpt-stat-label">' . LanguageManager::t('Total Hosts') . '</div></div></div>';
         $html .= '</div>';
-        
-        // 第一部分：告警信息
-        $html .= '<h2>' . LanguageManager::t('Part 1: Alert Information') . '</h2>';
-        $html .= '<table>';
-        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Alert Name') . '</th><th>' . LanguageManager::t('Alert Time') . '</th><th>' . LanguageManager::t('Recovery Time') . '</th></tr>';
-        if (!empty($this->data['alertInfo'])) {
-            $count = 0;
-            foreach ($this->data['alertInfo'] as $alert) {
-                if ($count >= 10) break; // 显示前10条告警
-                $recoveryTime = isset($alert['recovery_time']) && $alert['recovery_time'] ? $alert['recovery_time'] : '-';
-                $html .= "<tr><td>{$alert['host']}</td><td>{$alert['alert']}</td><td>{$alert['time']}</td><td>{$recoveryTime}</td></tr>";
-                $count++;
+
+        // 严重等级映射
+        $severityMap = [
+            0 => ['label' => LanguageManager::t('Not classified'), 'class' => 'rpt-sev-not-classified'],
+            1 => ['label' => LanguageManager::t('Information'),    'class' => 'rpt-sev-information'],
+            2 => ['label' => LanguageManager::t('Warning'),        'class' => 'rpt-sev-warning'],
+            3 => ['label' => LanguageManager::t('Average'),        'class' => 'rpt-sev-average'],
+            4 => ['label' => LanguageManager::t('High'),           'class' => 'rpt-sev-high'],
+            5 => ['label' => LanguageManager::t('Disaster'),       'class' => 'rpt-sev-disaster'],
+        ];
+
+        // CPU / Memory TOP 5 双列
+        $html .= '<div class="rpt-grid-2">';
+
+        // CPU TOP
+        $html .= '<div class="rpt-section"><div class="rpt-section-header"><span class="rpt-section-title">' . "\u{1F4BB} " . LanguageManager::t('CPU Information (TOP 5)') . '</span></div>';
+        $html .= '<table><tr><th>#</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . '</th><th>' . LanguageManager::t('CPU Total') . '</th></tr>';
+        if (!empty($this->data['topCpuHosts'])) {
+            $rank = 0;
+            foreach ($this->data['topCpuHosts'] as $host => $usage) {
+                if ($rank >= 5) break;
+                $rank++;
+                $rankClass = $rank <= 3 ? 'rpt-rank rpt-rank-' . $rank : 'rpt-rank rpt-rank-n';
+                $level = $usage < 60 ? 'low' : ($usage < 85 ? 'mid' : 'high');
+                $cpuTotal = isset($this->data['cpuTotal'][$host]) ? $this->data['cpuTotal'][$host] : 'N/A';
+                $html .= '<tr>';
+                $html .= '<td><span class="' . $rankClass . '">' . $rank . '</span></td>';
+                $html .= '<td><span class="rpt-host-name">' . htmlspecialchars($host) . '</span></td>';
+                $html .= '<td><span class="rpt-progress-bar"><span class="rpt-progress-fill level-' . $level . '" style="width:' . min($usage, 100) . '%"></span></span> <strong style="color:var(--rpt-' . ($level === 'low' ? 'success' : ($level === 'mid' ? 'warning' : 'danger')) . ')">' . number_format($usage, 2) . '%</strong></td>';
+                $html .= '<td>' . htmlspecialchars((string)$cpuTotal) . '</td>';
+                $html .= '</tr>';
             }
         } else {
-            $html .= '<tr><td>' . LanguageManager::t('No alerts found') . '</td><td></td><td></td><td></td></tr>';
+            $html .= '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--rpt-text-secondary);">' . LanguageManager::t('No data available') . '</td></tr>';
         }
-        $html .= '</table>';
-        
-        // 第二部分：主机群组信息
-        $html .= '<h2>' . LanguageManager::t('Part 2: Host Group Information') . '</h2>';
+        $html .= '</table></div>';
+
+        // Memory TOP
+        $html .= '<div class="rpt-section"><div class="rpt-section-header"><span class="rpt-section-title">' . "\u{1F4BE} " . LanguageManager::t('Memory Information (TOP 5)') . '</span></div>';
+        $html .= '<table><tr><th>#</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Memory Usage') . '</th><th>' . LanguageManager::t('Memory Total (GB)') . '</th></tr>';
+        if (!empty($this->data['topMemHosts'])) {
+            $rank = 0;
+            foreach ($this->data['topMemHosts'] as $host => $usage) {
+                if ($rank >= 5) break;
+                $rank++;
+                $rankClass = $rank <= 3 ? 'rpt-rank rpt-rank-' . $rank : 'rpt-rank rpt-rank-n';
+                $level = $usage < 60 ? 'low' : ($usage < 85 ? 'mid' : 'high');
+                $memTotal = isset($this->data['memTotal'][$host]) ? number_format($this->data['memTotal'][$host] / (1024*1024*1024), 2) . ' GB' : 'N/A';
+                $html .= '<tr>';
+                $html .= '<td><span class="' . $rankClass . '">' . $rank . '</span></td>';
+                $html .= '<td><span class="rpt-host-name">' . htmlspecialchars($host) . '</span></td>';
+                $html .= '<td><span class="rpt-progress-bar"><span class="rpt-progress-fill level-' . $level . '" style="width:' . min($usage, 100) . '%"></span></span> <strong style="color:var(--rpt-' . ($level === 'low' ? 'success' : ($level === 'mid' ? 'warning' : 'danger')) . ')">' . number_format($usage, 2) . '%</strong></td>';
+                $html .= '<td>' . htmlspecialchars($memTotal) . '</td>';
+                $html .= '</tr>';
+            }
+        } else {
+            $html .= '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--rpt-text-secondary);">' . LanguageManager::t('No data available') . '</td></tr>';
+        }
+        $html .= '</table></div>';
+        $html .= '</div>'; // rpt-grid-2
+
+        // 问题主机标签
+        if (!empty($this->data['topHosts'])) {
+            $html .= '<div class="rpt-section"><div class="rpt-section-header"><span class="rpt-section-title">' . "\u{1F525} " . LanguageManager::t('Top Problem Hosts') . '</span></div>';
+            $html .= '<div class="rpt-problem-tags">';
+            foreach ($this->data['topHosts'] as $host => $count) {
+                $html .= '<span class="rpt-problem-tag">' . htmlspecialchars($host) . ' (' . $count . ')</span>';
+            }
+            $html .= '</div></div>';
+        }
+
+        // 告警信息
+        $html .= '<div class="rpt-section"><div class="rpt-section-header"><span class="rpt-section-title">' . "\u{1F514} " . LanguageManager::t('Alert Information');
+        $alertCount = !empty($this->data['alertInfo']) ? count($this->data['alertInfo']) : 0;
+        $html .= '<span class="rpt-section-badge">' . $alertCount . '</span></span></div>';
         $html .= '<table>';
-        $html .= '<tr><th>' . LanguageManager::t('Host Group') . '</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . '</th><th>' . LanguageManager::t('CPU Total') . '</th><th>' . LanguageManager::t('Memory Usage') . '</th><th>' . LanguageManager::t('Memory Total') . '</th></tr>';
+        $html .= '<tr><th>#</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Severity') . '</th><th>' . LanguageManager::t('Alert Name') . '</th><th>' . LanguageManager::t('Alert Time') . '</th><th>' . LanguageManager::t('Recovery Time') . '</th></tr>';
+        if (!empty($this->data['alertInfo'])) {
+            $seq = 0;
+            foreach ($this->data['alertInfo'] as $alert) {
+                $seq++;
+                $sev = (int)($alert['severity'] ?? 0);
+                $sevInfo = $severityMap[$sev] ?? $severityMap[0];
+                $recoveryTime = !empty($alert['recovery_time']) ? $alert['recovery_time'] : '-';
+                $recClass = $recoveryTime !== '-' ? 'rpt-time rpt-time-recovered' : 'rpt-time';
+                $html .= '<tr>';
+                $html .= '<td><span class="rpt-rank rpt-rank-n">' . $seq . '</span></td>';
+                $html .= '<td><span class="rpt-host-name">' . htmlspecialchars($alert['host']) . '</span></td>';
+                $html .= '<td><span class="' . $sevInfo['class'] . '">' . $sevInfo['label'] . '</span></td>';
+                $html .= '<td>' . htmlspecialchars($alert['alert']) . '</td>';
+                $html .= '<td><span class="rpt-time">' . htmlspecialchars($alert['time']) . '</span></td>';
+                $html .= '<td><span class="' . $recClass . '">' . htmlspecialchars($recoveryTime) . '</span></td>';
+                $html .= '</tr>';
+            }
+        } else {
+            $html .= '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--rpt-text-secondary);">' . LanguageManager::t('No alerts found') . '</td></tr>';
+        }
+        $html .= '</table></div>';
+        
+        // 主机群组信息
+        $html .= '<div class="rpt-section"><div class="rpt-section-header"><span class="rpt-section-title">' . "\u{1F4CB} " . LanguageManager::t('Host Group Information');
+        $html .= '<span class="rpt-section-badge">' . $hostCount . '</span></span></div>';
+        $html .= '<table>';
+        $html .= '<tr><th>#</th><th>' . LanguageManager::t('Host Group') . '</th><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . '</th><th>' . LanguageManager::t('CPU Total') . '</th><th>' . LanguageManager::t('Memory Usage') . '</th><th>' . LanguageManager::t('Memory Total') . '</th></tr>';
         if (!empty($this->data['hostsByGroup'])) {
-            $count = 0;
+            $seq = 0;
             foreach ($this->data['hostsByGroup'] as $groupName => $hosts) {
                 foreach ($hosts as $host) {
-                    if ($count >= 20) break; // 显示前20个主机
-                    $html .= "<tr><td>$groupName</td><td>{$host['name']}</td><td>{$host['cpu_usage']}</td><td>{$host['cpu_total']}</td><td>{$host['mem_usage']}</td><td>{$host['mem_total']}</td></tr>";
-                    $count++;
+                    $seq++;
+                    $html .= '<tr>';
+                    $html .= '<td><span class="rpt-rank rpt-rank-n">' . $seq . '</span></td>';
+                    $html .= '<td>' . htmlspecialchars($groupName) . '</td>';
+                    $html .= '<td><span class="rpt-host-name">' . htmlspecialchars($host['name']) . '</span></td>';
+                    $html .= '<td>' . htmlspecialchars($host['cpu_usage']) . '</td>';
+                    $html .= '<td>' . htmlspecialchars((string)$host['cpu_total']) . '</td>';
+                    $html .= '<td>' . htmlspecialchars($host['mem_usage']) . '</td>';
+                    $html .= '<td>' . htmlspecialchars((string)$host['mem_total']) . '</td>';
+                    $html .= '</tr>';
                 }
-                if ($count >= 20) break;
             }
         } else {
-            $html .= '<tr><td>' . LanguageManager::t('No host data available') . '</td><td></td><td></td><td></td><td></td><td></td></tr>';
+            $html .= '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--rpt-text-secondary);">' . LanguageManager::t('No host data available') . '</td></tr>';
         }
-        $html .= '</table>';
-        
-        // CPU Information (TOP 5)
-        $html .= '<h3>' . LanguageManager::t('CPU Information (TOP 5)') . '</h3>';
-        $html .= '<table>';
-        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('CPU Usage') . ' (%)</th><th>' . LanguageManager::t('CPU Total') . '</th></tr>';
-        if (!empty($this->data['topCpuHosts'])) {
-            $count = 0;
-            foreach ($this->data['topCpuHosts'] as $host => $usage) {
-                if ($count >= 5) break;
-                $cpuTotal = isset($this->data['cpuTotal'][$host]) ? $this->data['cpuTotal'][$host] : 'N/A';
-                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$cpuTotal</td></tr>";
-                $count++;
-            }
-        } else {
-            $html .= '<tr><td>' . LanguageManager::t('No data available') . '</td><td></td><td></td></tr>';
-        }
-        $html .= '</table>';
-        
-        // Memory Information (TOP 5)
-        $html .= '<h3>' . LanguageManager::t('Memory Information (TOP 5)') . '</h3>';
-        $html .= '<table>';
-        $html .= '<tr><th>' . LanguageManager::t('Host Name') . '</th><th>' . LanguageManager::t('Memory Usage') . ' (%)</th><th>' . LanguageManager::t('Memory Total (GB)') . '</th></tr>';
-        if (!empty($this->data['topMemHosts'])) {
-            $count = 0;
-            foreach ($this->data['topMemHosts'] as $host => $usage) {
-                if ($count >= 5) break;
-                $memTotal = isset($this->data['memTotal'][$host]) ? number_format($this->data['memTotal'][$host] / (1024*1024*1024), 2) : 'N/A';
-                $html .= "<tr><td>$host</td><td>" . number_format($usage, 2) . "%</td><td>$memTotal " . LanguageManager::t('GB') . "</td></tr>";
-                $count++;
-            }
-        } else {
-            $html .= '<tr><td>' . LanguageManager::t('No data available') . '</td><td></td><td></td></tr>';
-        }
-        $html .= '</table>';
-        
-        $html .= '</body></html>';
+        $html .= '</table></div>';
+
+        // 页脚
+        $html .= '<div class="rpt-footer">' . LanguageManager::t('Generated by Zabbix Reports Module') . ' - ' . date('Y-m-d H:i:s') . ' | <a href="https://github.com/X-Mars/zabbix_modules" target="_blank" style="color:var(--rpt-primary);text-decoration:none;">https://github.com/X-Mars/zabbix_modules</a></div>';
+
+        $html .= '</div></body></html>';
         
         return $html;
     }
