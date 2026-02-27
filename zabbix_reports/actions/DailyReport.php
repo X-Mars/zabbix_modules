@@ -50,83 +50,50 @@ class DailyReport extends CController {
             'time_till' => $till
         ]);
 
-        // 获取告警事件信息（包括问题和恢复事件）
-        $events = API::Event()->get([
-            'output' => ['eventid', 'objectid', 'name', 'clock', 'value', 'r_eventid'],
-            'filter' => ['value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE]],
+        // 获取告警事件信息（仅问题事件，含主机和严重等级）
+        $problemEvents = API::Event()->get([
+            'output' => ['eventid', 'objectid', 'name', 'clock', 'r_eventid', 'severity'],
+            'source' => 0,
+            'object' => 0,
+            'value' => TRIGGER_VALUE_TRUE,
             'time_from' => $from,
             'time_till' => $till,
-            'sortfield' => 'clock',
+            'sortfield' => ['clock'],
             'sortorder' => 'DESC',
-            'limit' => 200
+            'limit' => 500,
+            'selectHosts' => ['hostid', 'name'],
         ]);
 
-        // 第一部分：告警信息
+        // 批量获取恢复事件时间
+        $recoveryMap = [];
+        $recoveryIds = array_filter(array_column($problemEvents, 'r_eventid'));
+        if (!empty($recoveryIds)) {
+            $recoveryEvents = API::Event()->get([
+                'output' => ['eventid', 'clock'],
+                'eventids' => array_values(array_unique($recoveryIds)),
+            ]);
+            foreach ($recoveryEvents as $re) {
+                $recoveryMap[$re['eventid']] = $re['clock'];
+            }
+        }
+
+        // 构建告警信息
         $alertInfo = [];
         $hostCounts = [];
-        
-        if (!empty($events)) {
-            // 构建事件映射：eventid -> event
-            $eventMap = [];
-            foreach ($events as $event) {
-                $eventMap[$event['eventid']] = $event;
+        foreach ($problemEvents as $event) {
+            $hostName = !empty($event['hosts']) ? $event['hosts'][0]['name'] : 'Unknown Host';
+            $recoveryTime = null;
+            if (!empty($event['r_eventid']) && isset($recoveryMap[$event['r_eventid']])) {
+                $recoveryTime = date('Y-m-d H:i:s', $recoveryMap[$event['r_eventid']]);
             }
-            
-            // 分离问题事件和恢复事件
-            $problemEvents = array_filter($events, function($event) {
-                return $event['value'] == TRIGGER_VALUE_TRUE;
-            });
-            
-            $triggerIds = array_unique(array_column($problemEvents, 'objectid'));
-            
-            // 获取触发器信息
-            $triggers = API::Trigger()->get([
-                'output' => ['triggerid', 'description'],
-                'triggerids' => $triggerIds
-            ]);
-            $triggerMap = [];
-            foreach ($triggers as $trigger) {
-                $triggerMap[$trigger['triggerid']] = $trigger;
-            }
-            
-            // 获取触发器对应的主机
-            $triggerHosts = [];
-            foreach ($triggerIds as $triggerId) {
-                $hosts = API::Host()->get([
-                    'output' => ['hostid', 'name'],
-                    'triggerids' => $triggerId,
-                    'limit' => 1
-                ]);
-                if (!empty($hosts)) {
-                    $triggerHosts[$triggerId] = $hosts[0];
-                }
-            }
-            
-            // 构建告警信息
-            foreach ($problemEvents as $event) {
-                $trigger = isset($triggerMap[$event['objectid']]) ? $triggerMap[$event['objectid']] : null;
-                $host = isset($triggerHosts[$event['objectid']]) ? $triggerHosts[$event['objectid']] : null;
-                
-                $hostName = $host ? $host['name'] : 'Unknown Host';
-                $triggerName = $trigger ? $trigger['description'] : $event['name'];
-                $alertTime = date('Y-m-d H:i:s', $event['clock']);
-                
-                // 查找恢复时间
-                $recoveryTime = null;
-                if (!empty($event['r_eventid']) && isset($eventMap[$event['r_eventid']])) {
-                    $recoveryEvent = $eventMap[$event['r_eventid']];
-                    $recoveryTime = date('Y-m-d H:i:s', $recoveryEvent['clock']);
-                }
-                
-                $alertInfo[] = [
-                    'host' => $hostName,
-                    'alert' => $triggerName,
-                    'time' => $alertTime,
-                    'recovery_time' => $recoveryTime
-                ];
-                
-                $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
-            }
+            $alertInfo[] = [
+                'host' => $hostName,
+                'alert' => $event['name'],
+                'severity' => (int)($event['severity'] ?? 0),
+                'time' => date('Y-m-d H:i:s', $event['clock']),
+                'recovery_time' => $recoveryTime,
+            ];
+            $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
         }
         arsort($hostCounts);
         $topHosts = array_slice($hostCounts, 0, 10, true);

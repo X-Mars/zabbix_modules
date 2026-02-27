@@ -1,4 +1,14 @@
-/* 日报预览页面样式 */
+/*
+ * Zabbix Reports - Unified Styles
+ * 
+ * Note: These styles are managed centrally by ReportViewHelper.php
+ * and injected inline via <style> tags for maximum compatibility.
+ * 
+ * This file is kept as a reference / fallback and for PDF export.
+ * See: lib/ReportViewHelper.php::getStyleTag()
+ */
+
+/* ===== Export / PDF specific styles ===== */
 .report-container {
     padding: 20px;
     max-width: 1200px;
@@ -6,18 +16,19 @@
 }
 
 .report-container h1 {
-    color: #2c3e50;
-    border-bottom: 2px solid #3498db;
+    color: #2b2d42;
+    border-bottom: 2px solid #4361ee;
     padding-bottom: 10px;
     margin-bottom: 20px;
 }
 
 .report-container h2 {
-    color: #34495e;
-    background-color: #ecf0f1;
-    padding: 10px;
+    color: #2b2d42;
+    background-color: #f8f9fc;
+    padding: 10px 14px;
     margin: 20px 0 10px 0;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid #4361ee;
+    border-radius: 0 6px 6px 0;
 }
 
 .report-container h3 {
@@ -32,47 +43,37 @@
 }
 
 .report-container table th {
-    background-color: #f8f9fa;
-    color: #495057;
-    font-weight: bold;
-    padding: 12px 8px;
+    background-color: #f8f9fc;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
     text-align: left;
-    border: 1px solid #dee2e6;
+    border-bottom: 2px solid #e9ecef;
 }
 
 .report-container table td {
-    padding: 10px 8px;
-    border: 1px solid #dee2e6;
-    vertical-align: top;
-}
-
-.report-container table tr:nth-child(even) {
-    background-color: #f8f9fa;
+    padding: 11px 16px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    font-size: 13px;
 }
 
 .report-container table tr:hover {
-    background-color: #e9ecef;
+    background-color: #eef1ff;
 }
 
-.report-container button {
-    margin: 10px 5px;
-    padding: 10px 20px;
-    font-size: 14px;
-    border-radius: 4px;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
     .report-container {
         padding: 10px;
     }
-    
     .report-container table {
         font-size: 12px;
     }
-    
     .report-container table th,
     .report-container table td {
-        padding: 6px 4px;
+        padding: 8px 10px;
     }
 }
