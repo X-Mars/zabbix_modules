@@ -149,6 +149,9 @@ class PdfGenerator {
         // Top CPU / Memory 双列
         $container->addItem(ReportViewHelper::buildTopResourceSection($viewData));
 
+        // 告警级别雷达 + 主机组问题分布双列图表
+        $container->addItem(ReportViewHelper::buildChartsRow($viewData['alert_info'], $viewData['hosts_by_group']));
+
         // 问题主机标签
         $container->addItem(ReportViewHelper::buildTopProblemHosts($viewData['top_problem_hosts']));
 

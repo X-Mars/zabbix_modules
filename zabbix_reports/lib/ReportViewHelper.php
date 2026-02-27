@@ -569,6 +569,66 @@ class ReportViewHelper {
     }
 }
 
+/* ===== 图表区域 ===== */
+.rpt-chart-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 280px;
+}
+
+.rpt-chart-wrapper svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.rpt-pie-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    min-height: 280px;
+    flex-wrap: wrap;
+}
+
+.rpt-pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--rpt-text);
+    min-width: 140px;
+}
+
+.rpt-pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.rpt-pie-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.rpt-pie-legend-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rpt-pie-legend-value {
+    font-weight: 600;
+    color: var(--rpt-text-secondary);
+}
+
 /* ===== 打印优化 ===== */
 @media print {
     .rpt-container {
@@ -691,6 +751,85 @@ class ReportViewHelper {
         requestAnimationFrame(step);
     });
 
+    // ===== 雷达图渲染 =====
+    (function() {
+        var el = document.getElementById("rpt-radar-chart");
+        if (!el) return;
+        var d;
+        try { d = JSON.parse(el.getAttribute("data-chart")); } catch(e) { return; }
+        var counts = d.counts, labels = d.labels;
+        var cx=160, cy=145, R=95, n=5, PI=Math.PI;
+        var order=[1,5,4,3,2];
+        var sC={1:"#7499FF",2:"#FFC859",3:"#FFA059",4:"#E97659",5:"#E45959"};
+        var angles=[];
+        for(var i=0;i<n;i++) angles[i]=-PI/2+i*2*PI/n;
+        var s="";
+        [0.25,0.5,0.75,1.0].forEach(function(lv){
+            var pts=[];
+            for(var i=0;i<n;i++) pts.push((cx+R*lv*Math.cos(angles[i])).toFixed(1)+","+(cy+R*lv*Math.sin(angles[i])).toFixed(1));
+            s+="<polygon points=\""+pts.join(" ")+"\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1\" opacity=\""+(lv===1?"0.4":"0.25")+"\"/>";
+        });
+        for(var i=0;i<n;i++) s+="<line x1=\""+cx+"\" y1=\""+cy+"\" x2=\""+(cx+R*Math.cos(angles[i])).toFixed(1)+"\" y2=\""+(cy+R*Math.sin(angles[i])).toFixed(1)+"\" stroke=\"#cbd5e1\" stroke-width=\"1\" opacity=\"0.3\"/>";
+        var maxV=1;
+        order.forEach(function(k){var v=counts[k]||0;if(v>maxV)maxV=v;});
+        var dp=[],dc=[];
+        for(var i=0;i<n;i++){
+            var sv=order[i],val=counts[sv]||0,ratio=maxV>0?val/maxV:0;
+            ratio=Math.max(ratio,0.03);
+            var px=cx+R*ratio*Math.cos(angles[i]),py=cy+R*ratio*Math.sin(angles[i]);
+            dp.push(px.toFixed(1)+","+py.toFixed(1));
+            dc.push({x:px,y:py,sv:sv});
+        }
+        s+="<polygon points=\""+dp.join(" ")+"\" fill=\"rgba(67,97,238,0.12)\" stroke=\"#4361ee\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>";
+        dc.forEach(function(c){s+="<circle cx=\""+c.x.toFixed(1)+"\" cy=\""+c.y.toFixed(1)+"\" r=\"4\" fill=\""+sC[c.sv]+"\" stroke=\"#fff\" stroke-width=\"1.5\"/>";});
+        s+="<circle cx=\""+cx+"\" cy=\""+cy+"\" r=\"3\" fill=\"#ffa000\"/>";
+        var lr=R+25;
+        for(var i=0;i<n;i++){
+            var sv=order[i],cnt=counts[sv]||0,txt=(labels[sv]||"")+": "+cnt;
+            var lx=cx+lr*Math.cos(angles[i]),ly=cy+lr*Math.sin(angles[i]);
+            var anchor="middle",dx=Math.cos(angles[i]),dy=Math.sin(angles[i]);
+            if(dx>0.3)anchor="start";else if(dx<-0.3)anchor="end";
+            if(dy<-0.3)ly-=4;else if(dy>0.3)ly+=4;
+            s+="<text x=\""+lx.toFixed(1)+"\" y=\""+ly.toFixed(1)+"\" text-anchor=\""+anchor+"\" font-size=\"12\" font-weight=\"500\" fill=\"#64748b\" dominant-baseline=\"middle\">"+txt+"</text>";
+        }
+        el.innerHTML="<svg viewBox=\"0 0 320 290\" xmlns=\"http://www.w3.org/2000/svg\" style=\"max-width:320px;width:100%;height:auto;\">"+s+"</svg>";
+    })();
+
+    // ===== 饼图渲染 =====
+    (function() {
+        var el = document.getElementById("rpt-pie-chart");
+        if (!el) return;
+        var d;
+        try { d = JSON.parse(el.getAttribute("data-chart")); } catch(e) { return; }
+        var data=d.data, centerLabel=d.centerLabel, colors=d.colors;
+        var cx=110,cy=110,r=95,PI=Math.PI;
+        var keys=Object.keys(data),total=0;
+        keys.forEach(function(k){total+=data[k];});
+        if(total<=0){
+            el.innerHTML="<svg viewBox=\"0 0 220 220\" xmlns=\"http://www.w3.org/2000/svg\" style=\"max-width:220px;width:100%;height:auto;\"><circle cx=\""+cx+"\" cy=\""+cy+"\" r=\""+r+"\" fill=\"#f1f5f9\" stroke=\"#e2e8f0\" stroke-width=\"1\"/></svg>";
+            return;
+        }
+        var s="",startA=-PI/2;
+        keys.forEach(function(k,idx){
+            var count=data[k],slice=(count/total)*2*PI,endA=startA+slice;
+            var color=colors[idx%colors.length];
+            if(count===total){
+                s+="<circle cx=\""+cx+"\" cy=\""+cy+"\" r=\""+r+"\" fill=\""+color+"\"/>";
+            }else{
+                var x1=cx+r*Math.cos(startA),y1=cy+r*Math.sin(startA);
+                var x2=cx+r*Math.cos(endA),y2=cy+r*Math.sin(endA);
+                var lg=slice>PI?1:0;
+                s+="<path d=\"M"+cx+","+cy+" L"+x1.toFixed(2)+","+y1.toFixed(2)+" A"+r+","+r+" 0 "+lg+",1 "+x2.toFixed(2)+","+y2.toFixed(2)+" Z\" fill=\""+color+"\" stroke=\"#fff\" stroke-width=\"2\"/>";
+            }
+            startA=endA;
+        });
+        var ir=r*0.45;
+        s+="<circle cx=\""+cx+"\" cy=\""+cy+"\" r=\""+ir+"\" fill=\"#fff\"/>";
+        s+="<text x=\""+cx+"\" y=\""+(cy-6)+"\" text-anchor=\"middle\" font-size=\"20\" font-weight=\"700\" fill=\"#2b2d42\">"+total+"</text>";
+        s+="<text x=\""+cx+"\" y=\""+(cy+12)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#64748b\">"+centerLabel+"</text>";
+        el.innerHTML="<svg viewBox=\"0 0 220 220\" xmlns=\"http://www.w3.org/2000/svg\" style=\"max-width:220px;width:100%;height:auto;\">"+s+"</svg>";
+    })();
+
 })();
 </script>';
     }
@@ -790,7 +929,12 @@ class ReportViewHelper {
     /**
      * 构建告警信息区域（含搜索）
      */
-    public static function buildAlertSection(array $alerts, int $limit = 200): \CDiv {
+    public static function buildAlertSection(array $alerts, int $limit = 500): \CDiv {
+        // 确保按时间倒序排列
+        usort($alerts, function($a, $b) {
+            return strcmp($b['time'] ?? '', $a['time'] ?? '');
+        });
+
         $section = (new \CDiv())->addClass('rpt-section rpt-animate');
         $alertCount = count($alerts);
 
@@ -1191,6 +1335,181 @@ class ReportViewHelper {
         $header->addItem($actions);
 
         return $header;
+    }
+
+    /**
+     * 构建图表双列区域（告警级别雷达 + 主机组问题分布饼图）
+     * 放置在"问题最多的主机"之前
+     */
+    public static function buildChartsRow(array $alerts, array $hostsByGroup): \CDiv {
+        $grid = (new \CDiv())->addClass('rpt-grid-2');
+        $grid->addItem(self::buildSeverityRadarChart($alerts));
+        $grid->addItem(self::buildGroupProblemPieChart($alerts, $hostsByGroup));
+        return $grid;
+    }
+
+    /**
+     * 构建告警级别雷达图（数据通过 data-chart 传递给 JS 渲染 SVG）
+     */
+    private static function buildSeverityRadarChart(array $alerts): \CDiv {
+        $section = (new \CDiv())->addClass('rpt-section rpt-animate');
+
+        // 头部
+        $header = (new \CDiv())->addClass('rpt-section-header');
+        $header->addItem(
+            (new \CTag('h3', true))
+                ->addClass('rpt-section-title')
+                ->addItem("\u{1F3AF} " . LanguageManager::t('Severity Radar'))
+        );
+        $section->addItem($header);
+
+        // 统计各级别数量
+        $severityCounts = ['1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0];
+        foreach ($alerts as $alert) {
+            $sev = (int)($alert['severity'] ?? 0);
+            if ($sev >= 1 && $sev <= 5) {
+                $severityCounts[(string)$sev]++;
+            }
+        }
+
+        $labels = [
+            '1' => LanguageManager::t('Information'),
+            '2' => LanguageManager::t('Warning'),
+            '3' => LanguageManager::t('Average'),
+            '4' => LanguageManager::t('High'),
+            '5' => LanguageManager::t('Disaster'),
+        ];
+
+        $chartData = json_encode([
+            'counts' => $severityCounts,
+            'labels' => $labels,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $body = (new \CDiv())->addClass('rpt-section-body');
+        $chartContainer = (new \CDiv())
+            ->addClass('rpt-chart-wrapper')
+            ->setAttribute('id', 'rpt-radar-chart')
+            ->setAttribute('data-chart', $chartData);
+        $body->addItem($chartContainer);
+        $section->addItem($body);
+
+        return $section;
+    }
+
+    /**
+     * 构建主机组问题分布饼图（数据通过 data-chart 传递给 JS 渲染 SVG）
+     */
+    private static function buildGroupProblemPieChart(array $alerts, array $hostsByGroup): \CDiv {
+        $section = (new \CDiv())->addClass('rpt-section rpt-animate');
+
+        // 头部
+        $header = (new \CDiv())->addClass('rpt-section-header');
+        $header->addItem(
+            (new \CTag('h3', true))
+                ->addClass('rpt-section-title')
+                ->addItem("\u{1F4CA} " . LanguageManager::t('Host Group Problem Distribution'))
+        );
+        $section->addItem($header);
+
+        // 构建主机→组的反向映射
+        $hostToGroup = [];
+        foreach ($hostsByGroup as $groupName => $hosts) {
+            foreach ($hosts as $host) {
+                $hostToGroup[$host['name']] = $groupName;
+            }
+        }
+
+        // 统计每个组的告警数量
+        $groupCounts = [];
+        foreach ($alerts as $alert) {
+            $hostName = $alert['host'] ?? '';
+            $groupName = $hostToGroup[$hostName] ?? LanguageManager::t('Other Groups');
+            $groupCounts[$groupName] = ($groupCounts[$groupName] ?? 0) + 1;
+        }
+        arsort($groupCounts);
+
+        $body = (new \CDiv())->addClass('rpt-section-body');
+
+        if (empty($groupCounts)) {
+            $body->addItem(
+                (new \CDiv())
+                    ->addClass('rpt-empty')
+                    ->addItem((new \CDiv("\u{1F4CA}"))->addClass('rpt-empty-icon'))
+                    ->addItem((new \CDiv(LanguageManager::t('No Alert Data')))->addClass('rpt-empty-text'))
+            );
+        } else {
+            // 最多显示 8 个分组，其余合并为"其他"
+            $maxSlices = 8;
+            $displayData = [];
+            $otherCount = 0;
+            $idx = 0;
+            foreach ($groupCounts as $group => $count) {
+                if ($idx < $maxSlices) {
+                    $displayData[$group] = $count;
+                } else {
+                    $otherCount += $count;
+                }
+                $idx++;
+            }
+            if ($otherCount > 0) {
+                $displayData[LanguageManager::t('Other Groups')] = 
+                    ($displayData[LanguageManager::t('Other Groups')] ?? 0) + $otherCount;
+            }
+
+            $pieColors = self::getPieColors();
+
+            $chartData = json_encode([
+                'data' => $displayData,
+                'centerLabel' => LanguageManager::t('Problem Count'),
+                'colors' => $pieColors,
+            ], JSON_UNESCAPED_UNICODE);
+
+            $pieWrap = (new \CDiv())->addClass('rpt-pie-wrapper');
+
+            // SVG 容器（由 JS 渲染）
+            $pieContainer = (new \CDiv())
+                ->setAttribute('id', 'rpt-pie-chart')
+                ->setAttribute('data-chart', $chartData);
+            $pieWrap->addItem($pieContainer);
+
+            // 图例（CTag 直接渲染，无转义问题）
+            $legend = (new \CDiv())->addClass('rpt-pie-legend');
+            $total = array_sum($displayData);
+            $colorIdx = 0;
+            foreach ($displayData as $group => $count) {
+                $pct = $total > 0 ? round($count / $total * 100, 1) : 0;
+                $color = $pieColors[$colorIdx % count($pieColors)];
+                $item = (new \CDiv())->addClass('rpt-pie-legend-item');
+                $item->addItem(
+                    (new \CDiv())->addClass('rpt-pie-legend-dot')
+                        ->setAttribute('style', 'background:' . $color . ';')
+                );
+                $item->addItem(
+                    (new \CSpan($group))->addClass('rpt-pie-legend-label')
+                );
+                $item->addItem(
+                    (new \CSpan($count . ' (' . $pct . '%)'))->addClass('rpt-pie-legend-value')
+                );
+                $legend->addItem($item);
+                $colorIdx++;
+            }
+            $pieWrap->addItem($legend);
+            $body->addItem($pieWrap);
+        }
+
+        $section->addItem($body);
+        return $section;
+    }
+
+    /**
+     * 饼图配色方案
+     */
+    private static function getPieColors(): array {
+        return [
+            '#4361ee', '#2ec4b6', '#ff9f1c', '#e63946', '#457b9d',
+            '#6a4c93', '#1982c4', '#8ac926', '#ff595e', '#ffca3a',
+            '#36b5a0', '#c77dff', '#f77f00', '#80b918', '#e07a5f'
+        ];
     }
 
     /**

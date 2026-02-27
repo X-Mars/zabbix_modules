@@ -110,6 +110,9 @@ if (isset($data['report_generated']) && $data['report_generated']) {
     // Top CPU / Memory 双列
     $content->addItem(ReportViewHelper::buildTopResourceSection($data));
 
+    // 告警级别雷达 + 主机组问题分布双列图表
+    $content->addItem(ReportViewHelper::buildChartsRow($data['alert_info'] ?? [], $data['hosts_by_group'] ?? []));
+
     // 问题主机标签
     $content->addItem(ReportViewHelper::buildTopProblemHosts($data['top_problem_hosts'] ?? []));
 
