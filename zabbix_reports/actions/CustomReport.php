@@ -131,11 +131,38 @@ class CustomReport extends CController {
                 }
             }
 
-            // 构建告警信息
+            // 对 selectHosts 返回空的事件，通过 Trigger API 二次解析主机名
+            $unknownTriggerIds = [];
+            foreach ($problemEvents as $event) {
+                if (empty($event['hosts'])) {
+                    $unknownTriggerIds[$event['objectid']] = true;
+                }
+            }
+            $triggerHostMap = [];
+            if (!empty($unknownTriggerIds)) {
+                $triggers = API::Trigger()->get([
+                    'output' => ['triggerid'],
+                    'triggerids' => array_keys($unknownTriggerIds),
+                    'selectHosts' => ['name'],
+                ]);
+                foreach ($triggers as $trigger) {
+                    if (!empty($trigger['hosts'])) {
+                        $triggerHostMap[$trigger['triggerid']] = $trigger['hosts'][0]['name'];
+                    }
+                }
+            }
+
+            // 构建告警信息（跳过主机已删除的事件）
             $alertInfo = [];
             $hostCounts = [];
             foreach ($problemEvents as $event) {
-                $hostName = !empty($event['hosts']) ? $event['hosts'][0]['name'] : 'Unknown Host';
+                if (!empty($event['hosts'])) {
+                    $hostName = $event['hosts'][0]['name'];
+                } elseif (isset($triggerHostMap[$event['objectid']])) {
+                    $hostName = $triggerHostMap[$event['objectid']];
+                } else {
+                    continue; // 主机已删除，跳过
+                }
                 $recoveryTime = null;
                 if (!empty($event['r_eventid']) && isset($recoveryMap[$event['r_eventid']])) {
                     $recoveryTime = date('Y-m-d H:i:s', $recoveryMap[$event['r_eventid']]);
