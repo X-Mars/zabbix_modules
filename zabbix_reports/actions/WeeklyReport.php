@@ -99,7 +99,7 @@ class WeeklyReport extends CController {
             }
         }
 
-        // 构建告警信息（跳过主机已删除的事件）
+        // 构建告警信息（主机已删除时显示为未知主机）
         $alertInfo = [];
         $hostCounts = [];
         foreach ($problemEvents as $event) {
@@ -108,7 +108,7 @@ class WeeklyReport extends CController {
             } elseif (isset($triggerHostMap[$event['objectid']])) {
                 $hostName = $triggerHostMap[$event['objectid']];
             } else {
-                continue; // 主机已删除，跳过
+                $hostName = LanguageManager::t('Unknown Host');
             }
             $recoveryTime = null;
             if (!empty($event['r_eventid']) && isset($recoveryMap[$event['r_eventid']])) {
