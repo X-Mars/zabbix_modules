@@ -141,21 +141,26 @@ class ProblemFinder {
         }
 
         // ====================================================
-        // 第3.5步：验证事件对应的触发器仍然存在
-        // Event 表保留所有历史记录，包括已删除主机/触发器的孤立事件
-        // 通过 Trigger API 验证，排除不存在的触发器产生的幽灵事件
+        // 第3.5步：检查事件对应的触发器状态（存在/启用/禁用/已删除）
+        // Event 表保留所有历史记录，包括已删除/禁用触发器的事件
+        // 通过 Trigger API 查询触发器状态，标记而非过滤
         // ====================================================
+        $triggerStatusMap = []; // objectid => 'enabled' | 'disabled' | 'deleted'
         $allObjectIds = array_values(array_unique(array_column($eventsInPeriod, 'objectid')));
         if (!empty($allObjectIds)) {
             $existingTriggers = API::Trigger()->get([
-                'output' => ['triggerid'],
+                'output' => ['triggerid', 'status'],
                 'triggerids' => $allObjectIds,
                 'preservekeys' => true,
             ]);
-            if (is_array($existingTriggers) && !empty($existingTriggers)) {
-                $eventsInPeriod = array_values(array_filter($eventsInPeriod, function($event) use ($existingTriggers) {
-                    return isset($existingTriggers[$event['objectid']]);
-                }));
+            foreach ($allObjectIds as $oid) {
+                if (!isset($existingTriggers[$oid])) {
+                    $triggerStatusMap[$oid] = 'deleted';
+                } elseif ((int)$existingTriggers[$oid]['status'] !== TRIGGER_STATUS_ENABLED) {
+                    $triggerStatusMap[$oid] = 'disabled';
+                } else {
+                    $triggerStatusMap[$oid] = 'enabled';
+                }
             }
         }
 
@@ -237,6 +242,7 @@ class ProblemFinder {
             'resolvedCount' => (int)$resolvedCount,
             'recoveryMap' => $recoveryMap,
             'triggerHostMap' => $triggerHostMap,
+            'triggerStatusMap' => $triggerStatusMap,
         ];
     }
 
@@ -335,18 +341,23 @@ class ProblemFinder {
             }
         }
 
-        // 验证：排除已删除主机/触发器的孤立事件
+        // 验证：检查触发器状态（存在/启用/禁用/已删除），标记而非过滤
+        $triggerStatusMap = [];
         $allObjectIds = array_values(array_unique(array_column($eventsInPeriod, 'objectid')));
         if (!empty($allObjectIds)) {
             $existingTriggers = API::Trigger()->get([
-                'output' => ['triggerid'],
+                'output' => ['triggerid', 'status'],
                 'triggerids' => $allObjectIds,
                 'preservekeys' => true,
             ]);
-            if (is_array($existingTriggers) && !empty($existingTriggers)) {
-                $eventsInPeriod = array_values(array_filter($eventsInPeriod, function($event) use ($existingTriggers) {
-                    return isset($existingTriggers[$event['objectid']]);
-                }));
+            foreach ($allObjectIds as $oid) {
+                if (!isset($existingTriggers[$oid])) {
+                    $triggerStatusMap[$oid] = 'deleted';
+                } elseif ((int)$existingTriggers[$oid]['status'] !== TRIGGER_STATUS_ENABLED) {
+                    $triggerStatusMap[$oid] = 'disabled';
+                } else {
+                    $triggerStatusMap[$oid] = 'enabled';
+                }
             }
         }
 
@@ -364,6 +375,7 @@ class ProblemFinder {
             'events' => $eventsInPeriod,
             'problemCount' => $problemCount,
             'resolvedCount' => (int)$resolvedCount,
+            'triggerStatusMap' => $triggerStatusMap,
         ];
     }
 
@@ -374,9 +386,10 @@ class ProblemFinder {
      * @param array $recoveryMap 恢复事件映射 [r_eventid => clock]
      * @param array $triggerHostMap 触发器主机映射 [triggerid => hostname]
      * @param string $unknownHostLabel 未知主机标签文字
+     * @param array $triggerStatusMap 触发器状态映射 [triggerid => 'enabled'|'disabled'|'deleted']
      * @return array ['alertInfo' => [...], 'hostCounts' => [...], 'topHosts' => [...]]
      */
-    public static function buildAlertInfo(array $problemEvents, array $recoveryMap, array $triggerHostMap, string $unknownHostLabel = 'Unknown Host'): array {
+    public static function buildAlertInfo(array $problemEvents, array $recoveryMap, array $triggerHostMap, string $unknownHostLabel = 'Unknown Host', array $triggerStatusMap = []): array {
         $alertInfo = [];
         $hostCounts = [];
 
@@ -394,12 +407,20 @@ class ProblemFinder {
                 $recoveryTime = date('Y-m-d H:i:s', $recoveryMap[$event['r_eventid']]);
             }
 
+            // 判断触发器是否已禁用或已删除
+            $triggerDisabled = false;
+            if (!empty($triggerStatusMap)) {
+                $status = $triggerStatusMap[$event['objectid']] ?? 'enabled';
+                $triggerDisabled = ($status === 'disabled' || $status === 'deleted');
+            }
+
             $alertInfo[] = [
                 'host' => $hostName,
                 'alert' => $event['name'],
                 'severity' => (int)($event['severity'] ?? 0),
                 'time' => date('Y-m-d H:i:s', $event['clock']),
                 'recovery_time' => $recoveryTime,
+                'trigger_disabled' => $triggerDisabled,
             ];
             $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
         }
