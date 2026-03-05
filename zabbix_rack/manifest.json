@@ -39,6 +39,9 @@
         },
         "host.problems": {
             "class": "HostProblems"
+        },
+        "rack.problems.refresh": {
+            "class": "RackProblemsRefresh"
         }
     }
 }

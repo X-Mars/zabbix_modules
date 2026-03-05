@@ -10,9 +10,11 @@ use CController,
 require_once dirname(__DIR__) . '/lib/PdfGenerator.php';
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/ProblemFinder.php';
 use Modules\ZabbixReports\Lib\PdfGenerator;
 use Modules\ZabbixReports\Lib\ItemFinder;
 use Modules\ZabbixReports\Lib\LanguageManager;
+use Modules\ZabbixReports\Lib\ProblemFinder;
 
 class WeeklyReportExport extends CController {
 
@@ -39,74 +41,15 @@ class WeeklyReportExport extends CController {
         $from = mktime(0, 0, 0, date('m', $weekStart), date('d', $weekStart), date('Y', $weekStart));
         $till = mktime(23, 59, 59, date('m', $weekEnd), date('d', $weekEnd), date('Y', $weekEnd));
 
-        $problemCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
+        // 使用 ProblemFinder 获取与报表周期有交集的所有告警
+        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till);
+        $problemCount = $problemResult['problemCount'];
+        $resolvedCount = $problemResult['resolvedCount'];
+        $events = $problemResult['problemEvents'];
+        $recoveryMap = $problemResult['recoveryMap'];
+        $triggerHostMap = $problemResult['triggerHostMap'];
 
-        $resolvedCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_FALSE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
-
-        // 获取告警事件信息（仅问题事件，使用 selectHosts 避免 N+1 查询）
-        $events = API::Event()->get([
-            'output' => ['eventid', 'objectid', 'name', 'clock', 'value', 'r_eventid', 'severity'],
-            'source' => 0,
-            'object' => 0,
-            'value' => TRIGGER_VALUE_TRUE,
-            'time_from' => $from,
-            'time_till' => $till,
-            'selectHosts' => ['hostid', 'name'],
-            'sortfield' => 'clock',
-            'sortorder' => 'DESC',
-            'limit' => 500
-        ]);
-
-        // 批量获取恢复事件
-        $recoveryEventIds = [];
-        foreach ($events as $event) {
-            if (!empty($event['r_eventid']) && $event['r_eventid'] != 0) {
-                $recoveryEventIds[] = $event['r_eventid'];
-            }
-        }
-        $recoveryMap = [];
-        if (!empty($recoveryEventIds)) {
-            $recoveryEvents = API::Event()->get([
-                'output' => ['eventid', 'clock'],
-                'eventids' => $recoveryEventIds
-            ]);
-            foreach ($recoveryEvents as $re) {
-                $recoveryMap[$re['eventid']] = $re['clock'];
-            }
-        }
-
-        // 对 selectHosts 返回空的事件，通过 Trigger API 二次解析主机名
-        $unknownTriggerIds = [];
-        foreach ($events as $event) {
-            if (empty($event['hosts'])) {
-                $unknownTriggerIds[$event['objectid']] = true;
-            }
-        }
-        $triggerHostMap = [];
-        if (!empty($unknownTriggerIds)) {
-            $triggers = API::Trigger()->get([
-                'output' => ['triggerid'],
-                'triggerids' => array_keys($unknownTriggerIds),
-                'selectHosts' => ['name'],
-            ]);
-            foreach ($triggers as $trigger) {
-                if (!empty($trigger['hosts'])) {
-                    $triggerHostMap[$trigger['triggerid']] = $trigger['hosts'][0]['name'];
-                }
-            }
-        }
-
-        // 构建告警信息（主机已删除时显示为未知主机）
+        // 构建告警信息
         $alertInfo = [];
         $hostCounts = [];
         foreach ($events as $event) {

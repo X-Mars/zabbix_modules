@@ -8,8 +8,10 @@ use CController,
 
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/ProblemFinder.php';
 use Modules\ZabbixReports\Lib\ItemFinder;
 use Modules\ZabbixReports\Lib\LanguageManager;
+use Modules\ZabbixReports\Lib\ProblemFinder;
 
 class DailyReport extends CController {
 
@@ -36,94 +38,23 @@ class DailyReport extends CController {
         $from = $yesterday;
         $till = $today;
 
-        $problemCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
+        // 使用 ProblemFinder 获取与报表周期有交集的所有告警
+        // 包括：周期内产生的、周期前产生但周期内仍活跃的、跨越整个周期的
+        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till);
+        $problemCount = $problemResult['problemCount'];
+        $resolvedCount = $problemResult['resolvedCount'];
+        $problemEvents = $problemResult['problemEvents'];
+        $recoveryMap = $problemResult['recoveryMap'];
+        $triggerHostMap = $problemResult['triggerHostMap'];
 
-        $resolvedCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_FALSE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
-
-        // 获取告警事件信息（仅问题事件，含主机和严重等级）
-        $problemEvents = API::Event()->get([
-            'output' => ['eventid', 'objectid', 'name', 'clock', 'r_eventid', 'severity'],
-            'source' => 0,
-            'object' => 0,
-            'value' => TRIGGER_VALUE_TRUE,
-            'time_from' => $from,
-            'time_till' => $till,
-            'sortfield' => ['clock'],
-            'sortorder' => 'DESC',
-            'limit' => 500,
-            'selectHosts' => ['hostid', 'name'],
-        ]);
-
-        // 批量获取恢复事件时间
-        $recoveryMap = [];
-        $recoveryIds = array_filter(array_column($problemEvents, 'r_eventid'));
-        if (!empty($recoveryIds)) {
-            $recoveryEvents = API::Event()->get([
-                'output' => ['eventid', 'clock'],
-                'eventids' => array_values(array_unique($recoveryIds)),
-            ]);
-            foreach ($recoveryEvents as $re) {
-                $recoveryMap[$re['eventid']] = $re['clock'];
-            }
-        }
-
-        // 对 selectHosts 返回空的事件，通过 Trigger API 二次解析主机名
-        $unknownTriggerIds = [];
-        foreach ($problemEvents as $event) {
-            if (empty($event['hosts'])) {
-                $unknownTriggerIds[$event['objectid']] = true;
-            }
-        }
-        $triggerHostMap = [];
-        if (!empty($unknownTriggerIds)) {
-            $triggers = API::Trigger()->get([
-                'output' => ['triggerid'],
-                'triggerids' => array_keys($unknownTriggerIds),
-                'selectHosts' => ['name'],
-            ]);
-            foreach ($triggers as $trigger) {
-                if (!empty($trigger['hosts'])) {
-                    $triggerHostMap[$trigger['triggerid']] = $trigger['hosts'][0]['name'];
-                }
-            }
-        }
-
-        // 构建告警信息（主机已删除时显示为未知主机）
-        $alertInfo = [];
-        $hostCounts = [];
-        foreach ($problemEvents as $event) {
-            if (!empty($event['hosts'])) {
-                $hostName = $event['hosts'][0]['name'];
-            } elseif (isset($triggerHostMap[$event['objectid']])) {
-                $hostName = $triggerHostMap[$event['objectid']];
-            } else {
-                $hostName = LanguageManager::t('Unknown Host');
-            }
-            $recoveryTime = null;
-            if (!empty($event['r_eventid']) && isset($recoveryMap[$event['r_eventid']])) {
-                $recoveryTime = date('Y-m-d H:i:s', $recoveryMap[$event['r_eventid']]);
-            }
-            $alertInfo[] = [
-                'host' => $hostName,
-                'alert' => $event['name'],
-                'severity' => (int)($event['severity'] ?? 0),
-                'time' => date('Y-m-d H:i:s', $event['clock']),
-                'recovery_time' => $recoveryTime,
-            ];
-            $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
-        }
-        arsort($hostCounts);
-        $topHosts = array_slice($hostCounts, 0, 10, true);
+        // 构建告警信息
+        $alertResult = ProblemFinder::buildAlertInfo(
+            $problemEvents, $recoveryMap, $triggerHostMap,
+            LanguageManager::t('Unknown Host')
+        );
+        $alertInfo = $alertResult['alertInfo'];
+        $hostCounts = $alertResult['hostCounts'];
+        $topHosts = $alertResult['topHosts'];
 
         // 获取所有主机
         $hosts = API::Host()->get([
