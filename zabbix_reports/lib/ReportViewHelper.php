@@ -412,6 +412,20 @@ class ReportViewHelper {
 .rpt-sev-high          { background: #E97659; color: #fff; }
 .rpt-sev-disaster      { background: #E45959; color: #fff; }
 
+/* ===== 触发器已禁用/已删除标签 ===== */
+.rpt-trigger-disabled-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #6c757d;
+    color: #fff;
+    margin-left: 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
 /* ===== 时间标签 ===== */
 .rpt-time {
     font-family: "SF Mono", "Menlo", "Monaco", monospace;
@@ -1012,7 +1026,15 @@ class ReportViewHelper {
                         )
                         ->setAttribute('data-sort-value', $severity)
                 );
-                $row->addItem(new \CTag('td', true, $alert['alert']));
+                // 告警名称（含禁用/删除标记）
+                $alertNameTd = new \CTag('td', true, $alert['alert']);
+                if (!empty($alert['trigger_disabled'])) {
+                    $alertNameTd->addItem(
+                        (new \CSpan(' ' . LanguageManager::t('Disabled or Deleted')))
+                            ->addClass('rpt-trigger-disabled-tag')
+                    );
+                }
+                $row->addItem($alertNameTd);
                 $row->addItem(
                     (new \CTag('td', true))
                         ->addItem((new \CSpan($alert['time']))->addClass('rpt-time'))

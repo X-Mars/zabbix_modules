@@ -460,10 +460,12 @@ class HostRackManager {
             $triggerHostMap = [];
             
             if (!empty($triggerIds)) {
+                // 只查询已启用的触发器，过滤掉禁用触发器对应的告警
                 $triggers = \API::Trigger()->get([
-                    'output' => ['triggerid'],
+                    'output' => ['triggerid', 'status'],
                     'selectHosts' => ['hostid'],
                     'triggerids' => $triggerIds,
+                    'filter' => ['status' => TRIGGER_STATUS_ENABLED],
                     'preservekeys' => true
                 ]);
                 
@@ -532,8 +534,28 @@ class HostRackManager {
                 return $b['clock'] - $a['clock'];
             });
             
+            // 获取所有相关触发器ID，过滤掉已禁用的触发器
+            $triggerIds = array_unique(array_column($problems, 'objectid'));
+            $enabledTriggerIds = [];
+            if (!empty($triggerIds)) {
+                $triggers = \API::Trigger()->get([
+                    'output' => ['triggerid'],
+                    'triggerids' => $triggerIds,
+                    'filter' => ['status' => TRIGGER_STATUS_ENABLED],
+                    'preservekeys' => true
+                ]);
+                if (is_array($triggers)) {
+                    $enabledTriggerIds = array_keys($triggers);
+                }
+            }
+            
             $result = [];
             foreach ($problems as $problem) {
+                // 跳过触发器已禁用的告警
+                if (!in_array($problem['objectid'], $enabledTriggerIds)) {
+                    continue;
+                }
+                
                 $severityNames = [
                     LanguageManager::t('severity_not_classified'),
                     LanguageManager::t('severity_information'),

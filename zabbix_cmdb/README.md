@@ -4,11 +4,12 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 和 7.0+ 版本。
+本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
 
 - ✅ Zabbix 6.0.x
 - ✅ Zabbix 7.0.x
 - ✅ Zabbix 7.4.x
+- ✅ Zabbix 8.0.x
 
 **兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
 
@@ -17,7 +18,8 @@
 这是一个 Zabbix 前端模块，用于配置管理数据库（CMDB），提供主机信息的集中查看和管理功能。模块在 Zabbix Web 的资产记录菜单下新增 CMDB 菜单，支持主机搜索和分组筛选。
 
 ![1](images/1.jpg)
-![2](images/2.jpg)
+![2](images/2.png)
+![3](images/3.jpg)
 
 ## 功能特性
 
@@ -48,7 +50,7 @@
 # Zabbix 6.0 / 7.0 部署方法
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 
-# Zabbix 7.4 部署方法
+# Zabbix 7.4 / 8.0 部署方法
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
 ```
 
@@ -81,16 +83,14 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 - `actions/Cmdb.php`：主机列表业务逻辑处理
 - `actions/CmdbGroups.php`：主机分组业务逻辑处理
 - `views/cmdb.php`：主机列表页面视图
-- `views/cmdb_groups.php`：主机分组页面视图
+- `views/cmdb.groups.php`：主机分组页面视图
 - `lib/LanguageManager.php`：国际化语言管理
 - `lib/ItemFinder.php`：监控项查找工具
+- `lib/ViewRenderer.php`：视图渲染工具
+- `lib/ZabbixVersion.php`：版本兼容工具
 
 如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
 
 ## 许可证
 
 本项目遵循Zabbix的许可证。详情请见[Zabbix许可证](https://www.zabbix.com/license)。
-
-## 贡献
-
-欢迎提交问题和改进建议。

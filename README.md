@@ -4,11 +4,12 @@
 
 ## ✨ 版本兼容性
 
-所有模块均兼容 Zabbix 6.0 和 7.0+ 版本。
+所有模块均兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
 
 - ✅ Zabbix 6.0.x
 - ✅ Zabbix 7.0.x
 - ✅ Zabbix 7.4.x
+- ✅ Zabbix 8.0.x
 
 ## 描述
 
@@ -32,7 +33,7 @@
 
 **文档链接**：[zabbix_reports/README.md](./zabbix_reports/README.md)
 
-**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
 ### 2. Zabbix CMDB
 
@@ -48,7 +49,7 @@
 
 **文档链接**：[zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
-**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
 ### 3. Zabbix Graph Trees
 
@@ -68,7 +69,7 @@
 
 **文档链接**：[zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
 
-**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
 ### 4. Zabbix Rack
 
@@ -86,7 +87,7 @@
 
 **文档链接**：[zabbix_rack/README.md](./zabbix_rack/README.md)
 
-**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
 ## 安装说明
 
@@ -100,7 +101,7 @@
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 ```
 
-2. **Zabbix 7.4 部署方法**
+2. **Zabbix 7.4 / 8.0 部署方法**
 
 ```bash
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
@@ -123,7 +124,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
 ```
 
-如果使用 Zabbix 7.0+，则无需修改，保持默认值即可。
+如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
 
 ### 启用模块
 

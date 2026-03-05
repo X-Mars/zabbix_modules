@@ -48,6 +48,7 @@ class WeeklyReportExport extends CController {
         $events = $problemResult['problemEvents'];
         $recoveryMap = $problemResult['recoveryMap'];
         $triggerHostMap = $problemResult['triggerHostMap'];
+        $triggerStatusMap = $problemResult['triggerStatusMap'] ?? [];
 
         // 构建告警信息
         $alertInfo = [];
@@ -70,7 +71,8 @@ class WeeklyReportExport extends CController {
                 'alert' => $event['name'],
                 'time' => $alertTime,
                 'recovery_time' => $recoveryTime,
-                'severity' => (int)($event['severity'] ?? 0)
+                'severity' => (int)($event['severity'] ?? 0),
+                'trigger_disabled' => isset($triggerStatusMap[$event['objectid']]) && ($triggerStatusMap[$event['objectid']] === 'disabled' || $triggerStatusMap[$event['objectid']] === 'deleted')
             ];
             $hostCounts[$hostName] = ($hostCounts[$hostName] ?? 0) + 1;
         }

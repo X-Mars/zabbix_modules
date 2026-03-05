@@ -45,11 +45,12 @@ class MonthlyReport extends CController {
         $problemEvents = $problemResult['problemEvents'];
         $recoveryMap = $problemResult['recoveryMap'];
         $triggerHostMap = $problemResult['triggerHostMap'];
+        $triggerStatusMap = $problemResult['triggerStatusMap'] ?? [];
 
         // 构建告警信息
         $alertResult = ProblemFinder::buildAlertInfo(
             $problemEvents, $recoveryMap, $triggerHostMap,
-            LanguageManager::t('Unknown Host')
+            LanguageManager::t('Unknown Host'), $triggerStatusMap
         );
         $alertInfo = $alertResult['alertInfo'];
         $hostCounts = $alertResult['hostCounts'];
