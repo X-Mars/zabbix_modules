@@ -5,6 +5,9 @@ namespace Modules\ZabbixReports\Actions;
 use CController,
     API;
 
+require_once dirname(__DIR__) . '/lib/ProblemFinder.php';
+use Modules\ZabbixReports\Lib\ProblemFinder;
+
 class DailyReportSend extends CController {
 
     public function init(): void {
@@ -29,26 +32,11 @@ class DailyReportSend extends CController {
         $from = mktime(0, 0, 0, date('m', $yesterday), date('d', $yesterday), date('Y', $yesterday));
         $till = mktime(23, 59, 59, date('m', $yesterday), date('d', $yesterday), date('Y', $yesterday));
 
-        $problemCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
-
-        $resolvedCount = API::Event()->get([
-            'countOutput' => true,
-            'filter' => ['value' => TRIGGER_VALUE_FALSE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
-
-        $events = API::Event()->get([
-            'output' => ['eventid', 'objectid'],
-            'filter' => ['value' => TRIGGER_VALUE_TRUE],
-            'time_from' => $from,
-            'time_till' => $till
-        ]);
+        // 使用 ProblemFinder 获取与报表周期有交集的所有告警
+        $problemResult = ProblemFinder::getSimpleProblemsInPeriod($from, $till);
+        $problemCount = $problemResult['problemCount'];
+        $resolvedCount = $problemResult['resolvedCount'];
+        $events = $problemResult['events'];
 
         $hostCounts = [];
         if (!empty($events)) {

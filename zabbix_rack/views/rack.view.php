@@ -1485,6 +1485,7 @@ if ($showOverview) {
 
             $rackCard = (new CDiv())
                 ->addClass($cardClasses)
+                ->setAttribute('data-rack-id', htmlspecialchars($rackData['id']))
                 ->setAttribute('onclick', "openRackDetail('" . htmlspecialchars($rackData['id']) . "')");
 
             // 卡片头部
@@ -2532,6 +2533,285 @@ $content->addItem(new CJsScript('<script>
             closeProblemModal();
         }
     });
+
+    // ============ 告警状态自动刷新 ============
+    var REFRESH_INTERVAL = 30000; // 30秒刷新一次
+
+    /**
+     * 收集当前页面上所有需要监控的主机ID
+     */
+    function collectAllHostIds() {
+        var hostIds = [];
+        // 从概览模式的 allRacksData 中收集
+        if (allRacksData && allRacksData.length > 0) {
+            for (var i = 0; i < allRacksData.length; i++) {
+                var hosts = allRacksData[i].hosts || [];
+                for (var j = 0; j < hosts.length; j++) {
+                    if (hosts[j].hostid && hostIds.indexOf(hosts[j].hostid) === -1) {
+                        hostIds.push(hosts[j].hostid);
+                    }
+                }
+            }
+        }
+        // 从单机柜模式的 DOM 中收集
+        document.querySelectorAll(".rack-unit-slot.occupied[data-host]").forEach(function(slot) {
+            try {
+                var hostData = JSON.parse(slot.getAttribute("data-host"));
+                if (hostData.hostid && hostIds.indexOf(hostData.hostid) === -1) {
+                    hostIds.push(hostData.hostid);
+                }
+            } catch(e) {}
+        });
+        return hostIds;
+    }
+
+    /**
+     * 根据严重级别获取 CSS 类名
+     */
+    function getSeverityClass(severity) {
+        switch (parseInt(severity)) {
+            case 5: return "severity-disaster";
+            case 4: return "severity-high";
+            case 3: return "severity-average";
+            case 2: return "severity-warning";
+            case 1: return "severity-info";
+            case 0: return "severity-not-classified";
+            default: return "";
+        }
+    }
+
+    /**
+     * 移除元素上的所有告警相关 CSS 类
+     */
+    function removeSeverityClasses(elem) {
+        // 使用正则匹配移除所有 severity- 开头的类以及告警相关类
+        // 这比固定列表更稳健，能覆盖所有可能的 severity 类名变体
+        var toRemove = [];
+        for (var i = 0; i < elem.classList.length; i++) {
+            var cls = elem.classList[i];
+            if (cls.indexOf("severity-") === 0 || cls === "has-problem" || cls === "no-problem" || cls === "has-alert") {
+                toRemove.push(cls);
+            }
+        }
+        for (var j = 0; j < toRemove.length; j++) {
+            elem.classList.remove(toRemove[j]);
+        }
+    }
+
+    /**
+     * 更新概览模式中的机柜卡片和 allRacksData 中的告警数据
+     */
+    function updateOverviewMode(problemData) {
+        if (!allRacksData || allRacksData.length === 0) return;
+
+        for (var i = 0; i < allRacksData.length; i++) {
+            var rackData = allRacksData[i];
+            var hosts = rackData.hosts || [];
+            var totalProblems = 0;
+            var maxSeverity = -1;
+
+            // 更新每个主机的告警状态
+            for (var j = 0; j < hosts.length; j++) {
+                var hostId = hosts[j].hostid;
+                if (problemData[hostId]) {
+                    hosts[j].problem_count = problemData[hostId].problem_count;
+                    hosts[j].max_severity = problemData[hostId].max_severity;
+                    totalProblems += problemData[hostId].problem_count;
+                    if (problemData[hostId].max_severity > maxSeverity) {
+                        maxSeverity = problemData[hostId].max_severity;
+                    }
+                } else {
+                    hosts[j].problem_count = 0;
+                    hosts[j].max_severity = -1;
+                }
+            }
+
+            // 更新 allRacksData
+            rackData.problem_count = totalProblems;
+            rackData.max_severity = maxSeverity;
+
+            // 更新 DOM - 机柜卡片（通过 data-rack-id 精确匹配）
+            var rackCards = document.querySelectorAll(".rack-card[data-rack-id]");
+            rackCards.forEach(function(card) {
+                if (card.getAttribute("data-rack-id") !== rackData.id) return;
+
+                removeSeverityClasses(card);
+                // 更新告警徽章
+                var badge = card.querySelector(".rack-alert-badge");
+                if (totalProblems > 0) {
+                    card.classList.add("has-alert");
+                    card.classList.add("severity-" + maxSeverity);
+                    if (badge) {
+                        badge.textContent = totalProblems;
+                        badge.setAttribute("title", totalProblems + " problems");
+                    } else {
+                        // 创建新的告警徽章
+                        var header = card.querySelector(".rack-card-header");
+                        if (header) {
+                            var newBadge = document.createElement("div");
+                            newBadge.className = "rack-alert-badge";
+                            newBadge.textContent = totalProblems;
+                            newBadge.setAttribute("title", totalProblems + " problems");
+                            header.appendChild(newBadge);
+                        }
+                    }
+                } else {
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+
+                // 更新迷你可视化中的告警颜色
+                var miniUnits = card.querySelectorAll(".rack-mini-unit");
+                miniUnits.forEach(function(unit) {
+                    removeSeverityClasses(unit);
+                });
+                // 重新计算迷你可视化的颜色
+                var rackHeight = parseInt(rackData.height) || 42;
+                for (var k = 0; k < rackHeight; k++) {
+                    var uPos = rackHeight - k;
+                    var unitElem = miniUnits[k];
+                    if (!unitElem) continue;
+                    for (var h = 0; h < hosts.length; h++) {
+                        if (uPos >= hosts[h].u_start && uPos <= hosts[h].u_end) {
+                            if (hosts[h].max_severity >= 0) {
+                                unitElem.classList.add("severity-" + hosts[h].max_severity);
+                            }
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新统计卡片中的告警数量
+        var statNumbers = document.querySelectorAll(".stat-card .stat-number");
+        if (statNumbers.length >= 3) {
+            var totalProblemsInRoom = 0;
+            for (var r = 0; r < allRacksData.length; r++) {
+                totalProblemsInRoom += allRacksData[r].problem_count;
+            }
+            // 第三个统计卡片是告警数量（概览模式下）
+            var statLabels = document.querySelectorAll(".stat-card .stat-label");
+            for (var s = 0; s < statLabels.length; s++) {
+                var labelParent = statLabels[s].closest(".stat-card");
+                if (labelParent && labelParent.querySelector(".stat-icon") &&
+                    labelParent.querySelector(".stat-icon").textContent.indexOf("🚨") !== -1) {
+                    labelParent.querySelector(".stat-number").textContent = totalProblemsInRoom;
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * 更新单机柜模式中的机架 U 位告警状态
+     */
+    function updateSingleRackMode(problemData) {
+        document.querySelectorAll(".rack-unit-slot.occupied[data-host]").forEach(function(slot) {
+            try {
+                var hostData = JSON.parse(slot.getAttribute("data-host"));
+                var hostId = hostData.hostid;
+                if (!hostId || !problemData[hostId]) return;
+
+                var newCount = problemData[hostId].problem_count;
+                var newSeverity = problemData[hostId].max_severity;
+
+                // 更新 data-host 属性中的数据
+                hostData.problem_count = newCount;
+                slot.setAttribute("data-host", JSON.stringify(hostData));
+
+                // 更新 CSS 类
+                removeSeverityClasses(slot);
+                var hostStatus = parseInt(hostData.status === "disabled" ? 1 : 0) || 0;
+                // 检查是否是通过 status 文字判断
+                if (slot.classList.contains("status-disabled")) {
+                    // 保持禁用状态不变
+                } else if (newCount > 0 && newSeverity >= 0) {
+                    slot.classList.add(getSeverityClass(newSeverity));
+                } else {
+                    slot.classList.add("no-problem");
+                }
+
+                // 更新告警数量徽章
+                var badge = slot.querySelector(".problem-badge");
+                if (newCount > 0) {
+                    if (badge) {
+                        badge.textContent = newCount;
+                        badge.setAttribute("title", newCount + " problems");
+                    } else {
+                        // 需要在 host-slot-content 中添加徽章
+                        var content = slot.querySelector(".host-slot-content");
+                        if (content) {
+                            var hostName = hostData.name || hostData.host || "";
+                            var newBadge = document.createElement("span");
+                            newBadge.className = "problem-badge";
+                            newBadge.textContent = newCount;
+                            newBadge.setAttribute("title", newCount + " problems");
+                            newBadge.setAttribute("onclick",
+                                "event.stopPropagation();showProblems(\x27" + hostId + "\x27,\x27" + escapeHtml(hostName).replace(/\x27/g, "\\\x27") + "\x27)");
+                            content.appendChild(newBadge);
+                        }
+                    }
+                } else {
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+            } catch(e) {
+                console.error("updateSingleRackMode error:", e);
+            }
+        });
+    }
+
+    /**
+     * 刷新告警数据的主函数
+     */
+    function refreshProblems() {
+        var hostIds = collectAllHostIds();
+        if (hostIds.length === 0) return;
+
+        fetch("zabbix.php?action=rack.problems.refresh&hostids=" + encodeURIComponent(hostIds.join(",")))
+            .then(function(response) { return response.json(); })
+            .then(function(result) {
+                if (!result.success || !result.data) return;
+
+                var problemData = result.data;
+
+                // 更新概览模式
+                updateOverviewMode(problemData);
+
+                // 更新单机柜模式
+                updateSingleRackMode(problemData);
+
+                // 如果详情弹窗打开着，也更新详情弹窗
+                var detailModal = document.getElementById("rack-detail-modal");
+                if (detailModal && detailModal.classList.contains("visible") && detailRackData) {
+                    // 更新 detailRackData 中的告警状态然后重新渲染
+                    var hosts = detailRackData.hosts || [];
+                    var needRerender = false;
+                    for (var i = 0; i < hosts.length; i++) {
+                        var hid = hosts[i].hostid;
+                        if (problemData[hid]) {
+                            var oldCount = parseInt(hosts[i].problem_count) || 0;
+                            var newCount = problemData[hid].problem_count;
+                            if (oldCount !== newCount) needRerender = true;
+                            hosts[i].problem_count = newCount;
+                            hosts[i].max_severity = problemData[hid].max_severity;
+                        }
+                    }
+                    if (needRerender) {
+                        viewRackDetail(detailRackData.id);
+                    }
+                }
+            })
+            .catch(function(err) {
+                console.warn("refreshProblems failed:", err);
+            });
+    }
+
+    // 启动定时刷新
+    setInterval(refreshProblems, REFRESH_INTERVAL);
 
 })();
 </script>'));

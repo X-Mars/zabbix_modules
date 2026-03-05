@@ -432,11 +432,11 @@ class HostRackManager {
         }
         
         try {
-            // 获取活跃告警 - Zabbix 7.4 的 problem.get 只支持 eventid 排序
+            // 获取活跃告警 - 不使用 recent=>true，只返回当前未恢复的问题
+            // recent=>true 会在告警恢复后仍返回约30分钟，导致页面刷新延迟
             $problems = \API::Problem()->get([
                 'output' => ['eventid', 'objectid', 'name', 'severity', 'clock', 'acknowledged'],
                 'hostids' => $hostIds,
-                'recent' => true,
                 'sortfield' => 'eventid',
                 'sortorder' => 'DESC',
                 'limit' => 1000
@@ -514,7 +514,6 @@ class HostRackManager {
             $problems = \API::Problem()->get([
                 'output' => ['eventid', 'objectid', 'name', 'severity', 'clock', 'acknowledged', 'r_clock'],
                 'hostids' => [$hostId],
-                'recent' => true,
                 'sortfield' => 'eventid',
                 'sortorder' => 'DESC',
                 'limit' => 100
