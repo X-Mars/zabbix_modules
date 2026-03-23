@@ -103,7 +103,14 @@ class LanguageManager {
             'Severity Radar' => '告警级别雷达',
             'Host Group Problem Distribution' => '主机组问题分布',
             'Other Groups' => '其他分组',
-            'No Alert Data' => '暂无告警数据'
+            'No Alert Data' => '暂无告警数据',
+            'All Groups' => '所有群组',
+            'All Interface Types' => '所有接口类型',
+            'Interface Type' => '接口类型',
+            'Apply Filter' => '应用过滤',
+            'rows' => '行',
+            'of' => '/',
+            'The start date cannot be later than the end date.' => '开始日期不能晚于结束日期。'
         ],
         'en_US' => [
             'Zabbix Reports' => 'Zabbix Reports',
@@ -114,7 +121,7 @@ class LanguageManager {
             'Zabbix Weekly Report' => 'Zabbix Weekly Report',
             'Zabbix Monthly Report' => 'Zabbix Monthly Report',
             'Export PDF' => 'Export PDF',
-            'Send Email' => 'Send Email（In Development）',
+            'Send Email' => 'Send Email (In Development)',
             'Preview Data' => 'Preview Data',
             'Report Date' => 'Report Date',
             'Problem Count' => 'Problem Count',
@@ -159,10 +166,10 @@ class LanguageManager {
             'End Date' => 'End Date',
             'Generate Report' => 'Generate Report',
             'Report Period' => 'Report Period',
-            'Please select start and end dates to generate a custom report. Maximum date range is 31 days.' => 'Please select start and end dates to generate a custom report. Maximum date range is 31 days.',
+            'Please select start and end dates to generate a custom report. Maximum date range is 90 days.' => 'Please select start and end dates to generate a custom report. Maximum date range is 90 days.',
             'Invalid date format' => 'Invalid date format',
             'Start date must be before end date' => 'Start date must be before end date',
-            'Date range cannot exceed 31 days' => 'Date range cannot exceed 31 days',
+            'The selected date range cannot exceed 90 days.' => 'The selected date range cannot exceed 90 days.',
             'Export HTML' => 'Export HTML',
             'Summary' => 'Summary',
             'Problem Events' => 'Problem Events',
@@ -197,7 +204,14 @@ class LanguageManager {
             'Severity Radar' => 'Severity Radar',
             'Host Group Problem Distribution' => 'Host Group Problem Distribution',
             'Other Groups' => 'Other Groups',
-            'No Alert Data' => 'No Alert Data'
+            'No Alert Data' => 'No Alert Data',
+            'All Groups' => 'All Groups',
+            'All Interface Types' => 'All Interface Types',
+            'Interface Type' => 'Interface Type',
+            'Apply Filter' => 'Apply Filter',
+            'rows' => 'rows',
+            'of' => 'of',
+            'The start date cannot be later than the end date.' => 'The start date cannot be later than the end date.'
         ]
     ];
     

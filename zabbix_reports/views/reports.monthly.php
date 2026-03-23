@@ -14,11 +14,43 @@ $styleTag = ReportViewHelper::getStyleTag();
 $content = (new CDiv())->addClass('rpt-container');
 
 // 标题 + 操作按钮
+$exportParams = ['groupid' => $data['filter_groupid'] ?? ''];
+$filterYear = $data['filter_year'] ?? (int)date('Y');
+$filterMonth = $data['filter_month'] ?? (int)date('m');
+$exportParams['year'] = $filterYear;
+$exportParams['month'] = $filterMonth;
+
+$titleText = LanguageManager::t('Zabbix Monthly Report') . ' - ' . $data['report_period'];
+if (!empty($data['filter_group_name'])) {
+    $titleText .= ' [' . $data['filter_group_name'] . ']';
+}
+
+// 构建年/月下拉选项
+$currentYear = (int)date('Y');
+$yearOptions = [
+    ['value' => (string)$currentYear, 'label' => (string)$currentYear],
+    ['value' => (string)($currentYear - 1), 'label' => (string)($currentYear - 1)]
+];
+$monthOptions = [];
+for ($m = 1; $m <= 12; $m++) {
+    $monthOptions[] = ['value' => (string)$m, 'label' => sprintf('%02d', $m)];
+}
+
 $content->addItem(
     ReportViewHelper::buildHeader(
-        LanguageManager::t('Zabbix Monthly Report') . ' - ' . $data['report_period'],
+        $titleText,
         "\u{1F4C5}",
-        'reports.monthly.export'
+        'reports.monthly.export',
+        $exportParams,
+        [
+            'action_name' => 'reports.monthly',
+            'all_groups' => $data['all_groups'] ?? [],
+            'filter_groupid' => $data['filter_groupid'] ?? '',
+            'date_selects' => [
+                ['name' => 'year', 'selected' => $filterYear, 'options' => $yearOptions],
+                ['name' => 'month', 'selected' => $filterMonth, 'options' => $monthOptions]
+            ]
+        ]
     )
 );
 

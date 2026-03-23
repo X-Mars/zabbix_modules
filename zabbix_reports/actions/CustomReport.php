@@ -29,7 +29,8 @@ class CustomReport extends CController {
         $fields = [
             'from_date' => 'string',
             'to_date' => 'string',
-            'generate' => 'string'
+            'generate' => 'string',
+            'groupid' => 'string'
         ];
         
         return $this->validateInput($fields);
@@ -48,13 +49,24 @@ class CustomReport extends CController {
         $fromDate = $this->getInput('from_date', $defaultFromDate);
         $toDate = $this->getInput('to_date', $defaultToDate);
         $generate = !empty($this->getInput('generate', ''));
+        $groupId = $this->getInput('groupid', '');
+
+        // 获取所有主机组（用于过滤下拉框）
+        $allGroups = API::HostGroup()->get([
+            'output' => ['groupid', 'name'],
+            'sortfield' => 'name',
+            'with_monitored_hosts' => true
+        ]);
 
         $data = [
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'generate' => $generate,
             'language' => LanguageManager::getCurrentLanguage(),
-            'is_chinese' => LanguageManager::isChinese()
+            'is_chinese' => LanguageManager::isChinese(),
+            'all_groups' => $allGroups,
+            'filter_groupid' => $groupId,
+            'filter_group_name' => $this->getGroupName($groupId, $allGroups)
         ];
 
         // 如果用户点击了生成报表
@@ -71,7 +83,7 @@ class CustomReport extends CController {
                 $data['error'] = LanguageManager::t('The selected date range cannot exceed 90 days.');
             } else {
                 // 生成真正的报表数据
-                $reportData = $this->generateReportData($fromTimestamp, $toTimestamp);
+                $reportData = $this->generateReportData($fromTimestamp, $toTimestamp, $groupId);
                 $data = array_merge($data, $reportData);
                 $data['report_generated'] = true;
                 $data['period_text'] = $fromDate . ' - ' . $toDate;
@@ -89,10 +101,22 @@ class CustomReport extends CController {
         $this->setResponse($response);
     }
 
-    private function generateReportData(int $fromTimestamp, int $toTimestamp): array {
+    private function generateReportData(int $fromTimestamp, int $toTimestamp, string $groupId = ''): array {
         try {
+            // 获取所有主机（带分组过滤）
+            $hostParams = [
+                'output' => ['hostid', 'name'],
+                'filter' => ['status' => HOST_STATUS_MONITORED]
+            ];
+            if ($groupId !== '') {
+                $hostParams['groupids'] = [$groupId];
+            }
+            $hosts = API::Host()->get($hostParams);
+
+            $filteredHostIds = array_column($hosts, 'hostid');
+
             // 使用 ProblemFinder 获取与报表周期有交集的所有告警
-            $problemResult = ProblemFinder::getProblemsInPeriod($fromTimestamp, $toTimestamp);
+            $problemResult = ProblemFinder::getProblemsInPeriod($fromTimestamp, $toTimestamp, 500, $filteredHostIds);
             $problemCount = $problemResult['problemCount'];
             $resolvedCount = $problemResult['resolvedCount'];
             $problemEvents = $problemResult['problemEvents'];
@@ -109,19 +133,12 @@ class CustomReport extends CController {
             $hostCounts = $alertResult['hostCounts'];
             $topProblemHosts = $alertResult['topHosts'];
 
-            // 获取所有主机
-            $hosts = API::Host()->get([
-                'output' => ['hostid', 'name'],
-                'filter' => ['status' => HOST_STATUS_MONITORED]
-            ]);
-
             // 获取主机组映射（修复selectGroups废弃问题）
             $hostGroups = [];
-            if (!empty($hosts)) {
-                $hostids = array_column($hosts, 'hostid');
+            if (!empty($filteredHostIds)) {
                 $hostGroupMap = API::HostGroup()->get([
                     'output' => ['groupid', 'name'],
-                    'hostids' => $hostids
+                    'hostids' => $filteredHostIds
                 ]);
                 
                 // 建立主机到组的映射
@@ -129,7 +146,7 @@ class CustomReport extends CController {
                     $groupHosts = API::Host()->get([
                         'output' => ['hostid'],
                         'groupids' => $group['groupid'],
-                        'filter' => ['status' => HOST_STATUS_MONITORED]
+                        'hostids' => $filteredHostIds
                     ]);
                     
                     foreach ($groupHosts as $gh) {
@@ -170,9 +187,9 @@ class CustomReport extends CController {
             foreach ($hosts as $host) {
                 // 分组主机
                 $groups = isset($hostGroups[$host['hostid']]) ? $hostGroups[$host['hostid']] : [];
-                $groupName = !empty($groups) ? $groups[0]['name'] : LanguageManager::t('No Group');
-                if (!isset($hostsByGroup[$groupName])) {
-                    $hostsByGroup[$groupName] = [];
+                $hostGroupName = !empty($groups) ? $groups[0]['name'] : LanguageManager::t('No Group');
+                if (!isset($hostsByGroup[$hostGroupName])) {
+                    $hostsByGroup[$hostGroupName] = [];
                 }
                 
                 // 初始化主机信息
@@ -208,7 +225,7 @@ class CustomReport extends CController {
                     $hostInfo['mem_total'] = number_format($memSizeResult['value'] / (1024*1024*1024), 2);
                 }
                 
-                $hostsByGroup[$groupName][] = $hostInfo;
+                $hostsByGroup[$hostGroupName][] = $hostInfo;
             }
 
             return [
@@ -237,5 +254,15 @@ class CustomReport extends CController {
                 'mem_total' => []
             ];
         }
+    }
+
+    private function getGroupName(string $groupId, array $allGroups): string {
+        if ($groupId === '') return '';
+        foreach ($allGroups as $group) {
+            if ((string)$group['groupid'] === (string)$groupId) {
+                return $group['name'];
+            }
+        }
+        return '';
     }
 }

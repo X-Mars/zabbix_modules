@@ -25,7 +25,14 @@ class WeeklyReport extends CController {
     }
 
     protected function checkInput(): bool {
-        return true;
+        $fields = [
+            'groupid' => 'string',
+            'year' => 'string',
+            'week' => 'string',
+            'apply' => 'string'
+        ];
+        $ret = $this->validateInput($fields);
+        return $ret;
     }
 
     protected function checkPermissions(): bool {
@@ -33,14 +40,47 @@ class WeeklyReport extends CController {
     }
 
     protected function doAction(): void {
-        // 计算本周的开始和结束时间
-        $weekStart = strtotime('last monday', strtotime('tomorrow'));
-        $weekEnd = strtotime('next sunday', $weekStart);
+        $groupId = $this->getInput('groupid', '');
+
+        // 获取所有主机组（用于过滤下拉框）
+        $allGroups = API::HostGroup()->get([
+            'output' => ['groupid', 'name'],
+            'sortfield' => 'name',
+            'with_monitored_hosts' => true
+        ]);
+
+        // 计算周的开始和结束时间（支持年+周参数）
+        $currentYear = (int)date('Y');
+        $year = (int)$this->getInput('year', $currentYear);
+        $week = (int)$this->getInput('week', date('W'));
+        if ($year < $currentYear - 1 || $year > $currentYear) {
+            $year = $currentYear;
+        }
+        $maxWeek = (int)date('W', mktime(0, 0, 0, 12, 28, $year));
+        if ($week < 1 || $week > $maxWeek) {
+            $week = (int)date('W');
+        }
+
+        $weekStart = strtotime($year . 'W' . sprintf('%02d', $week) . '1');
+        $weekEnd = strtotime($year . 'W' . sprintf('%02d', $week) . '7');
         $from = mktime(0, 0, 0, date('m', $weekStart), date('d', $weekStart), date('Y', $weekStart));
         $till = mktime(23, 59, 59, date('m', $weekEnd), date('d', $weekEnd), date('Y', $weekEnd));
 
+        // 获取主机（支持分组过滤）
+        $hostOptions = [
+            'output' => ['hostid', 'name'],
+            'filter' => ['status' => HOST_STATUS_MONITORED]
+        ];
+        if ($groupId !== '') {
+            $hostOptions['groupids'] = [$groupId];
+        }
+        $hosts = API::Host()->get($hostOptions);
+
+        // 获取过滤后的主机ID
+        $filteredHostIds = array_column($hosts, 'hostid');
+
         // 使用 ProblemFinder 获取与报表周期有交集的所有告警
-        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till);
+        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till, 500, $filteredHostIds);
         $problemCount = $problemResult['problemCount'];
         $resolvedCount = $problemResult['resolvedCount'];
         $problemEvents = $problemResult['problemEvents'];
@@ -57,13 +97,7 @@ class WeeklyReport extends CController {
         $hostCounts = $alertResult['hostCounts'];
         $topHosts = $alertResult['topHosts'];
 
-        // 获取所有主机
-        $hosts = API::Host()->get([
-            'output' => ['hostid', 'name'],
-            'filter' => ['status' => HOST_STATUS_MONITORED]
-        ]);
-
-        // 获取主机组映射
+        // 获取主机组映射（使用已过滤的主机）
         $hostGroups = [];
         if (!empty($hosts)) {
             $hostids = array_column($hosts, 'hostid');
@@ -118,9 +152,9 @@ class WeeklyReport extends CController {
         foreach ($hosts as $host) {
             // 分组主机
             $groups = isset($hostGroups[$host['hostid']]) ? $hostGroups[$host['hostid']] : [];
-            $groupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
-            if (!isset($hostsByGroup[$groupName])) {
-                $hostsByGroup[$groupName] = [];
+            $hostGroupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
+            if (!isset($hostsByGroup[$hostGroupName])) {
+                $hostsByGroup[$hostGroupName] = [];
             }
             
             // 初始化主机信息
@@ -156,7 +190,7 @@ class WeeklyReport extends CController {
                 $hostInfo['mem_total'] = number_format($memSizeResult['value'] / (1024*1024*1024), 2);
             }
             
-            $hostsByGroup[$groupName][] = $hostInfo;
+            $hostsByGroup[$hostGroupName][] = $hostInfo;
         }
 
         $response = new CControllerResponseData([
@@ -173,12 +207,27 @@ class WeeklyReport extends CController {
             'cpu_total' => $cpuTotal,
             'mem_total' => $memTotal,
             'language' => LanguageManager::getCurrentLanguage(),
-            'is_chinese' => LanguageManager::isChinese()
+            'is_chinese' => LanguageManager::isChinese(),
+            'all_groups' => $allGroups,
+            'filter_groupid' => $groupId,
+            'filter_group_name' => $this->getGroupName($groupId, $allGroups),
+            'filter_year' => $year,
+            'filter_week' => $week
         ]);
         
         // 显式设置响应标题（Zabbix 6.0 需要）
         $response->setTitle(LanguageManager::t('Weekly Report'));
 
         $this->setResponse($response);
+    }
+
+    private function getGroupName(string $groupId, array $allGroups): string {
+        if ($groupId === '') return '';
+        foreach ($allGroups as $group) {
+            if ((string)$group['groupid'] === (string)$groupId) {
+                return $group['name'];
+            }
+        }
+        return '';
     }
 }

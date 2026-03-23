@@ -14,11 +14,51 @@ $styleTag = ReportViewHelper::getStyleTag();
 $content = (new CDiv())->addClass('rpt-container');
 
 // 标题 + 操作按钮
+$exportParams = ['groupid' => $data['filter_groupid'] ?? ''];
+$filterYear = $data['filter_year'] ?? (int)date('Y');
+$filterMonth = $data['filter_month'] ?? (int)date('m');
+$filterDay = $data['filter_day'] ?? ((int)date('d') - 1);
+$exportParams['year'] = $filterYear;
+$exportParams['month'] = $filterMonth;
+$exportParams['day'] = $filterDay;
+
+$titleText = LanguageManager::t('Zabbix Daily Report') . ' - ' . $data['report_date'];
+if (!empty($data['filter_group_name'])) {
+    $titleText .= ' [' . $data['filter_group_name'] . ']';
+}
+
+// 构建年/月/日下拉选项
+$currentYear = (int)date('Y');
+$yearOptions = [
+    ['value' => (string)$currentYear, 'label' => (string)$currentYear],
+    ['value' => (string)($currentYear - 1), 'label' => (string)($currentYear - 1)]
+];
+$monthOptions = [];
+for ($m = 1; $m <= 12; $m++) {
+    $monthOptions[] = ['value' => (string)$m, 'label' => sprintf('%02d', $m)];
+}
+$maxDay = (int)date('t', mktime(0, 0, 0, $filterMonth, 1, $filterYear));
+$dayOptions = [];
+for ($d = 1; $d <= $maxDay; $d++) {
+    $dayOptions[] = ['value' => (string)$d, 'label' => sprintf('%02d', $d)];
+}
+
 $content->addItem(
     ReportViewHelper::buildHeader(
-        LanguageManager::t('Zabbix Daily Report') . ' - ' . $data['report_date'],
+        $titleText,
         "\u{1F4C5}",
-        'reports.daily.export'
+        'reports.daily.export',
+        $exportParams,
+        [
+            'action_name' => 'reports.daily',
+            'all_groups' => $data['all_groups'] ?? [],
+            'filter_groupid' => $data['filter_groupid'] ?? '',
+            'date_selects' => [
+                ['name' => 'year', 'selected' => $filterYear, 'options' => $yearOptions],
+                ['name' => 'month', 'selected' => $filterMonth, 'options' => $monthOptions],
+                ['name' => 'day', 'selected' => $filterDay, 'options' => $dayOptions]
+            ]
+        ]
     )
 );
 
