@@ -187,6 +187,28 @@ class RackView extends CController {
         $searchResults = [];
         if ($search) {
             $searchResults = HostRackManager::searchAssignedHosts($search);
+
+            // 在概览模式下，按搜索关键字过滤机柜显示
+            if ($showOverview && !empty($allRacksData)) {
+                // 收集搜索到的主机所在的机柜名
+                $matchedRackNames = [];
+                foreach ($searchResults as $sr) {
+                    $matchedRackNames[$sr['rack_name']] = true;
+                }
+
+                // 同时支持按机柜名搜索
+                $searchLower = mb_strtolower($search);
+                $filteredRacks = [];
+                foreach ($allRacksData as $rackData) {
+                    $rackNameLower = mb_strtolower($rackData['name']);
+                    // 机柜名匹配 或 包含搜索到的主机
+                    if (mb_strpos($rackNameLower, $searchLower) !== false
+                        || isset($matchedRackNames[$rackData['name']])) {
+                        $filteredRacks[] = $rackData;
+                    }
+                }
+                $allRacksData = $filteredRacks;
+            }
         }
         
         // 获取主机组列表（用于添加主机弹窗）

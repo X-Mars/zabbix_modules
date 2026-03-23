@@ -14,11 +14,46 @@ $styleTag = ReportViewHelper::getStyleTag();
 $content = (new CDiv())->addClass('rpt-container');
 
 // 标题 + 操作按钮
+$exportParams = ['groupid' => $data['filter_groupid'] ?? ''];
+$filterYear = $data['filter_year'] ?? (int)date('Y');
+$filterWeek = $data['filter_week'] ?? (int)date('W');
+$exportParams['year'] = $filterYear;
+$exportParams['week'] = $filterWeek;
+
+$titleText = LanguageManager::t('Zabbix Weekly Report') . ' - ' . $data['report_period'];
+if (!empty($data['filter_group_name'])) {
+    $titleText .= ' [' . $data['filter_group_name'] . ']';
+}
+
+// 构建年/周下拉选项
+$currentYear = (int)date('Y');
+$yearOptions = [
+    ['value' => (string)$currentYear, 'label' => (string)$currentYear],
+    ['value' => (string)($currentYear - 1), 'label' => (string)($currentYear - 1)]
+];
+$maxWeek = (int)date('W', mktime(0, 0, 0, 12, 28, $filterYear));
+$isChinese = LanguageManager::isChinese();
+$weekOptions = [];
+for ($w = 1; $w <= $maxWeek; $w++) {
+    $label = $isChinese ? '第' . $w . '周' : 'W' . sprintf('%02d', $w);
+    $weekOptions[] = ['value' => (string)$w, 'label' => $label];
+}
+
 $content->addItem(
     ReportViewHelper::buildHeader(
-        LanguageManager::t('Zabbix Weekly Report') . ' - ' . $data['report_period'],
+        $titleText,
         "\u{1F4C6}",
-        'reports.weekly.export'
+        'reports.weekly.export',
+        $exportParams,
+        [
+            'action_name' => 'reports.weekly',
+            'all_groups' => $data['all_groups'] ?? [],
+            'filter_groupid' => $data['filter_groupid'] ?? '',
+            'date_selects' => [
+                ['name' => 'year', 'selected' => $filterYear, 'options' => $yearOptions],
+                ['name' => 'week', 'selected' => $filterWeek, 'options' => $weekOptions]
+            ]
+        ]
     )
 );
 

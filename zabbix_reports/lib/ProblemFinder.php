@@ -30,11 +30,11 @@ class ProblemFinder {
      * @param int $limit 最大返回数量
      * @return array 包含 problemEvents, problemCount, resolvedCount 的结果
      */
-    public static function getProblemsInPeriod(int $from, int $till, int $limit = 500): array {
+    public static function getProblemsInPeriod(int $from, int $till, int $limit = 500, array $hostids = []): array {
         // ====================================================
         // 第1步：获取在报表周期内产生的问题事件（场景A和B）
         // ====================================================
-        $eventsInPeriod = API::Event()->get([
+        $eventOptions = [
             'output' => ['eventid', 'objectid', 'name', 'clock', 'r_eventid', 'severity'],
             'source' => 0,
             'object' => 0,
@@ -45,7 +45,11 @@ class ProblemFinder {
             'sortorder' => 'DESC',
             'limit' => $limit,
             'selectHosts' => ['hostid', 'name'],
-        ]);
+        ];
+        if (!empty($hostids)) {
+            $eventOptions['hostids'] = $hostids;
+        }
+        $eventsInPeriod = API::Event()->get($eventOptions);
         if (!is_array($eventsInPeriod)) {
             $eventsInPeriod = [];
         }
@@ -54,7 +58,7 @@ class ProblemFinder {
         // 第2步：获取在报表周期开始前产生但在周期内仍活跃的问题事件（场景C、D、E）
         // 策略：查询周期开始前产生的事件，然后通过恢复时间过滤
         // ====================================================
-        $eventsBeforePeriod = API::Event()->get([
+        $eventBeforeOptions = [
             'output' => ['eventid', 'objectid', 'name', 'clock', 'r_eventid', 'severity'],
             'source' => 0,
             'object' => 0,
@@ -64,7 +68,11 @@ class ProblemFinder {
             'sortorder' => 'DESC',
             'limit' => 2000,  // 加大限制以捕获所有跨周期事件
             'selectHosts' => ['hostid', 'name'],
-        ]);
+        ];
+        if (!empty($hostids)) {
+            $eventBeforeOptions['hostids'] = $hostids;
+        }
+        $eventsBeforePeriod = API::Event()->get($eventBeforeOptions);
         if (!is_array($eventsBeforePeriod)) {
             $eventsBeforePeriod = [];
         }
@@ -182,12 +190,16 @@ class ProblemFinder {
 
         // 恢复事件计数仍按原逻辑：统计周期内产生的恢复事件（value=TRIGGER_VALUE_FALSE）
         // 这代表"在此周期内实际恢复了多少告警"
-        $resolvedCount = API::Event()->get([
+        $resolvedOptions = [
             'countOutput' => true,
             'filter' => ['value' => TRIGGER_VALUE_FALSE],
             'time_from' => $from,
             'time_till' => $till
-        ]);
+        ];
+        if (!empty($hostids)) {
+            $resolvedOptions['hostids'] = $hostids;
+        }
+        $resolvedCount = API::Event()->get($resolvedOptions);
 
         // ====================================================
         // 第5步：批量获取恢复事件时间

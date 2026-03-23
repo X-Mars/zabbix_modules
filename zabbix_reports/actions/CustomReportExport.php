@@ -31,7 +31,8 @@ class CustomReportExport extends CController {
         $fields = [
             'from_date' => 'string',
             'to_date' => 'string',
-            'format' => 'string'
+            'format' => 'string',
+            'groupid' => 'string'
         ];
         
         return $this->validateInput($fields);
@@ -48,6 +49,18 @@ class CustomReportExport extends CController {
             $fromDate = $this->getInput('from_date');
             $toDate = $this->getInput('to_date');
             $format = $this->getInput('format', 'pdf');
+            $groupId = $this->getInput('groupid', '');
+            $groupName = '';
+            if ($groupId !== '') {
+                $groups = API::HostGroup()->get([
+                    'output' => ['name'],
+                    'groupids' => [$groupId],
+                    'limit' => 1
+                ]);
+                if (!empty($groups)) {
+                    $groupName = $groups[0]['name'];
+                }
+            }
 
             // 验证日期
             $fromTimestamp = strtotime($fromDate . ' 00:00:00');
@@ -58,10 +71,10 @@ class CustomReportExport extends CController {
             }
 
             // 重新生成报表数据
-            $reportData = $this->generateReportData($fromTimestamp, $toTimestamp);
+            $reportData = $this->generateReportData($fromTimestamp, $toTimestamp, $groupId);
 
             // 只支持PDF导出（参考日报导出）
-            $this->exportToPdf($reportData, $fromDate, $toDate);
+            $this->exportToPdf($reportData, $fromDate, $toDate, $groupName);
 
         } catch (\Exception $e) {
             error_log("Custom Report Export Error: " . $e->getMessage());
@@ -69,9 +82,20 @@ class CustomReportExport extends CController {
         }
     }
 
-    private function generateReportData(int $fromTimestamp, int $toTimestamp): array {
+    private function generateReportData(int $fromTimestamp, int $toTimestamp, string $groupId = ''): array {
+        // 获取主机（支持分组过滤）
+        $hostOptions = [
+            'output' => ['hostid', 'name'],
+            'filter' => ['status' => HOST_STATUS_MONITORED]
+        ];
+        if ($groupId !== '') {
+            $hostOptions['groupids'] = [$groupId];
+        }
+        $filteredHosts = API::Host()->get($hostOptions);
+        $filteredHostIds = array_column($filteredHosts, 'hostid');
+
         // 使用 ProblemFinder 获取与报表周期有交集的所有告警
-        $problemResult = ProblemFinder::getProblemsInPeriod($fromTimestamp, $toTimestamp);
+        $problemResult = ProblemFinder::getProblemsInPeriod($fromTimestamp, $toTimestamp, 500, $filteredHostIds);
         $problemCount = $problemResult['problemCount'];
         $resolvedCount = $problemResult['resolvedCount'];
         $events = $problemResult['problemEvents'];
@@ -108,11 +132,8 @@ class CustomReportExport extends CController {
         arsort($hostCounts);
         $topHosts = array_slice($hostCounts, 0, 10, true);
 
-        // 获取所有主机
-        $hosts = API::Host()->get([
-            'output' => ['hostid', 'name'],
-            'filter' => ['status' => HOST_STATUS_MONITORED]
-        ]);
+        // 获取所有主机（使用已过滤的主机列表）
+        $hosts = $filteredHosts;
 
         // 获取主机组映射
         $hostGroups = [];
@@ -150,9 +171,9 @@ class CustomReportExport extends CController {
         foreach ($hosts as $host) {
             // 分组主机
             $groups = isset($hostGroups[$host['hostid']]) ? $hostGroups[$host['hostid']] : [];
-            $groupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
-            if (!isset($hostsByGroup[$groupName])) {
-                $hostsByGroup[$groupName] = [];
+            $hostGroupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
+            if (!isset($hostsByGroup[$hostGroupName])) {
+                $hostsByGroup[$hostGroupName] = [];
             }
             
             // 初始化主机信息
@@ -193,7 +214,7 @@ class CustomReportExport extends CController {
             }
             
             // 添加主机到对应群组
-            $hostsByGroup[$groupName][] = $hostInfo;
+            $hostsByGroup[$hostGroupName][] = $hostInfo;
         }
         arsort($cpuUsage);
         arsort($memUsage);
@@ -217,9 +238,13 @@ class CustomReportExport extends CController {
         ];
     }
 
-    private function exportToPdf(array $data, string $fromDate, string $toDate): void {
+    private function exportToPdf(array $data, string $fromDate, string $toDate, string $groupName = ''): void {
         // 生成PDF（严格参考日报导出方式）
-        $pdfGenerator = new PdfGenerator(LanguageManager::t('Custom Report') . ' - ' . $fromDate . ' - ' . $toDate);
+        $pdfTitle = LanguageManager::t('Custom Report') . ' - ' . $fromDate . ' - ' . $toDate;
+        if ($groupName !== '') {
+            $pdfTitle .= ' [' . $groupName . ']';
+        }
+        $pdfGenerator = new PdfGenerator($pdfTitle);
         $pdfGenerator->setData($data);
         $pdfContent = $pdfGenerator->generate();
 

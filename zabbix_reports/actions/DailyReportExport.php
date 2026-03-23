@@ -28,7 +28,14 @@ class DailyReportExport extends CController {
     }
 
     protected function checkInput(): bool {
-        return true;
+        $fields = [
+            'format' => 'string',
+            'groupid' => 'string',
+            'year' => 'string',
+            'month' => 'string',
+            'day' => 'string'
+        ];
+        return $this->validateInput($fields);
     }
 
     protected function checkPermissions(): bool {
@@ -36,13 +43,53 @@ class DailyReportExport extends CController {
     }
 
     protected function doAction(): void {
-        $yesterday = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
-        $today = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $groupId = $this->getInput('groupid', '');
+        $groupName = '';
+        if ($groupId !== '') {
+            $groups = API::HostGroup()->get([
+                'output' => ['name'],
+                'groupids' => [$groupId],
+                'limit' => 1
+            ]);
+            if (!empty($groups)) {
+                $groupName = $groups[0]['name'];
+            }
+        }
+
+        $currentYear = (int)date('Y');
+        $year = (int)$this->getInput('year', $currentYear);
+        $month = (int)$this->getInput('month', date('m'));
+        $day = (int)$this->getInput('day', date('d') - 1);
+        if ($year < $currentYear - 1 || $year > $currentYear) {
+            $year = $currentYear;
+        }
+        if ($month < 1 || $month > 12) {
+            $month = (int)date('m');
+        }
+        $maxDay = (int)date('t', mktime(0, 0, 0, $month, 1, $year));
+        if ($day < 1 || $day > $maxDay) {
+            $day = min((int)date('d') - 1, $maxDay);
+            if ($day < 1) $day = 1;
+        }
+
+        $yesterday = mktime(0, 0, 0, $month, $day, $year);
+        $today = mktime(0, 0, 0, $month, $day + 1, $year);
         $from = $yesterday;
         $till = $today;
 
         // 使用 ProblemFinder 获取与报表周期有交集的所有告警
-        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till);
+        // 先获取主机（支持分组过滤），用于告警筛选
+        $hostOptions = [
+            'output' => ['hostid', 'name'],
+            'filter' => ['status' => HOST_STATUS_MONITORED]
+        ];
+        if ($groupId !== '') {
+            $hostOptions['groupids'] = [$groupId];
+        }
+        $filteredHosts = API::Host()->get($hostOptions);
+        $filteredHostIds = array_column($filteredHosts, 'hostid');
+
+        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till, 500, $filteredHostIds);
         $problemCount = $problemResult['problemCount'];
         $resolvedCount = $problemResult['resolvedCount'];
         $events = $problemResult['problemEvents'];
@@ -79,11 +126,8 @@ class DailyReportExport extends CController {
         arsort($hostCounts);
         $topHosts = array_slice($hostCounts, 0, 10, true);
 
-        // 获取所有主机
-        $hosts = API::Host()->get([
-            'output' => ['hostid', 'name'],
-            'filter' => ['status' => HOST_STATUS_MONITORED]
-        ]);
+        // 获取所有主机（使用已过滤的主机列表）
+        $hosts = $filteredHosts;
 
         // 获取主机组映射
         $hostGroups = [];
@@ -121,9 +165,9 @@ class DailyReportExport extends CController {
         foreach ($hosts as $host) {
             // 分组主机
             $groups = isset($hostGroups[$host['hostid']]) ? $hostGroups[$host['hostid']] : [];
-            $groupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
-            if (!isset($hostsByGroup[$groupName])) {
-                $hostsByGroup[$groupName] = [];
+            $hostGroupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
+            if (!isset($hostsByGroup[$hostGroupName])) {
+                $hostsByGroup[$hostGroupName] = [];
             }
             
             // 初始化主机信息
@@ -164,7 +208,7 @@ class DailyReportExport extends CController {
             }
             
             // 添加主机到对应群组
-            $hostsByGroup[$groupName][] = $hostInfo;
+            $hostsByGroup[$hostGroupName][] = $hostInfo;
         }
         arsort($cpuUsage);
         arsort($memUsage);
@@ -188,7 +232,11 @@ class DailyReportExport extends CController {
         ];
 
         // 生成PDF
-        $pdfGenerator = new PdfGenerator(LanguageManager::t('Zabbix Daily Report') . ' - ' . date('Y-m-d', $yesterday));
+        $pdfTitle = LanguageManager::t('Zabbix Daily Report') . ' - ' . date('Y-m-d', $yesterday);
+        if ($groupName !== '') {
+            $pdfTitle .= ' [' . $groupName . ']';
+        }
+        $pdfGenerator = new PdfGenerator($pdfTitle);
         $pdfGenerator->setData($reportData);
         $pdfContent = $pdfGenerator->generate();
 

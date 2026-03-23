@@ -25,7 +25,14 @@ class MonthlyReport extends CController {
     }
 
     protected function checkInput(): bool {
-        return true;
+        $fields = [
+            'groupid' => 'string',
+            'year' => 'string',
+            'month' => 'string',
+            'apply' => 'string'
+        ];
+        $ret = $this->validateInput($fields);
+        return $ret;
     }
 
     protected function checkPermissions(): bool {
@@ -33,13 +40,45 @@ class MonthlyReport extends CController {
     }
 
     protected function doAction(): void {
-        $monthStart = mktime(0, 0, 0, date('m'), 1, date('Y'));
-        $monthEnd = mktime(23, 59, 59, date('m') + 1, 0, date('Y'));
+        $groupId = $this->getInput('groupid', '');
+
+        // 获取所有主机组（用于过滤下拉框）
+        $allGroups = API::HostGroup()->get([
+            'output' => ['groupid', 'name'],
+            'sortfield' => 'name',
+            'with_monitored_hosts' => true
+        ]);
+
+        $currentYear = (int)date('Y');
+        $year = (int)$this->getInput('year', $currentYear);
+        $month = (int)$this->getInput('month', date('m'));
+        if ($year < $currentYear - 1 || $year > $currentYear) {
+            $year = $currentYear;
+        }
+        if ($month < 1 || $month > 12) {
+            $month = (int)date('m');
+        }
+
+        $monthStart = mktime(0, 0, 0, $month, 1, $year);
+        $monthEnd = mktime(23, 59, 59, $month + 1, 0, $year);
         $from = $monthStart;
         $till = $monthEnd;
 
+        // 获取主机（支持分组过滤）
+        $hostOptions = [
+            'output' => ['hostid', 'name'],
+            'filter' => ['status' => HOST_STATUS_MONITORED]
+        ];
+        if ($groupId !== '') {
+            $hostOptions['groupids'] = [$groupId];
+        }
+        $hosts = API::Host()->get($hostOptions);
+
+        // 获取过滤后的主机ID
+        $filteredHostIds = array_column($hosts, 'hostid');
+
         // 使用 ProblemFinder 获取与报表周期有交集的所有告警
-        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till);
+        $problemResult = ProblemFinder::getProblemsInPeriod($from, $till, 500, $filteredHostIds);
         $problemCount = $problemResult['problemCount'];
         $resolvedCount = $problemResult['resolvedCount'];
         $problemEvents = $problemResult['problemEvents'];
@@ -56,13 +95,7 @@ class MonthlyReport extends CController {
         $hostCounts = $alertResult['hostCounts'];
         $topHosts = $alertResult['topHosts'];
 
-        // 获取所有主机
-        $hosts = API::Host()->get([
-            'output' => ['hostid', 'name'],
-            'filter' => ['status' => HOST_STATUS_MONITORED]
-        ]);
-
-        // 获取主机组映射
+        // 获取主机组映射（使用已过滤的主机）
         $hostGroups = [];
         if (!empty($hosts)) {
             $hostids = array_column($hosts, 'hostid');
@@ -117,9 +150,9 @@ class MonthlyReport extends CController {
         foreach ($hosts as $host) {
             // 分组主机
             $groups = isset($hostGroups[$host['hostid']]) ? $hostGroups[$host['hostid']] : [];
-            $groupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
-            if (!isset($hostsByGroup[$groupName])) {
-                $hostsByGroup[$groupName] = [];
+            $hostGroupName = !empty($groups) ? $groups[0]['name'] : 'No Group';
+            if (!isset($hostsByGroup[$hostGroupName])) {
+                $hostsByGroup[$hostGroupName] = [];
             }
             
             // 初始化主机信息
@@ -155,7 +188,7 @@ class MonthlyReport extends CController {
                 $hostInfo['mem_total'] = number_format($memSizeResult['value'] / (1024*1024*1024), 2);
             }
             
-            $hostsByGroup[$groupName][] = $hostInfo;
+            $hostsByGroup[$hostGroupName][] = $hostInfo;
         }
 
         $response = new CControllerResponseData([
@@ -172,12 +205,27 @@ class MonthlyReport extends CController {
             'cpu_total' => $cpuTotal,
             'mem_total' => $memTotal,
             'language' => LanguageManager::getCurrentLanguage(),
-            'is_chinese' => LanguageManager::isChinese()
+            'is_chinese' => LanguageManager::isChinese(),
+            'all_groups' => $allGroups,
+            'filter_groupid' => $groupId,
+            'filter_group_name' => $this->getGroupName($groupId, $allGroups),
+            'filter_year' => $year,
+            'filter_month' => $month
         ]);
         
         // 显式设置响应标题（Zabbix 6.0 需要）
         $response->setTitle(LanguageManager::t('Monthly Report'));
 
         $this->setResponse($response);
+    }
+
+    private function getGroupName(string $groupId, array $allGroups): string {
+        if ($groupId === '') return '';
+        foreach ($allGroups as $group) {
+            if ((string)$group['groupid'] === (string)$groupId) {
+                return $group['name'];
+            }
+        }
+        return '';
     }
 }

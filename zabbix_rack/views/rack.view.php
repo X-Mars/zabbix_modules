@@ -899,6 +899,8 @@ z-select .list {
 .rack-card.severity-5 { border-color: #e45959; } /* 灾难 */
 
 /* 颜色背景 */
+.rack-card.severity-0 { background: linear-gradient(135deg, #f8fafb 0%, #eef2f5 100%); }
+.rack-card.severity-1 { background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%); }
 .rack-card.severity-2 { background: linear-gradient(135deg, #fffbf0 0%, #fff9f0 100%); }
 .rack-card.severity-3 { background: linear-gradient(135deg, #fff5f0 0%, #fff0e8 100%); }
 .rack-card.severity-4 { background: linear-gradient(135deg, #fff0ed 0%, #ffe8e8 100%); }
@@ -923,7 +925,6 @@ z-select .list {
 
 /* 告警指示器 */
 .rack-alert-badge {
-    background: linear-gradient(135deg, #e45959 0%, #dc3545 100%);
     color: #fff;
     border-radius: 50%;
     width: 28px;
@@ -935,6 +936,31 @@ z-select .list {
     font-size: 12px;
     flex-shrink: 0;
     animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(228, 89, 89, 0.7);
+}
+
+.rack-alert-badge.severity-0 {
+    background: linear-gradient(135deg, #97aab3 0%, #768d99 100%);
+    box-shadow: 0 0 0 0 rgba(151, 170, 179, 0.7);
+}
+.rack-alert-badge.severity-1 {
+    background: linear-gradient(135deg, #7499ff 0%, #5a7fd4 100%);
+    box-shadow: 0 0 0 0 rgba(116, 153, 255, 0.7);
+}
+.rack-alert-badge.severity-2 {
+    background: linear-gradient(135deg, #ffc859 0%, #e6b040 100%);
+    box-shadow: 0 0 0 0 rgba(255, 200, 89, 0.7);
+}
+.rack-alert-badge.severity-3 {
+    background: linear-gradient(135deg, #ffa059 0%, #e68840 100%);
+    box-shadow: 0 0 0 0 rgba(255, 160, 89, 0.7);
+}
+.rack-alert-badge.severity-4 {
+    background: linear-gradient(135deg, #e97659 0%, #d45e39 100%);
+    box-shadow: 0 0 0 0 rgba(233, 118, 89, 0.7);
+}
+.rack-alert-badge.severity-5 {
+    background: linear-gradient(135deg, #e45959 0%, #dc3545 100%);
     box-shadow: 0 0 0 0 rgba(228, 89, 89, 0.7);
 }
 
@@ -1496,7 +1522,7 @@ if ($showOverview) {
             if ($hasAlert) {
                 $cardHeader->addItem(
                     (new CDiv((string)$rackData['problem_count']))
-                        ->addClass('rack-alert-badge')
+                        ->addClass('rack-alert-badge ' . $severityClass)
                         ->setAttribute('title', $rackData['problem_count'] . ' ' . LanguageManager::t('problems'))
                 );
             }
@@ -1569,6 +1595,35 @@ if ($showOverview) {
     }
 
     $rackContainer->addItem($rackMain);
+
+    // 概览模式下的搜索结果
+    if (!empty($searchResults)) {
+        $searchSection = (new CDiv())->addClass('sidebar-card');
+        $searchSection->setAttribute('style', 'margin-top: 20px;');
+        $searchSection->addItem(
+            (new CDiv('🔍 ' . LanguageManager::t('search_results') . ' (' . count($searchResults) . ')'))
+                ->addClass('sidebar-card-header')
+        );
+        $searchBody = (new CDiv())->addClass('sidebar-card-body');
+        $searchList = (new CDiv())->addClass('host-list');
+        foreach ($searchResults as $result) {
+            $searchItem = (new CDiv())->addClass('host-list-item');
+            $searchItem->addItem(
+                (new CDiv('🖥️ ' . htmlspecialchars($result['name'])))->addClass('host-name')
+            );
+            $searchItem->addItem(
+                (new CDiv('📍 ' . htmlspecialchars($result['main_ip'])))->addClass('host-ip')
+            );
+            $searchItem->addItem(
+                (new CDiv('📦 ' . htmlspecialchars($result['room_name']) . ' / ' . htmlspecialchars($result['rack_name']) . ' (U' . $result['u_start'] . '-U' . $result['u_end'] . ')'))
+                    ->addClass('host-position')
+            );
+            $searchList->addItem($searchItem);
+        }
+        $searchBody->addItem($searchList);
+        $searchSection->addItem($searchBody);
+        $rackContainer->addItem($searchSection);
+    }
 } else {
     // ===== 单机柜详情模式 =====
 

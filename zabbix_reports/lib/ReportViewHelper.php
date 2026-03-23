@@ -100,6 +100,8 @@ class ReportViewHelper {
     border: 1px solid transparent;
     text-decoration: none;
     line-height: 1.4;
+    height: 42px;
+    box-sizing: border-box;
 }
 
 .rpt-btn-primary {
@@ -468,15 +470,15 @@ class ReportViewHelper {
 
 /* ===== 日期表单区 ===== */
 .rpt-date-form {
-    background: var(--rpt-card-bg);
-    padding: 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px 25px;
     border-radius: var(--rpt-radius);
     margin-bottom: 24px;
     box-shadow: var(--rpt-shadow);
     border: 1px solid var(--rpt-border);
     display: flex;
     align-items: flex-end;
-    gap: 20px;
+    gap: 25px;
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -488,26 +490,57 @@ class ReportViewHelper {
 }
 
 .rpt-form-label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--rpt-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #495057;
+    white-space: nowrap;
 }
 
 .rpt-form-input {
-    padding: 9px 14px;
-    border: 1px solid var(--rpt-border);
-    border-radius: var(--rpt-radius-sm);
+    padding: 10px 14px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
     font-size: 14px;
     color: var(--rpt-text);
-    transition: border-color 0.2s;
+    background-color: #fff;
+    transition: all 0.2s ease;
+    height: 42px;
+    box-sizing: border-box;
 }
 
 .rpt-form-input:focus {
     border-color: var(--rpt-primary);
     outline: none;
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.rpt-form-select {
+    padding: 10px 14px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--rpt-text);
+    background-color: #fff;
+    transition: all 0.2s ease;
+    height: 42px;
+    box-sizing: border-box;
+    min-width: 200px;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.rpt-form-select:focus {
+    border-color: var(--rpt-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.rpt-form-select:hover {
+    border-color: #adb5bd;
+}
+
+.rpt-form-select-sm {
+    min-width: auto;
 }
 
 /* ===== 错误提示 ===== */
@@ -1320,7 +1353,7 @@ class ReportViewHelper {
     /**
      * 构建页面头部（标题 + 操作按钮）
      */
-    public static function buildHeader(string $titleText, string $icon, string $exportAction, array $exportParams = []): \CDiv {
+    public static function buildHeader(string $titleText, string $icon, string $exportAction, array $exportParams = [], array $filterData = []): \CDiv {
         $header = (new \CDiv())->addClass('rpt-header');
 
         $title = (new \CTag('h1', true))
@@ -1331,18 +1364,64 @@ class ReportViewHelper {
 
         $actions = (new \CDiv())->addClass('rpt-actions');
 
-        // 导出按钮
-        $exportUrl = '?action=' . $exportAction . '&format=pdf';
+        // 过滤下拉框区域（群组、日期等）
+        if (!empty($filterData['action_name'])) {
+            $actionName = $filterData['action_name'];
+            // 统一 JS 跳转：收集 .rpt-actions 下所有 select 值拼接 URL
+            $jsRedirect = '(function(el){var c=el.closest(\'.rpt-actions\');var ss=c.querySelectorAll(\'select\');var u=\'zabbix.php?action=' . htmlspecialchars($actionName, ENT_QUOTES) . '\';for(var i=0;i<ss.length;i++){u+=\'&\'+ss[i].name+\'=\'+ss[i].value;}window.location.href=u;})(this)';
+
+            // 时间维度下拉框（年、月、周等）
+            if (!empty($filterData['date_selects'])) {
+                foreach ($filterData['date_selects'] as $selectDef) {
+                    $select = (new \CTag('select', true))
+                        ->setAttribute('name', $selectDef['name'])
+                        ->setAttribute('onchange', $jsRedirect)
+                        ->addClass('rpt-form-select rpt-form-select-sm');
+                    foreach ($selectDef['options'] as $option) {
+                        $opt = (new \CTag('option', true, $option['label']))
+                            ->setAttribute('value', $option['value']);
+                        if ((string)$option['value'] === (string)$selectDef['selected']) {
+                            $opt->setAttribute('selected', 'selected');
+                        }
+                        $select->addItem($opt);
+                    }
+                    $actions->addItem($select);
+                }
+            }
+
+            // 主机群组下拉框
+            $allGroups = $filterData['all_groups'] ?? [];
+            $selectedGroupId = $filterData['filter_groupid'] ?? '';
+            $groupSelect = (new \CTag('select', true))
+                ->setAttribute('name', 'groupid')
+                ->setAttribute('onchange', $jsRedirect)
+                ->addClass('rpt-form-select');
+            $groupSelect->addItem(
+                (new \CTag('option', true, LanguageManager::t('All Groups')))->setAttribute('value', '')
+            );
+            foreach ($allGroups as $group) {
+                $opt = (new \CTag('option', true, $group['name']))
+                    ->setAttribute('value', $group['groupid']);
+                if ((string)$group['groupid'] === (string)$selectedGroupId) {
+                    $opt->setAttribute('selected', 'selected');
+                }
+                $groupSelect->addItem($opt);
+            }
+            $actions->addItem($groupSelect);
+        }
+
+        // 导出按钮（使用 <a> 标签 + 静态 URL，避免 Zabbix CButton/form 事件干扰）
+        $exportUrl = 'zabbix.php?action=' . urlencode($exportAction) . '&format=pdf';
         foreach ($exportParams as $k => $v) {
             $exportUrl .= '&' . urlencode($k) . '=' . urlencode($v);
         }
-        $actions->addItem(
-            (new \CButton('export_pdf', ''))
-                ->addClass('rpt-btn rpt-btn-primary')
-                ->setAttribute('onclick', 'javascript: window.open("' . $exportUrl . '", "_blank");')
-                ->addItem((new \CSpan("\u{1F4E5}"))->addClass('rpt-btn-icon'))
-                ->addItem(LanguageManager::t('Export PDF'))
-        );
+        $exportLink = (new \CTag('a', true))
+            ->addClass('rpt-btn rpt-btn-primary')
+            ->setAttribute('href', $exportUrl)
+            ->setAttribute('target', '_blank')
+            ->addItem((new \CSpan("\u{1F4E5}"))->addClass('rpt-btn-icon'))
+            ->addItem(LanguageManager::t('Export PDF'));
+        $actions->addItem($exportLink);
 
         // 邮件按钮
         $actions->addItem(
@@ -1566,5 +1645,49 @@ class ReportViewHelper {
         $section->addItem($body);
 
         return $section;
+    }
+
+    /**
+     * 构建过滤栏（主机群组）
+     */
+    public static function buildFilterBar(string $actionName, array $data, array $extraFields = []): \CTag {
+        $allGroups = $data['all_groups'] ?? [];
+        $selectedGroupId = $data['filter_groupid'] ?? '';
+
+        // 构建跳转URL的JS参数
+        $extraParams = '';
+        foreach ($extraFields as $name => $value) {
+            $extraParams .= '"&' . htmlspecialchars($name, ENT_QUOTES) . '=' . htmlspecialchars($value, ENT_QUOTES) . '"+';
+        }
+
+        $jsRedirect = 'window.location.href="zabbix.php?action=' . htmlspecialchars($actionName, ENT_QUOTES) . '&groupid="+' . $extraParams . 'this.value';
+
+        // 使用 div 而非 form，避免与 Zabbix 页面外层 form 嵌套冲突
+        $container = (new \CDiv())->addClass('rpt-date-form');
+
+        // 主机群组选择
+        $groupDiv = (new \CDiv())->addClass('rpt-form-group');
+        $groupDiv->addItem(
+            (new \CTag('label', true, LanguageManager::t('Host Group')))->addClass('rpt-form-label')
+        );
+        $groupSelect = (new \CTag('select', true))
+            ->setAttribute('name', 'groupid')
+            ->setAttribute('onchange', $jsRedirect)
+            ->addClass('rpt-form-select');
+        $groupSelect->addItem(
+            (new \CTag('option', true, LanguageManager::t('All Groups')))->setAttribute('value', '')
+        );
+        foreach ($allGroups as $group) {
+            $opt = (new \CTag('option', true, $group['name']))
+                ->setAttribute('value', $group['groupid']);
+            if ((string)$group['groupid'] === (string)$selectedGroupId) {
+                $opt->setAttribute('selected', 'selected');
+            }
+            $groupSelect->addItem($opt);
+        }
+        $groupDiv->addItem($groupSelect);
+        $container->addItem($groupDiv);
+
+        return $container;
     }
 }
