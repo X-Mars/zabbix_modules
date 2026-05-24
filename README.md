@@ -31,6 +31,9 @@
 - 手动导出PDF
 - 邮件推送报表（HTML格式）
 
+![1](zabbix_reports/images/1.png)
+![2](zabbix_reports/images/2.png)
+
 **文档链接**：[zabbix_reports/README.md](./zabbix_reports/README.md)
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
@@ -46,6 +49,10 @@
 - 显示主机名、IP地址、接口方式、CPU总量、内存总量、主机分组等信息
 - 支持中英文界面国际化
 - 响应式设计，适配不同屏幕尺寸
+
+![1](zabbix_cmdb/images/1.jpg)
+![2](zabbix_cmdb/images/2.png)
+![3](zabbix_cmdb/images/3.jpg)
 
 **文档链接**：[zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
 
@@ -67,6 +74,9 @@
 - 多种时间范围选择（1小时至30天）
 - 支持中英文界面国际化
 
+![1](zabbix_graphtrees/images/1.png)
+![2](zabbix_graphtrees/images/2.png)
+
 **文档链接**：[zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
@@ -84,6 +94,10 @@
 - 搜索功能：按机柜或主机名称搜索
 - 支持中英文界面国际化
 - 响应式设计，适配不同屏幕尺寸
+
+![1](zabbix_rack/images/1.png)
+![2](zabbix_rack/images/2.png)
+![3](zabbix_rack/images/3.png)
 
 **文档链接**：[zabbix_rack/README.md](./zabbix_rack/README.md)
 
