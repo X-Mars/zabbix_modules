@@ -59,6 +59,13 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_rack/README.md](./zabbix_rack/README.md)
 
+### 5. Zabbix SNMP
+
+- **Purpose**: A Zabbix frontend module template for browsing common operating system SNMP MIB directories and viewing MIB file details.
+- **Features**: scan common MIB directories, show files from multiple directories, click any MIB file to view path/size/modified time/content preview, filename search, bilingual UI.
+
+- **Docs**: [zabbix_snmp/README.md](./zabbix_snmp/README.md)
+
 ## Installation
 
 ### Deploy all modules (recommended)
@@ -99,6 +106,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → CMDB**
 - **Monitoring → Graph Trees**
 - **Inventory → Rack Management**
+- **Monitoring → SNMP MIB Browser**
 
 Each module contains its own README with specific installation and usage details.
 

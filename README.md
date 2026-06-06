@@ -103,6 +103,22 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 5. Zabbix SNMP
+
+**简介**：用于浏览操作系统常见 SNMP MIB 目录和 MIB 文件的 Zabbix 前端模块模版，支持目录扫描、文件列表展示和详情预览。 
+
+**功能特性**：
+
+- 自动扫描常见 MIB 目录
+- 支持展示多个系统 MIB 目录
+- 点击 MIB 文件可查看路径、大小、修改时间和内容预览
+- 支持按文件名搜索
+- 支持中英文界面国际化
+
+**文档链接**：[zabbix_snmp/README.md](./zabbix_snmp/README.md)
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
 ### 安装模块
@@ -160,6 +176,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 - **Inventory → CMDB** (主机列表/主机分组)
 - **Monitoring → Graph Trees** (图表树)
 - **Inventory → Rack Management** (机柜管理)
+- **Monitoring → SNMP MIB Browser** (SNMP MIB 浏览)
 
 ### 单独安装模块
 
