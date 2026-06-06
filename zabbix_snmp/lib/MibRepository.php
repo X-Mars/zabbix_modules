@@ -831,22 +831,44 @@ class MibRepository {
             return null;
         }
 
-        $base = 'snmpwalk -On -t 2 -r 1';
+        $symbolicCmd = self::buildWalkCommand($target, $oid, $version, $connection, false);
+        if ($symbolicCmd === null) {
+            if ($version === '3' && trim((string) ($connection['securityname'] ?? '')) === '') {
+                return ['ok' => false, 'message' => LanguageManager::t('SNMPv3 security name is required'), 'lines' => []];
+            }
+
+            return null;
+        }
+
+        $symbolicOutput = @shell_exec($symbolicCmd . ' 2>&1');
+        if ($symbolicOutput === null) {
+            return ['ok' => false, 'message' => LanguageManager::t('SNMP walk command failed to execute'), 'lines' => []];
+        }
+
+        $numericCmd = self::buildWalkCommand($target, $oid, $version, $connection, true);
+        $numericOutput = $numericCmd !== null ? @shell_exec($numericCmd . ' 2>&1') : null;
+
+        return self::formatWalkCommandOutput($symbolicOutput, $numericOutput);
+    }
+
+    private static function buildWalkCommand(
+        string $target,
+        string $oid,
+        string $version,
+        array $connection,
+        bool $numericOnly
+    ): ?string {
+        $flags = ($numericOnly ? '-On ' : '') . '-t 2 -r 1';
+        $base = self::buildMibEnvironmentPrefix() . 'snmpwalk ' . $flags;
 
         if ($version === '1' || $version === '2c' || $version === '2') {
             $community = (string) ($connection['community'] ?? 'public');
-            $cmd = $base
+
+            return $base
                 . ' -v ' . escapeshellarg($version === '1' ? '1' : '2c')
                 . ' -c ' . escapeshellarg($community)
                 . ' ' . escapeshellarg($target)
                 . ' ' . escapeshellarg($oid);
-
-            $output = @shell_exec($cmd . ' 2>&1');
-            if ($output === null) {
-                return ['ok' => false, 'message' => LanguageManager::t('SNMP walk command failed to execute'), 'lines' => []];
-            }
-
-            return self::formatWalkCommandOutput($output);
         }
 
         if ($version === '3') {
@@ -858,7 +880,7 @@ class MibRepository {
             $privPass = (string) ($connection['privpassphrase'] ?? '');
 
             if ($securityName === '') {
-                return ['ok' => false, 'message' => LanguageManager::t('SNMPv3 security name is required'), 'lines' => []];
+                return null;
             }
 
             $cmd = $base
@@ -876,45 +898,334 @@ class MibRepository {
                     . ' -X ' . escapeshellarg($privPass);
             }
 
-            $cmd .= ' ' . escapeshellarg($target) . ' ' . escapeshellarg($oid);
-
-            $output = @shell_exec($cmd . ' 2>&1');
-            if ($output === null) {
-                return ['ok' => false, 'message' => LanguageManager::t('SNMP walk command failed to execute'), 'lines' => []];
-            }
-
-            return self::formatWalkCommandOutput($output);
+            return $cmd . ' ' . escapeshellarg($target) . ' ' . escapeshellarg($oid);
         }
 
         return null;
     }
 
-    private static function formatWalkCommandOutput(string $output): array {
-        $text = trim($output);
+    private static function formatWalkCommandOutput(string $symbolicOutput, ?string $numericOutput = null): array {
+        $text = trim($symbolicOutput);
         if ($text === '') {
-            return ['ok' => false, 'message' => LanguageManager::t('SNMP walk returned no data'), 'lines' => []];
+            return ['ok' => false, 'message' => LanguageManager::t('SNMP walk returned no data'), 'lines' => [], 'entries' => []];
         }
 
-        $errorHints = ['Timeout', 'Unknown', 'No Such', 'Authentication failure', 'USM'];
-        foreach ($errorHints as $hint) {
-            if (stripos($text, $hint) !== false) {
-                return ['ok' => false, 'message' => $text, 'lines' => []];
-            }
+        $symbolicValid = self::filterValidWalkLines(self::splitWalkOutputLines($text));
+        $numericValid = $numericOutput !== null
+            ? self::filterValidWalkLines(self::splitWalkOutputLines(trim($numericOutput)))
+            : [];
+
+        $dataLines = [];
+        $entries = [];
+
+        foreach ($symbolicValid as $index => $symbolicItem) {
+            $entry = $symbolicItem['entry'];
+            $entry['oid_numeric'] = self::resolveNumericOidFromWalkPair(
+                $entry,
+                $numericValid[$index]['entry'] ?? null
+            );
+
+            $entries[] = $entry;
+            $dataLines[] = $symbolicItem['line'];
         }
 
+        if (!empty($entries)) {
+            return [
+                'ok' => true,
+                'message' => '',
+                'lines' => $dataLines,
+                'entries' => self::enrichWalkEntries($entries),
+                'raw' => $text
+            ];
+        }
+
+        return [
+            'ok' => false,
+            'message' => $text,
+            'lines' => [],
+            'entries' => [],
+            'raw' => $text
+        ];
+    }
+
+    private static function splitWalkOutputLines(string $text): array {
         $lines = preg_split('/\r\n|\r|\n/', $text);
         if (!is_array($lines)) {
             $lines = [$text];
         }
 
-        $lines = array_values(array_filter(array_map('trim', $lines), static function (string $line): bool {
+        return array_values(array_filter(array_map('trim', $lines), static function (string $line): bool {
             return $line !== '';
         }));
+    }
 
-        if (empty($lines)) {
-            return ['ok' => false, 'message' => LanguageManager::t('SNMP walk returned no data'), 'lines' => []];
+    private static function filterValidWalkLines(array $lines): array {
+        $valid = [];
+
+        foreach ($lines as $line) {
+            $entry = self::parseWalkLine($line);
+            if ($entry['oid'] === '-' || self::isWalkTerminationValue((string) $entry['value'])) {
+                continue;
+            }
+
+            $valid[] = [
+                'line' => $line,
+                'entry' => $entry
+            ];
         }
 
-        return ['ok' => true, 'message' => '', 'lines' => $lines];
+        return $valid;
+    }
+
+    private static function resolveNumericOidFromWalkPair(array $symbolicEntry, ?array $numericEntry): string {
+        if ($numericEntry !== null) {
+            $numericOid = self::normalizeNumericOid((string) ($numericEntry['oid'] ?? ''));
+            if ($numericOid !== '') {
+                return $numericOid;
+            }
+        }
+
+        return self::normalizeNumericOid((string) ($symbolicEntry['oid'] ?? ''));
+    }
+
+    private static function normalizeNumericOid(string $oid): string {
+        $oid = ltrim(trim($oid), '.');
+        if ($oid === '' || preg_match('/^\d+(?:\.\d+)*$/', $oid) !== 1) {
+            return '';
+        }
+
+        return $oid;
+    }
+
+    private static function isWalkTerminationValue(string $value): bool {
+        $markers = [
+            'No Such Object',
+            'No Such Instance',
+            'No more variables left in this MIB View',
+            'End of MIB'
+        ];
+
+        foreach ($markers as $marker) {
+            if (stripos($value, $marker) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function parseWalkLines(array $lines): array {
+        $entries = [];
+
+        foreach ($lines as $line) {
+            $entries[] = self::parseWalkLine((string) $line);
+        }
+
+        return self::enrichWalkEntries($entries);
+    }
+
+    private static function parseWalkLine(string $line): array {
+        if (preg_match('/^(\S+)\s*=\s*(.+)$/u', $line, $matches) !== 1) {
+            return [
+                'oid' => '-',
+                'oid_numeric' => '-',
+                'module' => '-',
+                'mib_file' => '-',
+                'data_type' => '-',
+                'value' => $line
+            ];
+        }
+
+        $oidPart = ltrim($matches[1], '.');
+        $rawValue = trim($matches[2]);
+
+        $module = '-';
+        if (preg_match('/^([^:]+)::(.+)$/u', $oidPart, $moduleMatch) === 1) {
+            $module = $moduleMatch[1];
+        }
+
+        $dataType = '-';
+        $value = $rawValue;
+        if (preg_match('/^([\w][\w-]*(?:\s+[\w][\w-]*)*):\s*(.*)$/u', $rawValue, $typeMatch) === 1) {
+            $dataType = strtoupper(trim($typeMatch[1]));
+            $value = self::formatWalkValue(trim($typeMatch[2]));
+        }
+
+        return [
+            'oid' => $oidPart,
+            'oid_numeric' => '-',
+            'module' => $module,
+            'mib_file' => '-',
+            'data_type' => $dataType,
+            'value' => $value
+        ];
+    }
+
+    public static function enrichWalkEntries(array $entries): array {
+        $moduleCache = [];
+
+        foreach ($entries as $index => $entry) {
+            $module = (string) ($entry['module'] ?? '-');
+            if ($module !== '-') {
+                $moduleKey = strtoupper($module);
+                if (!isset($moduleCache[$moduleKey])) {
+                    $moduleCache[$moduleKey] = self::resolveMibFileForModule($module);
+                }
+
+                $entries[$index]['mib_file'] = $moduleCache[$moduleKey];
+            }
+
+            if (($entry['oid_numeric'] ?? '-') === '-') {
+                $numericOid = self::normalizeNumericOid((string) ($entry['oid'] ?? ''));
+                if ($numericOid !== '') {
+                    $entries[$index]['oid_numeric'] = $numericOid;
+                }
+            }
+        }
+
+        return $entries;
+    }
+
+    private static function resolveMibFileForModule(string $module): string {
+        static $cache = [];
+
+        $moduleKey = strtoupper(trim($module));
+        if ($moduleKey === '' || $moduleKey === '-') {
+            return '-';
+        }
+
+        if (isset($cache[$moduleKey])) {
+            return $cache[$moduleKey];
+        }
+
+        $cache[$moduleKey] = '-';
+        foreach (self::getCandidateDirectories() as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $patterns = [
+                $directory . '/' . $module . '.*',
+                $directory . '/*/' . $module . '.*'
+            ];
+
+            foreach ($patterns as $pattern) {
+                $matches = glob($pattern);
+                if (!is_array($matches) || empty($matches)) {
+                    continue;
+                }
+
+                $cache[$moduleKey] = basename((string) $matches[0]);
+                return $cache[$moduleKey];
+            }
+        }
+
+        return $cache[$moduleKey];
+    }
+
+    public static function translateOidToNumeric(string $oid): ?string {
+        $oid = trim($oid);
+        if ($oid === '' || $oid === '-') {
+            return null;
+        }
+
+        if (preg_match('/^\.?(\d+(?:\.\d+)*)$/', $oid, $matches) === 1) {
+            return $matches[1];
+        }
+
+        if (!function_exists('shell_exec')) {
+            return null;
+        }
+
+        $cmd = self::buildMibEnvironmentPrefix()
+            . 'snmptranslate -On ' . escapeshellarg($oid) . ' 2>/dev/null';
+        $output = @shell_exec($cmd);
+        if ($output === null) {
+            return null;
+        }
+
+        $numeric = ltrim(trim($output), '.');
+        if ($numeric === '' || !preg_match('/^\d+(?:\.\d+)*$/', $numeric)) {
+            return null;
+        }
+
+        return $numeric;
+    }
+
+    private static function buildMibEnvironmentPrefix(): string {
+        $dirs = [];
+        foreach (self::getCandidateDirectories() as $directory) {
+            if (is_dir($directory)) {
+                $dirs[] = $directory;
+            }
+        }
+
+        if (empty($dirs)) {
+            return '';
+        }
+
+        return 'MIBDIRS=' . escapeshellarg(implode(PATH_SEPARATOR, $dirs))
+            . ' MIBS=+ALL ';
+    }
+
+    private static function formatWalkValue(string $raw): string {
+        if (preg_match('/^"(.*)"$/s', $raw, $quoted) === 1) {
+            return stripcslashes($quoted[1]);
+        }
+
+        if (preg_match("/^'(.*)'$/s", $raw, $quoted) === 1) {
+            return stripcslashes($quoted[1]);
+        }
+
+        return $raw;
+    }
+
+    public static function mapSnmpTypeToZabbixValueType(string $dataType, string $value = ''): int {
+        $type = strtoupper(trim($dataType));
+
+        switch ($type) {
+            case 'INTEGER':
+            case 'INTEGER32':
+                if ($value !== '' && preg_match('/^-/', trim($value)) === 1) {
+                    return 0;
+                }
+
+                return 3;
+            case 'COUNTER32':
+            case 'COUNTER64':
+            case 'GAUGE32':
+            case 'UNSIGNED32':
+            case 'TIMETICKS':
+            case 'COUNTER':
+            case 'GAUGE':
+            case 'TRUTHVALUE':
+                return 3;
+            case 'FLOAT':
+            case 'DOUBLE':
+                return 0;
+            case 'OCTET STRING':
+            case 'STRING':
+            case 'DISPLAYSTRING':
+            case 'OID':
+            case 'IPADDRESS':
+            case 'BITS':
+            case 'HEX-STRING':
+            case 'OPAQUE':
+            case 'DATEANDTIME':
+                return 4;
+            default:
+                break;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed !== '' && preg_match('/^-?\d+$/', $trimmed) === 1) {
+            return preg_match('/^-/', $trimmed) === 1 ? 0 : 3;
+        }
+
+        if ($trimmed !== '' && is_numeric($trimmed)) {
+            return 0;
+        }
+
+        return 4;
     }
 }

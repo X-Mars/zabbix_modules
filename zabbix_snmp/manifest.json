@@ -18,6 +18,9 @@
         },
         "snmp.source": {
             "class": "SnmpSource"
+        },
+        "snmp.item.create": {
+            "class": "SnmpItemCreate"
         }
     }
 }

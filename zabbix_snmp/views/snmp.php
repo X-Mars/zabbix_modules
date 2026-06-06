@@ -152,7 +152,7 @@ $styleTag = new CTag('style', true, '
 .snmp-controls {
     margin-top: 12px;
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(220px, 380px) auto auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) minmax(160px, 0.9fr) minmax(160px, 0.9fr) auto;
     gap: 10px;
     align-items: center;
 }
@@ -193,15 +193,16 @@ $styleTag = new CTag('style', true, '
     color: #243b53;
 }
 
+.snmp-btn-outline {
+    padding: 0 14px;
+    background: #fff;
+    border-color: #1b6ec2;
+    color: #1b6ec2;
+    cursor: pointer;
+}
+
 .snmp-testbox {
     margin-top: 14px;
-    border: 1px solid #d9e3ec;
-    border-radius: 8px;
-    padding: 12px;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -233,7 +234,6 @@ $styleTag = new CTag('style', true, '
     background: #f9fbfd;
     padding: 10px 12px;
     min-height: auto;
-    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -288,13 +288,12 @@ $styleTag = new CTag('style', true, '
 }
 
 .snmp-layout {
-    display: grid;
-    grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 16px;
-    min-height: 620px;
 }
 
-.snmp-panel {
+.snmp-objects-section {
     border: 1px solid #d9e3ec;
     border-radius: 10px;
     background: #fff;
@@ -320,6 +319,20 @@ $styleTag = new CTag('style', true, '
 
 .snmp-panel-actions {
     flex: 0 0 auto;
+}
+
+.snmp-panel-btn {
+    display: inline-block;
+    height: 30px;
+    line-height: 28px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid #1b6ec2;
+    background: #fff;
+    color: #1b6ec2;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
 .snmp-panel-title {
@@ -566,7 +579,7 @@ $styleTag = new CTag('style', true, '
 .snmp-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1060px;
+    min-width: 720px;
 }
 
 .snmp-table th,
@@ -587,16 +600,56 @@ $styleTag = new CTag('style', true, '
     letter-spacing: 0.03em;
     position: sticky;
     top: 0;
+    z-index: 2;
+    box-shadow: 0 1px 0 #e5edf5;
 }
 
 .snmp-table tbody tr:hover {
     background: #f8fbfe;
 }
 
+.snmp-cell-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.snmp-cell-primary {
+    color: #243b53;
+    word-break: break-all;
+}
+
+.snmp-cell-secondary {
+    color: #627d98;
+    font-size: 11px;
+    word-break: break-all;
+}
+
+.snmp-cell-mono {
+    font-family: Consolas, Monaco, monospace;
+}
+
+.snmp-cell-meta-line {
+    font-size: 11px;
+    color: #486581;
+    line-height: 1.4;
+}
+
+.snmp-cell-label {
+    color: #829ab1;
+    margin-right: 4px;
+}
+
+.snmp-col-desc {
+    max-width: 200px;
+    word-break: break-word;
+}
+
 .snmp-row-actions {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 }
 
 .snmp-row-btn,
@@ -686,13 +739,28 @@ $styleTag = new CTag('style', true, '
     white-space: pre;
 }
 
+.snmp-modal-fullscreen .snmp-modal-card {
+    width: 96vw;
+    height: 96vh;
+    max-width: none;
+    border-radius: 10px;
+}
+
+.snmp-modal-body {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+}
+
+.snmp-modal-fullscreen .snmp-table-wrap {
+    max-height: none;
+    border: none;
+    border-radius: 0;
+}
+
 @media (max-width: 1280px) {
     .snmp-controls {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .snmp-layout {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -723,10 +791,11 @@ $topForm->setAttribute('method', 'get');
 $topForm->setAttribute('action', 'zabbix.php');
 $topForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'action')->setAttribute('value', 'snmp'));
 $topForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'conn_mode')->setAttribute('value', $connMode));
-$topForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'groupid')->setAttribute('value', $groupid));
-$topForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'hostid')->setAttribute('value', $hostid));
 
-$directorySelect = (new CTag('select', true))->addClass('snmp-select')->setAttribute('name', 'directory');
+$directorySelect = (new CTag('select', true))
+    ->addClass('snmp-select')
+    ->setAttribute('name', 'directory')
+    ->setAttribute('onchange', 'this.form.submit()');
 if (empty($directories)) {
     $directorySelect->addItem((new CTag('option', true, LanguageManager::t('No directories with MIB files found.')))->setAttribute('value', ''));
 } else {
@@ -742,37 +811,28 @@ if (empty($directories)) {
 }
 $topForm->addItem($directorySelect);
 
-$topForm->addItem(
-    (new CTag('input'))
-        ->addClass('snmp-input')
-        ->setAttribute('type', 'text')
-        ->setAttribute('name', 'search')
-        ->setAttribute('value', $search)
-        ->setAttribute('placeholder', LanguageManager::t('Search MIB files...'))
-);
-$topForm->addItem((new CTag('button', true, LanguageManager::t('Search')))->addClass('snmp-btn')->setAttribute('type', 'submit'));
-$topForm->addItem((new CLink(LanguageManager::t('Clear'), 'zabbix.php?action=snmp'))->addClass('snmp-btn-link'));
+$fileSelect = (new CTag('select', true))
+    ->addClass('snmp-select')
+    ->setAttribute('name', 'file')
+    ->setAttribute('onchange', 'this.form.submit()');
+if (empty($files)) {
+    $fileSelect->addItem((new CTag('option', true, LanguageManager::t('No MIB files found in this directory.')))->setAttribute('value', ''));
+} else {
+    foreach ($files as $file) {
+        $option = (new CTag('option', true, htmlspecialchars((string) ($file['name'] ?? ''), ENT_QUOTES, 'UTF-8')))
+            ->setAttribute('value', $file['path']);
+        if ($selectedFilePath !== '' && $selectedFilePath === $file['path']) {
+            $option->setAttribute('selected', 'selected');
+        }
+        $fileSelect->addItem($option);
+    }
+}
+$topForm->addItem($fileSelect);
 
-$top->addItem($topForm);
-
-$testBox = (new CDiv())->addClass('snmp-testbox');
-$testBox->addItem((new CTag('h2', true, LanguageManager::t('SNMP Connection Test')))->addClass('snmp-test-title'));
-
-$hostForm = new CTag('form', true);
-$hostForm->setAttribute('method', 'get');
-$hostForm->setAttribute('action', 'zabbix.php');
-$hostForm->addClass('snmp-host-test');
-$hostForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'action')->setAttribute('value', 'snmp'));
-$hostForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'conn_mode')->setAttribute('value', 'host'));
-$hostForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'directory')->setAttribute('value', $selectedDirectory));
-$hostForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'search')->setAttribute('value', $search));
-$hostForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttribute('name', 'file')->setAttribute('value', $selectedFilePath));
-
-$filterRow = (new CDiv())->addClass('snmp-filter-row');
-
-$groupField = (new CDiv())->addClass('snmp-field');
-$groupField->addItem((new CSpan(LanguageManager::t('Host Group')))->addClass('snmp-field-label'));
-$groupSelect = (new CTag('select', true))->addClass('snmp-select')->setAttribute('name', 'groupid')->setAttribute('onchange', 'this.form.submit()');
+$groupSelect = (new CTag('select', true))
+    ->addClass('snmp-select')
+    ->setAttribute('name', 'groupid')
+    ->setAttribute('onchange', 'this.form.submit()');
 foreach ($hostGroups as $group) {
     $option = (new CTag('option', true, htmlspecialchars((string) ($group['name'] ?? ''), ENT_QUOTES, 'UTF-8')))
         ->setAttribute('value', $group['groupid']);
@@ -781,12 +841,12 @@ foreach ($hostGroups as $group) {
     }
     $groupSelect->addItem($option);
 }
-$groupField->addItem($groupSelect);
-$filterRow->addItem($groupField);
+$topForm->addItem($groupSelect);
 
-$hostField = (new CDiv())->addClass('snmp-field');
-$hostField->addItem((new CSpan(LanguageManager::t('Host')))->addClass('snmp-field-label'));
-$hostSelect = (new CTag('select', true))->addClass('snmp-select')->setAttribute('name', 'hostid')->setAttribute('onchange', 'this.form.submit()');
+$hostSelect = (new CTag('select', true))
+    ->addClass('snmp-select')
+    ->setAttribute('name', 'hostid')
+    ->setAttribute('onchange', 'this.form.submit()');
 if (empty($hosts)) {
     $hostSelect->addItem(
         (new CTag('option', true, LanguageManager::t('No SNMP hosts in selected group')))
@@ -821,10 +881,21 @@ if (empty($hosts)) {
         }
     }
 }
-$hostField->addItem($hostSelect);
-$filterRow->addItem($hostField);
+$topForm->addItem($hostSelect);
 
-$hostForm->addItem($filterRow);
+$topForm->addItem(
+    (new CTag('button', true, LanguageManager::t('View Source')))
+        ->addClass('snmp-btn snmp-btn-outline js-view-source')
+        ->setAttribute('type', 'button')
+        ->setAttribute('data-file', $selectedFilePath)
+        ->setAttribute('data-symbol', '')
+        ->setAttribute('data-directory', $selectedDirectory)
+        ->setAttribute('data-search', '')
+);
+
+$top->addItem($topForm);
+
+$testBox = (new CDiv())->addClass('snmp-testbox');
 
 $profile = (new CDiv())->addClass('snmp-profile');
 $profile->addItem((new CTag('h3', true, LanguageManager::t('Current Host SNMP Profile')))->addClass('snmp-profile-title'));
@@ -851,60 +922,26 @@ if (!empty($hostConnection)) {
 } else {
     $profile->addItem((new CDiv(LanguageManager::t('No SNMP interface found on this host.')))->addClass('snmp-profile-item'));
 }
-$hostForm->addItem($profile);
-
-$testBox->addItem($hostForm);
+$testBox->addItem($profile);
 
 $top->addItem($testBox);
 $content->addItem($top);
 
 $layout = (new CDiv())->addClass('snmp-layout');
 
-$leftPanel = (new CDiv())->addClass('snmp-panel');
-$leftPanelTitle = (new CDiv())->addClass('snmp-panel-title-block');
-$leftPanelTitle->addItem((new CTag('h2', true, LanguageManager::t('Files in Current Directory')))->addClass('snmp-panel-title'));
-$leftPanelTitle->addItem((new CDiv($selectedDirectory !== '' ? $selectedDirectory : LanguageManager::t('Select MIB directory')))->addClass('snmp-panel-hint'));
-$leftPanel->addItem((new CDiv())->addClass('snmp-panel-title-wrap')->addItem($leftPanelTitle));
-
-$fileList = new CTag('ul', true);
-$fileList->addClass('snmp-file-list');
-
-if (!empty($files)) {
-    foreach ($files as $file) {
-        $isSelectedFile = $selectedFilePath !== '' && $selectedFilePath === $file['path'];
-
-        $link = new CLink('', buildSnmpUrl([
-            'directory' => $selectedDirectory,
-            'file' => $file['path']
-        ], $data));
-        $link->addClass('snmp-file-link');
-        $link->addItem((new CSpan($file['name']))->addClass('snmp-file-name'));
-        $item = new CTag('li', true);
-        $item->addClass('snmp-file-item');
-        if ($isSelectedFile) {
-            $link->addClass('active');
-        }
-        $item->addItem($link);
-        $item->addItem(
-            (new CTag('button', true, LanguageManager::t('View Source')))
-                ->addClass('snmp-row-btn snmp-file-meta-btn js-view-source')
-                ->setAttribute('type', 'button')
-                ->setAttribute('data-file', $file['path'])
-                ->setAttribute('data-symbol', $file['selected_symbol'] ?? '')
-                ->setAttribute('data-directory', $selectedDirectory)
-                ->setAttribute('data-search', $search)
-        );
-        $fileList->addItem($item);
-    }
-    $leftPanel->addItem($fileList);
-} else {
-    $leftPanel->addItem((new CDiv(LanguageManager::t('No MIB files match the current filter.')))->addClass('snmp-empty'));
-}
-
-$rightPanel = (new CDiv())->addClass('snmp-panel');
+$rightPanel = (new CDiv())->addClass('snmp-objects-section');
+$rightPanelTitleWrap = (new CDiv())->addClass('snmp-panel-title-wrap');
 $rightPanelTitle = (new CDiv())->addClass('snmp-panel-title-block');
 $rightPanelTitle->addItem((new CTag('h2', true, LanguageManager::t('SNMP Objects')))->addClass('snmp-panel-title'));
-$rightPanel->addItem((new CDiv())->addClass('snmp-panel-title-wrap')->addItem($rightPanelTitle));
+$rightPanelTitleWrap->addItem($rightPanelTitle);
+$rightPanelTitleWrap->addItem(
+    (new CDiv())->addClass('snmp-panel-actions')->addItem(
+        (new CTag('button', true, LanguageManager::t('Fullscreen')))
+            ->addClass('snmp-panel-btn js-snmp-objects-fullscreen')
+            ->setAttribute('type', 'button')
+    )
+);
+$rightPanel->addItem($rightPanelTitleWrap);
 
 $right = (new CDiv())->addClass('snmp-right')->setAttribute('id', 'snmp-right');
 if ($testResult !== null) {
@@ -965,16 +1002,16 @@ if ($selectedFile !== null) {
             LanguageManager::t('Name'),
             LanguageManager::t('Kind'),
             LanguageManager::t('OID'),
-            LanguageManager::t('Resolved OID'),
-            LanguageManager::t('Syntax'),
-            LanguageManager::t('Access'),
-            LanguageManager::t('Status'),
+            LanguageManager::t('Attributes'),
             LanguageManager::t('Description'),
             LanguageManager::t('Line'),
-            LanguageManager::t('Copy Command'),
-            LanguageManager::t('Test')
-        ] as $header) {
-            $headerRow->addItem(new CTag('th', true, $header));
+            LanguageManager::t('Action')
+        ] as $headerIndex => $header) {
+            $th = new CTag('th', true, $header);
+            if ($headerIndex === 4) {
+                $th->addClass('snmp-col-desc');
+            }
+            $headerRow->addItem($th);
         }
         $thead->addItem($headerRow);
         $table->addItem($thead);
@@ -984,23 +1021,38 @@ if ($selectedFile !== null) {
             $row = new CTag('tr', true);
             $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['name'])));
             $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['kind'])));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['oid'])));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) ($object['oid_numeric'] ?? '-'))));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['syntax'])));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['access'])));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['status'])));
-            $row->addItem(new CTag('td', true, htmlspecialchars((string) $object['description'])));
+
+            $oidCell = new CTag('td', true);
+            $oidStack = (new CDiv())->addClass('snmp-cell-stack');
+            $oidStack->addItem((new CDiv(htmlspecialchars((string) $object['oid'])))->addClass('snmp-cell-primary'));
+            $oidStack->addItem((new CDiv(htmlspecialchars((string) ($object['oid_numeric'] ?? '-'))))->addClass('snmp-cell-secondary snmp-cell-mono'));
+            $oidCell->addItem($oidStack);
+            $row->addItem($oidCell);
+
+            $attrCell = new CTag('td', true);
+            $attrStack = (new CDiv())->addClass('snmp-cell-stack');
+            foreach ([
+                LanguageManager::t('Syntax') => (string) $object['syntax'],
+                LanguageManager::t('Access') => (string) $object['access'],
+                LanguageManager::t('Status') => (string) $object['status']
+            ] as $attrLabel => $attrValue) {
+                $attrLine = (new CDiv())->addClass('snmp-cell-meta-line');
+                $attrLine->addItem((new CTag('span', true, $attrLabel . ': '))->addClass('snmp-cell-label'));
+                $attrLine->addItem(new CTag('span', true, htmlspecialchars($attrValue)));
+                $attrStack->addItem($attrLine);
+            }
+            $attrCell->addItem($attrStack);
+            $row->addItem($attrCell);
+
+            $row->addItem((new CTag('td', true, htmlspecialchars((string) $object['description'])))->addClass('snmp-col-desc'));
             $row->addItem(new CTag('td', true, (string) ($object['start_line'] ?? '-')));
 
-            $copyCell = new CTag('td', true);
+            $actionCell = new CTag('td', true);
+            $actions = (new CDiv())->addClass('snmp-row-actions');
             $copyButton = (new CTag('button', true, LanguageManager::t('Copy Command')))
                 ->addClass('snmp-row-test js-copy-snmpcmd')
                 ->setAttribute('type', 'button')
                 ->setAttribute('data-cmd', buildSnmpGetCommand($hostConnection, $object));
-            $copyCell->addItem($copyButton);
-            $row->addItem($copyCell);
-
-            $testCell = new CTag('td', true);
             $testLink = new CLink(
                 LanguageManager::t('Test'),
                 buildSnmpUrl([
@@ -1011,8 +1063,10 @@ if ($selectedFile !== null) {
                 ], $data)
             );
             $testLink->addClass('snmp-row-test js-snmp-test-link');
-            $testCell->addItem($testLink);
-            $row->addItem($testCell);
+            $actions->addItem($testLink);
+            $actions->addItem($copyButton);
+            $actionCell->addItem($actions);
+            $row->addItem($actionCell);
 
             $tbody->addItem($row);
         }
@@ -1024,12 +1078,11 @@ if ($selectedFile !== null) {
         $right->addItem((new CDiv(LanguageManager::t('No SNMP objects parsed from this file.')))->addClass('snmp-empty'));
     }
 } else {
-    $right->addItem((new CDiv(LanguageManager::t('Click a MIB file on the left to view its details.')))->addClass('snmp-empty'));
+    $right->addItem((new CDiv(LanguageManager::t('Select a MIB file from the dropdown above.')))->addClass('snmp-empty'));
 }
 
 $rightPanel->addItem($right);
 
-$layout->addItem($leftPanel);
 $layout->addItem($rightPanel);
 $content->addItem($layout);
 
@@ -1043,6 +1096,16 @@ $modalCard->addItem((new CTag('pre', true, LanguageManager::t('Loading source...
 $modal->addItem($modalCard);
 $content->addItem($modal);
 
+$objectsModal = (new CDiv())->addClass('snmp-modal snmp-modal-fullscreen')->setAttribute('id', 'snmp-objects-modal');
+$objectsModalCard = (new CDiv())->addClass('snmp-modal-card');
+$objectsModalHead = (new CDiv())->addClass('snmp-modal-head');
+$objectsModalHead->addItem((new CTag('h3', true, LanguageManager::t('SNMP Objects')))->addClass('snmp-modal-title'));
+$objectsModalHead->addItem((new CTag('button', true, LanguageManager::t('Close')))->addClass('snmp-modal-close')->setAttribute('type', 'button')->setAttribute('id', 'snmp-objects-close'));
+$objectsModalCard->addItem($objectsModalHead);
+$objectsModalCard->addItem((new CDiv())->addClass('snmp-modal-body')->setAttribute('id', 'snmp-objects-modal-body'));
+$objectsModal->addItem($objectsModalCard);
+$content->addItem($objectsModal);
+
 $noSourceAvailableText = json_encode(LanguageManager::t('No source available'));
 
 $content->addItem(new CJsScript('<script>
@@ -1053,6 +1116,9 @@ $content->addItem(new CJsScript('<script>
     var closeBtn = document.getElementById("snmp-source-close");
     var title = document.getElementById("snmp-source-title");
     var content = document.getElementById("snmp-source-content");
+    var objectsModal = document.getElementById("snmp-objects-modal");
+    var objectsModalBody = document.getElementById("snmp-objects-modal-body");
+    var objectsModalClose = document.getElementById("snmp-objects-close");
     var noSourceAvailable = ' . $noSourceAvailableText . ';
 
     function openModal() {
@@ -1061,6 +1127,27 @@ $content->addItem(new CJsScript('<script>
 
     function closeModal() {
         modal.classList.remove("open");
+    }
+
+    function openObjectsModal() {
+        var right = document.querySelector("#snmp-right");
+        if (!right || !objectsModal || !objectsModalBody) {
+            return;
+        }
+
+        objectsModalBody.innerHTML = right.innerHTML;
+        objectsModal.classList.add("open");
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeObjectsModal() {
+        if (!objectsModal || !objectsModalBody) {
+            return;
+        }
+
+        objectsModal.classList.remove("open");
+        objectsModalBody.innerHTML = "";
+        document.body.style.overflow = "";
     }
 
     function setSourceLoading() {
@@ -1072,17 +1159,25 @@ $content->addItem(new CJsScript('<script>
     }
 
     function refreshRightPanel(url) {
+        var currentRight = document.querySelector("#snmp-right");
+        var tableWrap = currentRight ? currentRight.querySelector(".snmp-table-wrap") : null;
+        var scrollTop = tableWrap ? tableWrap.scrollTop : 0;
+
         return fetch(url, { credentials: "same-origin" })
             .then(function(resp) { return resp.text(); })
             .then(function(html) {
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(html, "text/html");
                 var nextRight = doc.querySelector("#snmp-right");
-                var currentRight = document.querySelector("#snmp-right");
 
                 if (nextRight && currentRight) {
                     currentRight.innerHTML = nextRight.innerHTML;
                     bindTableWheelScope();
+
+                    var newTableWrap = currentRight.querySelector(".snmp-table-wrap");
+                    if (newTableWrap) {
+                        newTableWrap.scrollTop = scrollTop;
+                    }
                 }
             });
     }
@@ -1108,6 +1203,13 @@ $content->addItem(new CJsScript('<script>
     bindTableWheelScope();
 
     document.addEventListener("click", function(e) {
+        var fullscreenBtn = e.target.closest(".js-snmp-objects-fullscreen");
+        if (fullscreenBtn) {
+            e.preventDefault();
+            openObjectsModal();
+            return;
+        }
+
         var sourceBtn = e.target.closest(".js-view-source");
         if (sourceBtn) {
             e.preventDefault();
@@ -1197,9 +1299,16 @@ $content->addItem(new CJsScript('<script>
         if (e.target === modal) {
             closeModal();
         }
+
+        if (objectsModal && e.target === objectsModal) {
+            closeObjectsModal();
+        }
     });
 
     closeBtn.addEventListener("click", closeModal);
+    if (objectsModalClose) {
+        objectsModalClose.addEventListener("click", closeObjectsModal);
+    }
 })();
 </script>'));
 
