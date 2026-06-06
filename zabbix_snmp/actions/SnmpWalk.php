@@ -66,7 +66,8 @@ class SnmpWalk extends CController {
             'hosts' => $hosts,
             'host_connection' => $hostConnection,
             'walk_oid' => $walkOid,
-            'walk_result' => $walkResult
+            'walk_result' => $walkResult,
+            'template_groups' => $this->getTemplateGroups()
         ]);
 
         $response->setTitle(LanguageManager::t('Zabbix Walk'));
@@ -86,6 +87,24 @@ class SnmpWalk extends CController {
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    private function getTemplateGroups(): array {
+        try {
+            $groups = API::TemplateGroup()->get([
+                'output' => ['groupid', 'name'],
+                'sortfield' => 'name',
+                'sortorder' => 'ASC'
+            ]);
+
+            if (is_array($groups)) {
+                return $groups;
+            }
+        } catch (\Throwable $e) {
+            // Older Zabbix without TemplateGroup API.
+        }
+
+        return [];
     }
 
     private function getHostsByGroup(string $groupid): array {

@@ -15,7 +15,7 @@ This module is compatible with Zabbix 6.0 / 7.0+ / 8.0+.
 
 ## Description
 
-This is a Zabbix frontend module that provides an SNMP assistant. It adds an **SNMP Assistant** menu under the **Monitoring** section of Zabbix Web, containing two sub-pages: **MIB Browser** and **SNMP Walk**. It helps operators browse MIB files, run SNMP walks, resolve OIDs, and create monitoring items or generate SNMP templates with a single click.
+This is a Zabbix frontend module that provides an SNMP assistant. It adds an **SNMP Assistant** menu under the **Data collection** section of Zabbix Web, containing two sub-pages: **MIB Browser** and **SNMP Walk**. It helps operators browse MIB files, run SNMP walks, resolve OIDs, and create monitoring items or generate SNMP templates with a single click.
 
 ![1](images/1.png)
 ![2](images/2.png)
@@ -72,7 +72,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 1. Go to **Administration → General → Modules**.
 2. Click **Scan directory** to scan for new modules.
 3. Find the "Zabbix SNMP" module and enable it.
-4. Refresh the page. The module will appear under the **Monitoring** menu as "SNMP Assistant" submenu, containing "Zabbix Mibs" and "Zabbix Walk" subitems.
+4. Refresh the page. The module will appear under the **Data collection** menu as "SNMP Assistant" submenu, containing "Zabbix Mibs" and "Zabbix Walk" subitems.
 
 ## Default directories
 

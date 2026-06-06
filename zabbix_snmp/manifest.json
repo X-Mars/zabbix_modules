@@ -21,6 +21,9 @@
         },
         "snmp.item.create": {
             "class": "SnmpItemCreate"
+        },
+        "snmp.template.create": {
+            "class": "SnmpTemplateCreate"
         }
     }
 }

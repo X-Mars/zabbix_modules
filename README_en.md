@@ -111,7 +111,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → CMDB**
 - **Monitoring → Graph Trees**
 - **Inventory → Rack Management**
-- **Monitoring → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
+- **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
 
 Each module contains its own README with specific installation and usage details.
 

@@ -29,7 +29,7 @@ class Module extends ModuleBase {
 
                 if ($app->hasMethod('Component')) {
                     \APP::Component()->get('menu.main')
-                        ->findOrAdd(_('Monitoring'))
+                        ->findOrAdd(_('Data collection'))
                         ->getSubmenu()
                         ->add(
                             (new CMenuItem(LanguageManager::t('SNMP Assistant')))->setSubMenu(

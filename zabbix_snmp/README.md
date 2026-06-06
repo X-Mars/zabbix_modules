@@ -15,7 +15,7 @@
 
 ## 描述
 
-这是一个 Zabbix 前端模块，提供 SNMP 辅助助手功能。模块在 Zabbix Web 的 **Monitoring（监控）** 菜单下新增 **SNMP Assistant** 菜单，包含 **MIB 浏览** 和 **SNMP Walk** 两个子页面，帮助运维人员快速浏览 MIB 文件、执行 SNMP Walk、解析 OID，并一键创建监控项或批量生成 SNMP 模板。
+这是一个 Zabbix 前端模块，提供 SNMP 辅助助手功能。模块在 Zabbix Web 的 **数据采集** 菜单下新增 **SNMP Assistant** 菜单，包含 **MIB 浏览** 和 **SNMP Walk** 两个子页面，帮助运维人员快速浏览 MIB 文件、执行 SNMP Walk、解析 OID，并一键创建监控项或批量生成 SNMP 模板。
 
 ![1](images/1.png)
 ![2](images/2.png)
@@ -72,7 +72,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 1. 转到 **Administration → General → Modules**。
 2. 点击 **Scan directory** 按钮扫描新模块。
 3. 找到 "Zabbix SNMP" 模块，点击启用模块。
-4. 刷新页面，模块将在 **Monitoring** 菜单下显示为 "SNMP Assistant" 子菜单，包含 "Zabbix Mibs" 和 "Zabbix Walk" 两个子项。
+4. 刷新页面，模块将在 **数据采集** 菜单下显示为 "SNMP Assistant" 子菜单，包含 "Zabbix Mibs" 和 "Zabbix Walk" 两个子项。
 
 ## 默认扫描目录
 

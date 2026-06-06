@@ -184,7 +184,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 - **Inventory → CMDB** (主机列表/主机分组)
 - **Monitoring → Graph Trees** (图表树)
 - **Inventory → Rack Management** (机柜管理)
-- **Monitoring → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
+- **数据采集 → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
 
 ### 单独安装模块
 

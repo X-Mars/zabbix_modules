@@ -16,6 +16,7 @@ $hosts = $data['hosts'] ?? [];
 $hostConnection = $data['host_connection'] ?? [];
 $walkOid = $data['walk_oid'] ?? '1.3.6.1.2.1';
 $walkResult = $data['walk_result'] ?? null;
+$templateGroups = $data['template_groups'] ?? [];
 
 function walkShellQuote(string $value): string {
     return "'" . str_replace("'", "'\"'\"'", $value) . "'";
@@ -449,6 +450,190 @@ $styleTag = new CTag('style', true, '
     background: #f8fbfe;
 }
 
+.snmp-col-select {
+    width: 36px;
+    text-align: center;
+}
+
+.snmp-walk-table td.snmp-col-select {
+    text-align: center;
+}
+
+.snmp-walk-checkbox {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.snmp-walk-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e5edf5;
+    background: #fff;
+}
+
+.snmp-walk-selected-info {
+    font-size: 12px;
+    color: #486581;
+}
+
+.snmp-walk-toolbar-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.snmp-walk-toolbar-btn {
+    height: 30px;
+    line-height: 28px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.snmp-walk-toolbar-create {
+    border: 1px solid #127c56;
+    background: #127c56;
+    color: #fff;
+}
+
+.snmp-walk-toolbar-create:disabled {
+    border-color: #b7c2cc;
+    background: #e4e9ee;
+    color: #93a1ad;
+    cursor: not-allowed;
+}
+
+.snmp-walk-toolbar-clear {
+    border: 1px solid #bcccdc;
+    background: #fff;
+    color: #486581;
+}
+
+.snmp-template-card {
+    height: auto;
+    max-height: 90vh;
+    width: min(560px, 95vw);
+}
+
+.snmp-template-body {
+    padding: 14px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.snmp-template-label {
+    font-size: 12px;
+    color: #627d98;
+    margin-top: 6px;
+}
+
+.snmp-template-input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #bcccdc;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #243b53;
+    box-sizing: border-box;
+}
+
+.snmp-template-input.is-invalid {
+    border-color: #d64545;
+    background: #fff8f8;
+}
+
+.snmp-template-hint {
+    font-size: 11px;
+    color: #829ab1;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.snmp-template-error {
+    display: none;
+    font-size: 11px;
+    color: #9b1c1c;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.snmp-template-error.visible {
+    display: block;
+}
+
+.snmp-template-items-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: #334e68;
+    font-weight: 600;
+}
+
+.snmp-template-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #e8faf0;
+    color: #127c56;
+    font-size: 11px;
+}
+
+.snmp-template-items {
+    max-height: 280px;
+    overflow: auto;
+    border: 1px solid #e5edf5;
+    border-radius: 8px;
+    margin-top: 4px;
+}
+
+.snmp-template-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f4f8;
+    font-size: 12px;
+}
+
+.snmp-template-item:last-child {
+    border-bottom: 0;
+}
+
+.snmp-template-item-name {
+    color: #243b53;
+    font-weight: 600;
+}
+
+.snmp-template-item-oid {
+    color: #627d98;
+    font-family: Consolas, Monaco, monospace;
+    word-break: break-all;
+}
+
+.snmp-template-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 1px solid #e5edf5;
+    background: #f8fafc;
+}
+
 .snmp-cell-primary {
     color: #243b53;
     word-break: break-all;
@@ -692,12 +877,44 @@ if ($walkResult !== null) {
 
         $resultBlock->addItem((new CDiv(LanguageManager::t('Total lines') . ': ' . count($entries)))->addClass('snmp-result-meta'));
 
+        if (!empty($walkTableRows)) {
+            $toolbar = (new CDiv())->addClass('snmp-walk-toolbar');
+            $toolbar->addItem(
+                (new CSpan(''))->addClass('snmp-walk-selected-info')->setAttribute('id', 'snmp-walk-selected-info')
+            );
+            $toolbarActions = (new CDiv())->addClass('snmp-walk-toolbar-actions');
+            $toolbarActions->addItem(
+                (new CTag('button', true, LanguageManager::t('Clear selection')))
+                    ->addClass('snmp-walk-toolbar-btn snmp-walk-toolbar-clear')
+                    ->setAttribute('type', 'button')
+                    ->setAttribute('id', 'snmp-walk-clear-selection')
+            );
+            $toolbarActions->addItem(
+                (new CTag('button', true, LanguageManager::t('Create Template')))
+                    ->addClass('snmp-walk-toolbar-btn snmp-walk-toolbar-create')
+                    ->setAttribute('type', 'button')
+                    ->setAttribute('id', 'snmp-create-template-btn')
+                    ->setAttribute('disabled', 'disabled')
+            );
+            $toolbar->addItem($toolbarActions);
+            $resultBlock->addItem($toolbar);
+        }
+
         $tableWrap = (new CDiv())->addClass('snmp-walk-table-wrap');
         $table = new CTag('table', true);
         $table->addClass('snmp-walk-table');
 
         $thead = new CTag('thead', true);
         $headerRow = new CTag('tr', true);
+        $selectTh = (new CTag('th', true))->addClass('snmp-col-select');
+        $selectTh->addItem(
+            (new CTag('input'))
+                ->addClass('snmp-walk-checkbox')
+                ->setAttribute('type', 'checkbox')
+                ->setAttribute('id', 'snmp-walk-select-all')
+                ->setAttribute('title', LanguageManager::t('Select all'))
+        );
+        $headerRow->addItem($selectTh);
         foreach ([
             LanguageManager::t('No.'),
             LanguageManager::t('OID'),
@@ -717,7 +934,7 @@ if ($walkResult !== null) {
         if (empty($walkTableRows)) {
             $row = new CTag('tr', true);
             $emptyCell = new CTag('td', true, LanguageManager::t('No walk results'));
-            $emptyCell->setAttribute('colspan', '8');
+            $emptyCell->setAttribute('colspan', '9');
             $row->addItem($emptyCell);
             $tbody->addItem($row);
         }
@@ -803,6 +1020,64 @@ $popoverActions->addItem((new CTag('button', true, LanguageManager::t('Confirm')
 $createPopover->addItem($popoverActions);
 $content->addItem($createPopover);
 
+$tplModal = (new CDiv())->addClass('snmp-modal')->setAttribute('id', 'snmp-template-modal');
+$tplCard = (new CDiv())->addClass('snmp-modal-card snmp-template-card');
+
+$tplHead = (new CDiv())->addClass('snmp-modal-head');
+$tplHead->addItem((new CTag('h3', true, LanguageManager::t('Create Template')))->addClass('snmp-modal-title'));
+$tplHead->addItem((new CTag('button', true, LanguageManager::t('Close')))->addClass('snmp-modal-close')->setAttribute('type', 'button')->setAttribute('id', 'snmp-template-close'));
+$tplCard->addItem($tplHead);
+
+$tplBody = (new CDiv())->addClass('snmp-template-body');
+
+$tplBody->addItem((new CTag('label', true, LanguageManager::t('Template Name')))->addClass('snmp-template-label')->setAttribute('for', 'snmp-template-name'));
+$tplBody->addItem(
+    (new CTag('input'))
+        ->addClass('snmp-template-input')
+        ->setAttribute('type', 'text')
+        ->setAttribute('id', 'snmp-template-name')
+        ->setAttribute('placeholder', LanguageManager::t('Enter template name'))
+        ->setAttribute('pattern', '[a-zA-Z0-9._-]+')
+        ->setAttribute('autocomplete', 'off')
+);
+$tplBody->addItem((new CDiv(LanguageManager::t('Template name hint')))->addClass('snmp-template-hint'));
+$tplBody->addItem((new CDiv(''))->addClass('snmp-template-error')->setAttribute('id', 'snmp-template-name-error'));
+
+$tplBody->addItem((new CTag('label', true, LanguageManager::t('Template Group')))->addClass('snmp-template-label')->setAttribute('for', 'snmp-template-group'));
+$tplBody->addItem(
+    (new CTag('input'))
+        ->addClass('snmp-template-input')
+        ->setAttribute('type', 'text')
+        ->setAttribute('id', 'snmp-template-group')
+        ->setAttribute('list', 'snmp-template-group-list')
+        ->setAttribute('placeholder', LanguageManager::t('Enter template group'))
+);
+$tplDatalist = (new CTag('datalist', true))->setAttribute('id', 'snmp-template-group-list');
+foreach ($templateGroups as $tplGroup) {
+    $tplGroupName = (string) ($tplGroup['name'] ?? '');
+    if ($tplGroupName === '') {
+        continue;
+    }
+    $tplDatalist->addItem((new CTag('option', true))->setAttribute('value', $tplGroupName));
+}
+$tplBody->addItem($tplDatalist);
+
+$tplItemsHead = (new CDiv())->addClass('snmp-template-items-head');
+$tplItemsHead->addItem(new CSpan(LanguageManager::t('Selected items')));
+$tplItemsHead->addItem((new CSpan('0'))->addClass('snmp-template-count')->setAttribute('id', 'snmp-template-count'));
+$tplBody->addItem($tplItemsHead);
+$tplBody->addItem((new CDiv())->addClass('snmp-template-items')->setAttribute('id', 'snmp-template-items'));
+
+$tplCard->addItem($tplBody);
+
+$tplFoot = (new CDiv())->addClass('snmp-template-foot');
+$tplFoot->addItem((new CTag('button', true, LanguageManager::t('Cancel')))->addClass('snmp-create-popover-btn snmp-create-popover-cancel')->setAttribute('type', 'button')->setAttribute('id', 'snmp-template-cancel'));
+$tplFoot->addItem((new CTag('button', true, LanguageManager::t('Confirm')))->addClass('snmp-create-popover-btn snmp-create-popover-confirm')->setAttribute('type', 'button')->setAttribute('id', 'snmp-template-confirm'));
+$tplCard->addItem($tplFoot);
+
+$tplModal->addItem($tplCard);
+$content->addItem($tplModal);
+
 $content->addItem(new CJsScript('<script>
 (function() {
     "use strict";
@@ -827,15 +1102,79 @@ $content->addItem(new CJsScript('<script>
     var walkPrevBtn = document.getElementById("snmp-walk-prev");
     var walkNextBtn = document.getElementById("snmp-walk-next");
     var walkPageSizeSelect = document.getElementById("snmp-walk-page-size");
+    var walkSelectAll = document.getElementById("snmp-walk-select-all");
+    var walkSelectedInfo = document.getElementById("snmp-walk-selected-info");
+    var walkClearBtn = document.getElementById("snmp-walk-clear-selection");
+    var createTemplateBtn = document.getElementById("snmp-create-template-btn");
+    var tplModal = document.getElementById("snmp-template-modal");
+    var tplCloseBtn = document.getElementById("snmp-template-close");
+    var tplCancelBtn = document.getElementById("snmp-template-cancel");
+    var tplConfirmBtn = document.getElementById("snmp-template-confirm");
+    var tplNameInput = document.getElementById("snmp-template-name");
+    var tplNameError = document.getElementById("snmp-template-name-error");
+    var tplGroupInput = document.getElementById("snmp-template-group");
+    var tplItemsEl = document.getElementById("snmp-template-items");
+    var tplCountEl = document.getElementById("snmp-template-count");
     var walkRows = [];
     var walkCurrentPage = 1;
     var walkPageSize = 100;
+    var selectedRows = {};
+    var selectedCount = 0;
     var walkLabels = {
         copyCommand: ' . json_encode(LanguageManager::t('Copy Command')) . ',
         copyOid: ' . json_encode(LanguageManager::t('Copy OID')) . ',
         createItem: ' . json_encode(LanguageManager::t('Create Item')) . ',
-        showing: ' . json_encode(LanguageManager::t('Showing %d-%d of %d')) . '
+        showing: ' . json_encode(LanguageManager::t('Showing %d-%d of %d')) . ',
+        selected: ' . json_encode(LanguageManager::t('Selected %d items')) . ',
+        noSelection: ' . json_encode(LanguageManager::t('No items selected.')) . ',
+        enterName: ' . json_encode(LanguageManager::t('Please enter a template name.')) . ',
+        enterGroup: ' . json_encode(LanguageManager::t('Please enter a template group.')) . ',
+        creatingTpl: ' . json_encode(LanguageManager::t('Creating template...')) . ',
+        createTpl: ' . json_encode(LanguageManager::t('Create Template')) . ',
+        invalidName: ' . json_encode(LanguageManager::t('Invalid template name.')) . '
     };
+
+    var templateNamePattern = /^[a-zA-Z0-9._-]+$/;
+
+    function isValidTemplateName(name) {
+        return name !== "" && templateNamePattern.test(name);
+    }
+
+    function setTemplateNameError(message) {
+        if (!tplNameInput || !tplNameError) {
+            return;
+        }
+        if (message) {
+            tplNameInput.classList.add("is-invalid");
+            tplNameError.textContent = message;
+            tplNameError.classList.add("visible");
+        } else {
+            tplNameInput.classList.remove("is-invalid");
+            tplNameError.textContent = "";
+            tplNameError.classList.remove("visible");
+        }
+    }
+
+    function validateTemplateName(showError) {
+        if (!tplNameInput) {
+            return false;
+        }
+        var name = tplNameInput.value.trim();
+        if (name === "") {
+            if (showError) {
+                setTemplateNameError(walkLabels.enterName);
+            }
+            return false;
+        }
+        if (!isValidTemplateName(name)) {
+            if (showError) {
+                setTemplateNameError(walkLabels.invalidName);
+            }
+            return false;
+        }
+        setTemplateNameError("");
+        return true;
+    }
 
     function escapeHtml(text) {
         return String(text)
@@ -873,6 +1212,7 @@ $content->addItem(new CJsScript('<script>
         for (var i = start; i < end; i++) {
             var row = walkRows[i];
             html.push("<tr>");
+            html.push("<td class=\"snmp-col-select\"><input type=\"checkbox\" class=\"snmp-walk-checkbox js-walk-row-check\" data-index=\"" + i + "\"" + (selectedRows[i] ? " checked" : "") + "></td>");
             html.push("<td class=\"snmp-col-no\">" + escapeHtml(row.no) + "</td>");
             html.push("<td class=\"snmp-walk-oid snmp-cell-primary\">" + escapeHtml(row.oid) + "</td>");
             html.push("<td class=\"snmp-walk-resolved-oid snmp-cell-secondary snmp-cell-mono\">" + escapeHtml(row.oid_numeric) + "</td>");
@@ -901,6 +1241,57 @@ $content->addItem(new CJsScript('<script>
         if (walkNextBtn) {
             walkNextBtn.disabled = walkCurrentPage >= totalPages;
         }
+
+        syncSelectAllState();
+    }
+
+    function syncSelectAllState() {
+        if (!walkSelectAll) {
+            return;
+        }
+
+        var total = walkRows.length;
+        var start = (walkCurrentPage - 1) * walkPageSize;
+        var end = Math.min(start + walkPageSize, total);
+        var pageHasRows = end > start;
+        var allChecked = pageHasRows;
+
+        for (var i = start; i < end; i++) {
+            if (!selectedRows[i]) {
+                allChecked = false;
+                break;
+            }
+        }
+
+        walkSelectAll.checked = allChecked;
+    }
+
+    function updateSelectionUi() {
+        if (walkSelectedInfo) {
+            walkSelectedInfo.textContent = walkLabels.selected.replace("%d", String(selectedCount));
+        }
+        if (createTemplateBtn) {
+            createTemplateBtn.disabled = selectedCount === 0;
+        }
+    }
+
+    function setRowSelected(index, checked) {
+        if (checked) {
+            if (!selectedRows[index]) {
+                selectedRows[index] = true;
+                selectedCount += 1;
+            }
+        } else if (selectedRows[index]) {
+            delete selectedRows[index];
+            selectedCount -= 1;
+        }
+    }
+
+    function clearSelection() {
+        selectedRows = {};
+        selectedCount = 0;
+        renderWalkPage();
+        updateSelectionUi();
     }
 
     function initWalkTable() {
@@ -1201,7 +1592,194 @@ $content->addItem(new CJsScript('<script>
         });
     }
 
+    if (walkTbody) {
+        walkTbody.addEventListener("change", function(e) {
+            var cb = e.target.closest(".js-walk-row-check");
+            if (!cb) {
+                return;
+            }
+            var idx = parseInt(cb.getAttribute("data-index"), 10);
+            if (isNaN(idx)) {
+                return;
+            }
+            setRowSelected(idx, cb.checked);
+            syncSelectAllState();
+            updateSelectionUi();
+        });
+    }
+
+    if (walkSelectAll) {
+        walkSelectAll.addEventListener("change", function() {
+            var total = walkRows.length;
+            var start = (walkCurrentPage - 1) * walkPageSize;
+            var end = Math.min(start + walkPageSize, total);
+            for (var i = start; i < end; i++) {
+                setRowSelected(i, walkSelectAll.checked);
+            }
+            renderWalkPage();
+            updateSelectionUi();
+        });
+    }
+
+    if (walkClearBtn) {
+        walkClearBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            clearSelection();
+        });
+    }
+
+    if (createTemplateBtn) {
+        createTemplateBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            openTemplateModal();
+        });
+    }
+
+    function getSelectedItems() {
+        var items = [];
+        for (var key in selectedRows) {
+            if (!selectedRows.hasOwnProperty(key)) {
+                continue;
+            }
+            var row = walkRows[parseInt(key, 10)];
+            if (!row) {
+                continue;
+            }
+            items.push({
+                oid: row.command_oid,
+                name: "SNMP " + row.label_oid,
+                value: row.value,
+                data_type: row.data_type
+            });
+        }
+        return items;
+    }
+
+    function openTemplateModal() {
+        if (selectedCount === 0) {
+            alert(walkLabels.noSelection);
+            return;
+        }
+        if (!tplModal) {
+            return;
+        }
+
+        var items = getSelectedItems();
+        if (tplCountEl) {
+            tplCountEl.textContent = String(items.length);
+        }
+        if (tplItemsEl) {
+            var html = [];
+            for (var i = 0; i < items.length; i++) {
+                html.push("<div class=\"snmp-template-item\">");
+                html.push("<span class=\"snmp-template-item-name\">" + escapeHtml(items[i].name) + "</span>");
+                html.push("<span class=\"snmp-template-item-oid\">" + escapeHtml(items[i].oid) + "</span>");
+                html.push("</div>");
+            }
+            tplItemsEl.innerHTML = html.join("");
+        }
+        setTemplateNameError("");
+        tplModal.classList.add("open");
+        if (tplNameInput) {
+            tplNameInput.focus();
+        }
+    }
+
+    function closeTemplateModal() {
+        if (tplModal) {
+            tplModal.classList.remove("open");
+        }
+        setTemplateNameError("");
+    }
+
+    function submitTemplate() {
+        var name = tplNameInput ? tplNameInput.value.trim() : "";
+        var group = tplGroupInput ? tplGroupInput.value.trim() : "";
+
+        if (!validateTemplateName(true)) {
+            if (tplNameInput) {
+                tplNameInput.focus();
+            }
+            return;
+        }
+        if (group === "") {
+            alert(walkLabels.enterGroup);
+            return;
+        }
+
+        var items = getSelectedItems();
+        if (items.length === 0) {
+            alert(walkLabels.noSelection);
+            return;
+        }
+
+        if (!tplConfirmBtn) {
+            return;
+        }
+
+        tplConfirmBtn.disabled = true;
+        var originalLabel = tplConfirmBtn.textContent;
+        tplConfirmBtn.textContent = walkLabels.creatingTpl;
+
+        var params = new URLSearchParams();
+        params.append("name", name);
+        params.append("group", group);
+        params.append("items", JSON.stringify(items));
+
+        fetch("zabbix.php?action=snmp.template.create", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+            body: params.toString()
+        })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                tplConfirmBtn.disabled = false;
+                tplConfirmBtn.textContent = originalLabel;
+                if (data && data.ok) {
+                    alert((data && data.message) ? data.message : "OK");
+                    closeTemplateModal();
+                    clearSelection();
+                } else {
+                    alert((data && data.message) ? data.message : "Error");
+                }
+            })
+            .catch(function(err) {
+                tplConfirmBtn.disabled = false;
+                tplConfirmBtn.textContent = originalLabel;
+                alert(String(err));
+            });
+    }
+
+    if (tplCloseBtn) {
+        tplCloseBtn.addEventListener("click", function(e) { e.preventDefault(); closeTemplateModal(); });
+    }
+    if (tplCancelBtn) {
+        tplCancelBtn.addEventListener("click", function(e) { e.preventDefault(); closeTemplateModal(); });
+    }
+    if (tplConfirmBtn) {
+        tplConfirmBtn.addEventListener("click", function(e) { e.preventDefault(); submitTemplate(); });
+    }
+    if (tplNameInput) {
+        tplNameInput.addEventListener("input", function() {
+            validateTemplateName(tplNameInput.value.trim() !== "");
+        });
+        tplNameInput.addEventListener("blur", function() {
+            if (tplNameInput.value.trim() !== "") {
+                validateTemplateName(true);
+            }
+        });
+    }
+    if (tplModal) {
+        tplModal.addEventListener("click", function(e) {
+            if (e.target === tplModal) {
+                closeTemplateModal();
+            }
+        });
+    }
+
     initWalkTable();
+    updateSelectionUi();
 })();
 </script>'));
 
