@@ -59,6 +59,17 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_rack/README.md](./zabbix_rack/README.md)
 
+### 5. Zabbix SNMP
+
+- **Purpose**: An SNMP assistant Zabbix frontend module providing a MIB browser and SNMP Walk, with OID resolution, one-click item creation and bulk SNMP template creation.
+- **Features**: MIB browser with object table (OID, resolved OID, syntax/access/status, view source); SNMP Walk reading host SNMP connection parameters (v1/v2c/v3) into a paginated table; view raw data; copy snmpget command/OID; create a single item with automatic value-type mapping; check multiple results to create an SNMP template with items in bulk; bilingual UI.
+
+![1](zabbix_snmp/images/1.png)
+![2](zabbix_snmp/images/2.png)
+![3](zabbix_snmp/images/3.png)
+
+- **Docs**: [zabbix_snmp/README.md](./zabbix_snmp/README.md)
+
 ## Installation
 
 ### Deploy all modules (recommended)
@@ -83,6 +94,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manif
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
 ```
 
 For Zabbix 7.0+ / 8.0+, no change is required.
@@ -99,6 +111,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → CMDB**
 - **Monitoring → Graph Trees**
 - **Inventory → Rack Management**
+- **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
 
 Each module contains its own README with specific installation and usage details.
 

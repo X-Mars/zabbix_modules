@@ -1,0 +1,29 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-snmp",
+    "name": "Zabbix SNMP",
+    "author": "火星小刘",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "version": "1.0.0",
+    "namespace": "ZabbixSnmp",
+    "description": "Browse operating system MIB files from common SNMP directories in Zabbix",
+    "actions": {
+        "snmp": {
+            "class": "Snmp",
+            "view": "snmp"
+        },
+        "snmp.walk": {
+            "class": "SnmpWalk",
+            "view": "snmp.walk"
+        },
+        "snmp.source": {
+            "class": "SnmpSource"
+        },
+        "snmp.item.create": {
+            "class": "SnmpItemCreate"
+        },
+        "snmp.template.create": {
+            "class": "SnmpTemplateCreate"
+        }
+    }
+}
