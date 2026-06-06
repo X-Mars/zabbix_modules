@@ -105,15 +105,20 @@
 
 ### 5. Zabbix SNMP
 
-**简介**：用于浏览操作系统常见 SNMP MIB 目录和 MIB 文件的 Zabbix 前端模块模版，支持目录扫描、文件列表展示和详情预览。 
+**简介**：SNMP 辅助助手 Zabbix 前端模块，提供 MIB 浏览和 SNMP Walk 功能，支持解析 OID、一键创建监控项和批量创建 SNMP 模板。
 
 **功能特性**：
 
-- 自动扫描常见 MIB 目录
-- 支持展示多个系统 MIB 目录
-- 点击 MIB 文件可查看路径、大小、修改时间和内容预览
-- 支持按文件名搜索
+- MIB 浏览：自动扫描常见 MIB 目录，表格展示对象的 OID、解析 OID、语法/权限/状态，支持查看源码
+- SNMP Walk：自动读取主机 SNMP 连接参数（v1/v2c/v3），将结果解析为表格并支持客户端分页
+- 查看原数据、复制 snmpget 命令 / OID
+- 选中单条结果一键创建监控项（自动映射数据类型）
+- 勾选多条结果批量创建 SNMP 模板及监控项
 - 支持中英文界面国际化
+
+![1](zabbix_snmp/images/1.png)
+![2](zabbix_snmp/images/2.png)
+![3](zabbix_snmp/images/3.png)
 
 **文档链接**：[zabbix_snmp/README.md](./zabbix_snmp/README.md)
 
@@ -152,6 +157,9 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 
 # 修改 zabbix_rack 模块
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
+
+# 修改 zabbix_snmp 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
@@ -176,7 +184,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 - **Inventory → CMDB** (主机列表/主机分组)
 - **Monitoring → Graph Trees** (图表树)
 - **Inventory → Rack Management** (机柜管理)
-- **Monitoring → SNMP MIB Browser** (SNMP MIB 浏览)
+- **Monitoring → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
 
 ### 单独安装模块
 
