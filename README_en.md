@@ -70,6 +70,15 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_snmp/README.md](./zabbix_snmp/README.md)
 
+### 6. Zabbix JumpServer
+
+- **Purpose**: A Zabbix frontend module that synchronizes Zabbix hosts and host groups to a JumpServer bastion, with bulk push, automatic node creation, and one-click connect to assets from Zabbix.
+- **Features**: host group, host, and alarm status dropdowns plus IP/hostname search (all groups/hosts by default); one-click "Push all host groups" / "Push all hosts" with auto node creation; "Fetch JumpServer asset IDs" to match by IP and write tags back; platform detection (Linux/Windows) and asset create/update with optional account template on create only; alarm status counts per severity with expandable row details; asset ID written back as a Zabbix host tag; re-push on hover for synced hosts; "Connect" button linking to the JumpServer connect page; bilingual UI.
+
+![1](zabbix_jumpserver/images/1.png)
+
+- **Docs**: [zabbix_jumpserver/README.md](./zabbix_jumpserver/README.md)
+
 ## Installation
 
 ### Deploy all modules (recommended)
@@ -95,6 +104,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
 ```
 
 For Zabbix 7.0+ / 8.0+, no change is required.
@@ -112,6 +122,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Monitoring → Graph Trees**
 - **Inventory → Rack Management**
 - **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
+- **Inventory → JumpServer**
 
 Each module contains its own README with specific installation and usage details.
 
