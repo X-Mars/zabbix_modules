@@ -23,7 +23,7 @@ When pushing hosts, it automatically:
 - Detects the host platform (Linux / Windows) from the Zabbix "Operating system" item
 - Creates or updates JumpServer assets, and writes the JumpServer asset ID back to the Zabbix host as a tag for the "Connect" button to use
 
-![1](zabbix_jumpserver/images/1.png)
+![1](images/1.png)
 
 ## Features
 
