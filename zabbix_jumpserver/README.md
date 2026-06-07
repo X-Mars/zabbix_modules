@@ -23,7 +23,7 @@
 - 根据 Zabbix「Operating system」监控项识别主机平台（Linux / Windows）
 - 创建或更新 JumpServer 资产，并把 JumpServer 资产 ID 以标记（Tag）的形式写回 Zabbix 主机，供「连接」按钮使用
 
-![1](zabbix_jumpserver/images/1.png)
+![1](images/1.png)
 
 ## 功能特性
 
