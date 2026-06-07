@@ -124,6 +124,27 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 6. Zabbix JumpServer
+
+**简介**：用于将 Zabbix 主机和主机分组同步到 JumpServer 堡垒机的 Zabbix 前端模块，支持批量推送、自动创建节点，并可从 Zabbix 一键跳转连接主机。
+
+**功能特性**：
+
+- 顶部主机分组、主机、告警状态下拉框及 IP/主机名搜索，默认展示所有分组和主机
+- 一键「推送所有主机组」「推送所有主机」，缺失的 JumpServer 节点自动创建
+- 「获取 JumpServer 资产 ID」：从 JumpServer 按 IP 反向匹配并写回资产 ID 标记
+- 自动识别主机平台（Linux / Windows），创建或更新 JumpServer 资产；创建时可按账号模板自动关联登录账号
+- 告警状态列按严重度显示数量，行可展开查看全部告警明细
+- JumpServer 资产 ID 以标记形式写回 Zabbix 主机；已推送主机悬停可重新推送
+- 表格最后一列「连接」按钮，一键跳转到 JumpServer 主机连接页面
+- 支持中英文界面国际化
+
+![1](zabbix_jumpserver/images/1.png)
+
+**文档链接**：[zabbix_jumpserver/README.md](./zabbix_jumpserver/README.md)
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
 ### 安装模块
@@ -160,6 +181,9 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 
 # 修改 zabbix_snmp 模块
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
+
+# 修改 zabbix_jumpserver 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
@@ -185,6 +209,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 - **Monitoring → Graph Trees** (图表树)
 - **Inventory → Rack Management** (机柜管理)
 - **数据采集 → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
+- **资产记录 → JumpServer** (JumpServer 同步)
 
 ### 单独安装模块
 

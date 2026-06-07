@@ -1,0 +1,22 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-jumpserver",
+    "name": "Zabbix JumpServer",
+    "author": "火星小刘",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "version": "1.0.0",
+    "namespace": "ZabbixJumpserver",
+    "description": "Sync Zabbix hosts and host groups to JumpServer and quickly connect to assets",
+    "actions": {
+        "jumpserver": {
+            "class": "Jumpserver",
+            "view": "jumpserver"
+        },
+        "jumpserver.push": {
+            "class": "JumpserverPush"
+        },
+        "jumpserver.fetchids": {
+            "class": "JumpserverFetchIds"
+        }
+    }
+}

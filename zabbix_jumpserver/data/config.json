@@ -1,0 +1,9 @@
+{
+    "jumpserver_url": "http://192.168.3.29",
+    "access_key_id": "cdee93ce-fa1f-45a4-bd07-36bdb7f87578",
+    "access_key_secret": "iSVbzr2JQzt96kbU5GBgr3TrHjPuJNFyjp99",
+    "org_id": "00000000-0000-0000-0000-000000000002",
+    "connect_url_template": "{base_url}/luna/connect?asset={asset_id}",
+    "account_template_id": "fd43c5fc-2eb7-4118-b9ac-2e4c603d4947",
+    "verify_ssl": false
+}
