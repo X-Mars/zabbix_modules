@@ -15,6 +15,8 @@ use Modules\ZabbixRack\Lib\ViewRenderer;
 $lang = $data['lang'];
 $rooms = $data['rooms'] ?? [];
 $racks = $data['racks'] ?? [];
+$userGroupOptions = $data['user_groups'] ?? [];
+$userOptions = $data['users'] ?? [];
 
 $pageTitle = LanguageManager::t('rack_manage');
 
@@ -46,10 +48,19 @@ foreach ($rooms as $room) {
     $roomsMap[$room['id']] = [
         'id' => $room['id'],
         'name' => $room['name'],
-        'description' => $room['description'] ?? ''
+        'description' => $room['description'] ?? '',
+        'user_groups' => $room['user_groups'] ?? [],
+        'users' => $room['users'] ?? [],
     ];
 }
 $roomsJson = json_encode($roomsMap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
+$defaultAllUserGroupIds = array_map('strval', array_column($userGroupOptions, 'usrgrpid'));
+$defaultAllUserIds = array_map('strval', array_column($userOptions, 'userid'));
+$defaultPermissionsJson = json_encode([
+    'user_groups' => $defaultAllUserGroupIds,
+    'users' => $defaultAllUserIds,
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 $racksMap = [];
 foreach ($racks as $rack) {
@@ -304,6 +315,13 @@ $styleTag = new CTag('style', true, '
     margin-top: 2px;
 }
 
+.cell-secondary {
+    font-size: 13px;
+    color: #495057;
+    max-width: 280px;
+    word-break: break-word;
+}
+
 /* 徽章 */
 .badge {
     display: inline-flex;
@@ -514,6 +532,12 @@ z-select .list {
 textarea.form-control {
     min-height: 100px;
     resize: vertical;
+}
+
+select.form-control-multi {
+    min-height: 120px;
+    height: auto;
+    padding: 8px 12px;
 }
 
 .form-hint {
@@ -836,6 +860,7 @@ if (empty($rooms)) {
     $roomTable->setHeader([
         LanguageManager::t('room_name'),
         LanguageManager::t('description'),
+        LanguageManager::t('room_permissions'),
         LanguageManager::t('rack_count'),
         LanguageManager::t('created_at'),
         (new CCol(LanguageManager::t('actions')))->setAttribute('style', 'width:120px;')
@@ -850,6 +875,10 @@ if (empty($rooms)) {
             (new CDiv(htmlspecialchars($room['name'])))->addClass('cell-main')
         );
         $descCol = new CCol(htmlspecialchars($room['description'] ?? '-'));
+        $permissionSummary = htmlspecialchars($room['permission_summary'] ?? LanguageManager::t('permission_public'), ENT_QUOTES);
+        $permissionCol = new CCol(
+            (new CDiv($permissionSummary))->addClass('cell-secondary')->setAttribute('title', $permissionSummary)
+        );
         $countCol = new CCol(
             (new CSpan('🗄️ ' . $rackCount))->addClass('badge badge-blue')
         );
@@ -868,7 +897,7 @@ if (empty($rooms)) {
         );
         $actionCol = new CCol($actionBtns);
 
-        $roomTable->addRow([$nameCol, $descCol, $countCol, $dateCol, $actionCol]);
+        $roomTable->addRow([$nameCol, $descCol, $permissionCol, $countCol, $dateCol, $actionCol]);
     }
 
     $roomBody->addItem($roomTable);
@@ -1032,6 +1061,51 @@ $descGroup->addItem(
         ->setAttribute('maxlength', '500')
 );
 $roomForm->addItem($descGroup);
+
+$userGroupSelectGroup = (new CDiv())->addClass('form-group');
+$userGroupSelectGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('room_user_groups')))->addClass('form-label')
+);
+$roomUserGroupSelect = (new CTag('select', true))
+    ->setAttribute('id', 'room-user-groups')
+    ->setAttribute('name', 'user_groups[]')
+    ->setAttribute('multiple', 'multiple')
+    ->addClass('form-control form-control-multi');
+foreach ($userGroupOptions as $group) {
+    $roomUserGroupSelect->addItem(
+        (new CTag('option', true, htmlspecialchars($group['name'], ENT_QUOTES)))
+            ->setAttribute('value', htmlspecialchars($group['usrgrpid'], ENT_QUOTES))
+    );
+}
+$userGroupSelectGroup->addItem($roomUserGroupSelect);
+$userGroupSelectGroup->addItem(
+    (new CDiv(LanguageManager::t('select_user_groups')))->addClass('form-hint')
+);
+$roomForm->addItem($userGroupSelectGroup);
+
+$userSelectGroup = (new CDiv())->addClass('form-group');
+$userSelectGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('room_users')))->addClass('form-label')
+);
+$roomUserSelect = (new CTag('select', true))
+    ->setAttribute('id', 'room-users')
+    ->setAttribute('name', 'users[]')
+    ->setAttribute('multiple', 'multiple')
+    ->addClass('form-control form-control-multi');
+foreach ($userOptions as $user) {
+    $roomUserSelect->addItem(
+        (new CTag('option', true, htmlspecialchars($user['label'], ENT_QUOTES)))
+            ->setAttribute('value', htmlspecialchars($user['userid'], ENT_QUOTES))
+    );
+}
+$userSelectGroup->addItem($roomUserSelect);
+$userSelectGroup->addItem(
+    (new CDiv(LanguageManager::t('select_users')))->addClass('form-hint')
+);
+$userSelectGroup->addItem(
+    (new CDiv(LanguageManager::t('permission_hint')))->addClass('form-hint')
+);
+$roomForm->addItem($userSelectGroup);
 
 $roomModalBody = (new CDiv())->addClass('modal-body');
 $roomModalBody->addItem($roomForm);
@@ -1277,6 +1351,9 @@ $content->addItem(new CJsScript('<script>
     
     // 机柜数据（以 ID 为键的映射）
     var racksData = ' . $racksJson . ';
+
+    // 权限多选默认值：全部用户组与用户（表示全员可见）
+    var defaultPermissionSelection = ' . $defaultPermissionsJson . ';
     
     // 管理器对象
     var RackManager = {
@@ -1285,11 +1362,50 @@ $content->addItem(new CJsScript('<script>
         currentDeleteId: null,
         
         // ==================== 机房相关 ====================
+        setMultiSelectValues: function(selectId, values) {
+            var select = document.getElementById(selectId);
+            if (!select) {
+                return;
+            }
+            var valueSet = {};
+            (values || []).forEach(function(value) {
+                valueSet[String(value)] = true;
+            });
+            Array.prototype.forEach.call(select.options, function(option) {
+                option.selected = !!valueSet[option.value];
+            });
+        },
+
+        getMultiSelectValues: function(selectId) {
+            var select = document.getElementById(selectId);
+            if (!select) {
+                return [];
+            }
+            return Array.prototype.filter.call(select.options, function(option) {
+                return option.selected;
+            }).map(function(option) {
+                return option.value;
+            });
+        },
+
+        resolveRoomPermissionSelection: function(room) {
+            var groups = (room && room.user_groups && room.user_groups.length)
+                ? room.user_groups
+                : (defaultPermissionSelection.user_groups || []);
+            var users = (room && room.users && room.users.length)
+                ? room.users
+                : (defaultPermissionSelection.users || []);
+            return { user_groups: groups, users: users };
+        },
+
         openRoomModal: function() {
             document.getElementById("room-modal-title").innerHTML = "🏢 " + i18n.add_room;
             document.getElementById("room-id").value = "";
             document.getElementById("room-name").value = "";
             document.getElementById("room-description").value = "";
+            var defaults = this.resolveRoomPermissionSelection(null);
+            this.setMultiSelectValues("room-user-groups", defaults.user_groups);
+            this.setMultiSelectValues("room-users", defaults.users);
             this.clearFormErrors("room-form");
             this.showModal("room-modal");
             setTimeout(function() {
@@ -1313,6 +1429,9 @@ $content->addItem(new CJsScript('<script>
             document.getElementById("room-id").value = room.id || "";
             document.getElementById("room-name").value = room.name || "";
             document.getElementById("room-description").value = room.description || "";
+            var selection = this.resolveRoomPermissionSelection(room);
+            this.setMultiSelectValues("room-user-groups", selection.user_groups);
+            this.setMultiSelectValues("room-users", selection.users);
             this.clearFormErrors("room-form");
             this.showModal("room-modal");
         },
@@ -1338,6 +1457,8 @@ $content->addItem(new CJsScript('<script>
             formData.append("id", id);
             formData.append("name", name);
             formData.append("description", description);
+            formData.append("user_groups", JSON.stringify(this.getMultiSelectValues("room-user-groups")));
+            formData.append("users", JSON.stringify(this.getMultiSelectValues("room-users")));
             
             fetch("zabbix.php", { method: "POST", body: formData })
             .then(function(response) { return response.json(); })

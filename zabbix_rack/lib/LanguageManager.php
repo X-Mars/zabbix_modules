@@ -181,6 +181,26 @@ class LanguageManager {
             
             // 后端验证
             'invalid_input' => '输入参数无效',
+            'permission_denied' => '无权访问该机房',
+            'room_permissions' => '访问权限',
+            'room_user_groups' => 'Zabbix 用户组',
+            'room_users' => 'Zabbix 用户',
+            'permission_public' => '全员可见',
+            'permission_restricted' => '受限',
+            'permission_user_groups_count' => '%d 个用户组',
+            'permission_users_count' => '%d 个用户',
+            'permission_hint' => '默认选中全部用户组和用户表示全员可见；取消部分选项可限制访问范围。',
+            'select_user_groups' => '按住 Ctrl/Shift 多选用户组',
+            'select_users' => '按住 Ctrl/Shift 多选用户',
+            'no_accessible_rooms' => '当前账号没有可访问的机房',
+            'manage_super_admin_only' => '仅超级管理员可访问机柜配置',
+            'rack_side' => '机柜面',
+            'rack_side_front' => '正面',
+            'rack_side_back' => '背面',
+            'rack_side_front_view' => '机柜正面',
+            'rack_side_back_view' => '机柜背面',
+            'switch_to_front' => '切换到正面',
+            'switch_to_back' => '切换到背面',
         ],
         'en_US' => [
             // 模块和菜单（用于 Module.php）
@@ -352,6 +372,26 @@ class LanguageManager {
             
             // 后端验证
             'invalid_input' => 'Invalid input',
+            'permission_denied' => 'You do not have access to this room',
+            'room_permissions' => 'Access control',
+            'room_user_groups' => 'Zabbix user groups',
+            'room_users' => 'Zabbix users',
+            'permission_public' => 'Visible to all users',
+            'permission_restricted' => 'Restricted',
+            'permission_user_groups_count' => '%d user group(s)',
+            'permission_users_count' => '%d user(s)',
+            'permission_hint' => 'All user groups and users selected by default means visible to everyone; deselect entries to restrict access.',
+            'select_user_groups' => 'Hold Ctrl/Shift to select multiple user groups',
+            'select_users' => 'Hold Ctrl/Shift to select multiple users',
+            'no_accessible_rooms' => 'No accessible rooms for your account',
+            'manage_super_admin_only' => 'Only Super Admin can access Rack Config',
+            'rack_side' => 'Rack side',
+            'rack_side_front' => 'Front',
+            'rack_side_back' => 'Rear',
+            'rack_side_front_view' => 'Rack front',
+            'rack_side_back_view' => 'Rack rear',
+            'switch_to_front' => 'Switch to front',
+            'switch_to_back' => 'Switch to rear',
         ]
     ];
 
@@ -619,6 +659,10 @@ class LanguageManager {
 
         // 如果都没有，返回原键值
         return $key;
+    }
+
+    public static function tf($key, ...$args) {
+        return sprintf(self::t($key), ...$args);
     }
 
     /**

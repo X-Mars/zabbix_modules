@@ -1,1 +1,25 @@
-{"rooms":[{"id":"room1","name":"Room 1","description":"Test Room"}],"racks":[{"id":"rack1","name":"Rack 1","room_id":"room1","height":42,"description":"Test Rack"}]}
+{
+    "rooms": [
+        {
+            "id": "room1",
+            "name": "Room 1",
+            "description": "Test Room",
+            "user_groups": [
+                "7"
+            ],
+            "updated_at": "2026-06-13 11:48:28",
+            "users": [
+                "24"
+            ]
+        }
+    ],
+    "racks": [
+        {
+            "id": "rack1",
+            "name": "Rack 1",
+            "room_id": "room1",
+            "height": 42,
+            "description": "Test Rack"
+        }
+    ]
+}

@@ -15,6 +15,134 @@ class HostRackManager {
     const TAG_RACK = 'rack_name';
     const TAG_U_START = 'rack_u_start';
     const TAG_U_END = 'rack_u_end';
+    const TAG_SIDE = 'rack_side';
+    const SIDE_FRONT = 'front';
+    const SIDE_BACK = 'back';
+
+    /** @var string */
+    private static $lastError = '';
+
+    /** @var array<int, string> */
+    private static $rackTagNames = [
+        self::TAG_ROOM,
+        self::TAG_RACK,
+        self::TAG_U_START,
+        self::TAG_U_END,
+        self::TAG_SIDE,
+    ];
+
+    public static function getLastError(): string {
+        return self::$lastError;
+    }
+
+    /**
+     * 规范化机柜正/背面；无标记或非 back 均视为正面。
+     *
+     * @param mixed $value
+     */
+    public static function normalizeSide($value): string {
+        $value = strtolower(trim((string) $value));
+        if ($value === self::SIDE_BACK || $value === 'rear') {
+            return self::SIDE_BACK;
+        }
+
+        return self::SIDE_FRONT;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $tags
+     * @return array{room:string,rack:string,u_start:?int,u_end:?int,side:string}
+     */
+    public static function parseRackTagsFromList(array $tags): array {
+        $result = [
+            'room'    => '',
+            'rack'    => '',
+            'u_start' => null,
+            'u_end'   => null,
+            'side'    => self::SIDE_FRONT,
+        ];
+
+        foreach ($tags as $tag) {
+            $name = (string) ($tag['tag'] ?? '');
+            $value = $tag['value'] ?? '';
+            switch ($name) {
+                case self::TAG_ROOM:
+                    $result['room'] = (string) $value;
+                    break;
+                case self::TAG_RACK:
+                    $result['rack'] = (string) $value;
+                    break;
+                case self::TAG_U_START:
+                    $result['u_start'] = ($value !== '' && $value !== null) ? (int) $value : null;
+                    break;
+                case self::TAG_U_END:
+                    $result['u_end'] = ($value !== '' && $value !== null) ? (int) $value : null;
+                    break;
+                case self::TAG_SIDE:
+                    $result['side'] = self::normalizeSide($value);
+                    break;
+            }
+        }
+
+        return $result;
+    }
+
+    public static function sideMatches(string $hostSide, string $viewSide): bool {
+        return self::normalizeSide($hostSide) === self::normalizeSide($viewSide);
+    }
+
+    private static function setLastError(string $message): void {
+        self::$lastError = $message;
+    }
+
+    /**
+     * host.update 仅接受 tag/value，需去掉 automatic 等扩展字段（Zabbix 7+）。
+     *
+     * @param array<int, array<string, mixed>> $tags
+     * @return array<int, array{tag:string,value:string}>
+     */
+    private static function sanitizeTagsForUpdate(array $tags): array {
+        $result = [];
+
+        foreach ($tags as $tag) {
+            $name = trim((string) ($tag['tag'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $result[] = [
+                'tag'   => $name,
+                'value' => (string) ($tag['value'] ?? ''),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $tags
+     */
+    private static function updateHostTags(string $hostId, array $tags): bool {
+        self::setLastError('');
+
+        try {
+            $result = \API::Host()->update([
+                'hostid' => $hostId,
+                'tags'   => self::sanitizeTagsForUpdate($tags),
+            ]);
+
+            if (empty($result)) {
+                self::setLastError('Host update returned empty result');
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            self::setLastError($message);
+            error_log('HostRackManager: update tags failed for host ' . $hostId . ': ' . $message);
+            return false;
+        }
+    }
     
     /**
      * 获取主机组查询参数名（兼容 Zabbix 6/7）
@@ -50,9 +178,16 @@ class HostRackManager {
      * 
      * @param string $roomName 机房名称
      * @param string $rackName 机柜名称
+     * @param string $side 正面 front / 背面 back
      * @return array 主机列表，包含位置信息
      */
-    public static function getHostsInRack(string $roomName, string $rackName): array {
+    public static function getHostsInRack(
+        string $roomName,
+        string $rackName,
+        string $side = self::SIDE_FRONT
+    ): array {
+        $side = self::normalizeSide($side);
+
         $hosts = \API::Host()->get([
             'output' => ['hostid', 'host', 'name', 'status'],
             'selectTags' => 'extend',
@@ -67,16 +202,13 @@ class HostRackManager {
         
         $result = [];
         foreach ($hosts as $host) {
-            $uStart = null;
-            $uEnd = null;
-            
-            foreach ($host['tags'] as $tag) {
-                if ($tag['tag'] === self::TAG_U_START) {
-                    $uStart = (int)$tag['value'];
-                } elseif ($tag['tag'] === self::TAG_U_END) {
-                    $uEnd = (int)$tag['value'];
-                }
+            $parsed = self::parseRackTagsFromList($host['tags'] ?? []);
+            if (!self::sideMatches($parsed['side'], $side)) {
+                continue;
             }
+
+            $uStart = $parsed['u_start'];
+            $uEnd = $parsed['u_end'];
             
             // 获取主接口IP
             $mainIp = '';
@@ -103,7 +235,8 @@ class HostRackManager {
                 'u_end' => $uEnd,
                 'u_height' => ($uStart && $uEnd) ? ($uEnd - $uStart + 1) : 1,
                 'main_ip' => $mainIp,
-                'groups' => $groups
+                'groups' => $groups,
+                'side' => $parsed['side'],
             ];
         }
         
@@ -123,17 +256,34 @@ class HostRackManager {
      * @param string $rackName 机柜名称
      * @param int $uStart 起始U位
      * @param int $uEnd 结束U位
+     * @param string $side 正面 front / 背面 back（正面不写标签）
      * @return bool 是否成功
      */
-    public static function assignHost(string $hostId, string $roomName, string $rackName, int $uStart, int $uEnd): bool {
-        // 获取当前主机标签
-        $hosts = \API::Host()->get([
-            'output' => ['hostid'],
-            'selectTags' => 'extend',
-            'hostids' => [$hostId]
-        ]);
+    public static function assignHost(
+        string $hostId,
+        string $roomName,
+        string $rackName,
+        int $uStart,
+        int $uEnd,
+        string $side = self::SIDE_FRONT
+    ): bool {
+        self::setLastError('');
+        $side = self::normalizeSide($side);
+
+        try {
+            $hosts = \API::Host()->get([
+                'output' => ['hostid'],
+                'selectTags' => 'extend',
+                'hostids' => [$hostId],
+            ]);
+        } catch (\Throwable $e) {
+            self::setLastError($e->getMessage());
+            error_log('HostRackManager: assignHost get failed for host ' . $hostId . ': ' . $e->getMessage());
+            return false;
+        }
         
         if (empty($hosts)) {
+            self::setLastError('Host not found or no permission to read host');
             return false;
         }
         
@@ -141,29 +291,20 @@ class HostRackManager {
         $tags = $host['tags'] ?? [];
         
         // 移除旧的机柜标签
-        $tags = array_filter($tags, function($tag) {
-            return !in_array($tag['tag'], [
-                self::TAG_ROOM,
-                self::TAG_RACK,
-                self::TAG_U_START,
-                self::TAG_U_END
-            ]);
-        });
-        $tags = array_values($tags);
+        $tags = array_values(array_filter($tags, static function ($tag) {
+            return !in_array($tag['tag'] ?? '', self::$rackTagNames, true);
+        }));
         
         // 添加新的机柜标签
         $tags[] = ['tag' => self::TAG_ROOM, 'value' => $roomName];
         $tags[] = ['tag' => self::TAG_RACK, 'value' => $rackName];
-        $tags[] = ['tag' => self::TAG_U_START, 'value' => (string)$uStart];
-        $tags[] = ['tag' => self::TAG_U_END, 'value' => (string)$uEnd];
+        $tags[] = ['tag' => self::TAG_U_START, 'value' => (string) $uStart];
+        $tags[] = ['tag' => self::TAG_U_END, 'value' => (string) $uEnd];
+        if ($side === self::SIDE_BACK) {
+            $tags[] = ['tag' => self::TAG_SIDE, 'value' => self::SIDE_BACK];
+        }
         
-        // 更新主机标签
-        $result = \API::Host()->update([
-            'hostid' => $hostId,
-            'tags' => $tags
-        ]);
-        
-        return !empty($result);
+        return self::updateHostTags($hostId, $tags);
     }
     
     /**
@@ -173,14 +314,22 @@ class HostRackManager {
      * @return bool 是否成功
      */
     public static function removeHost(string $hostId): bool {
-        // 获取当前主机标签
-        $hosts = \API::Host()->get([
-            'output' => ['hostid'],
-            'selectTags' => 'extend',
-            'hostids' => [$hostId]
-        ]);
+        self::setLastError('');
+
+        try {
+            $hosts = \API::Host()->get([
+                'output' => ['hostid'],
+                'selectTags' => 'extend',
+                'hostids' => [$hostId],
+            ]);
+        } catch (\Throwable $e) {
+            self::setLastError($e->getMessage());
+            error_log('HostRackManager: removeHost get failed for host ' . $hostId . ': ' . $e->getMessage());
+            return false;
+        }
         
         if (empty($hosts)) {
+            self::setLastError('Host not found or no permission to read host');
             return false;
         }
         
@@ -188,23 +337,11 @@ class HostRackManager {
         $tags = $host['tags'] ?? [];
         
         // 移除机柜相关标签
-        $tags = array_filter($tags, function($tag) {
-            return !in_array($tag['tag'], [
-                self::TAG_ROOM,
-                self::TAG_RACK,
-                self::TAG_U_START,
-                self::TAG_U_END
-            ]);
-        });
-        $tags = array_values($tags);
+        $tags = array_values(array_filter($tags, static function ($tag) {
+            return !in_array($tag['tag'] ?? '', self::$rackTagNames, true);
+        }));
         
-        // 更新主机标签
-        $result = \API::Host()->update([
-            'hostid' => $hostId,
-            'tags' => $tags
-        ]);
-        
-        return !empty($result);
+        return self::updateHostTags($hostId, $tags);
     }
     
     /**
@@ -241,19 +378,17 @@ class HostRackManager {
         
         $result = [];
         foreach ($hosts as $host) {
-            // 检查是否已分配到机柜
             $inRack = false;
             $currentRoom = '';
             $currentRack = '';
+            $currentSide = self::SIDE_FRONT;
             
-            foreach ($host['tags'] as $tag) {
-                if ($tag['tag'] === self::TAG_RACK && !empty($tag['value'])) {
-                    $inRack = true;
-                    $currentRack = $tag['value'];
-                }
-                if ($tag['tag'] === self::TAG_ROOM && !empty($tag['value'])) {
-                    $currentRoom = $tag['value'];
-                }
+            $parsed = self::parseRackTagsFromList($host['tags'] ?? []);
+            if ($parsed['rack'] !== '') {
+                $inRack = true;
+                $currentRoom = $parsed['room'];
+                $currentRack = $parsed['rack'];
+                $currentSide = $parsed['side'];
             }
             
             // 获取主接口IP
@@ -281,7 +416,8 @@ class HostRackManager {
                 'groups' => $groups,
                 'in_rack' => $inRack,
                 'current_room' => $currentRoom,
-                'current_rack' => $currentRack
+                'current_rack' => $currentRack,
+                'current_side' => $currentSide,
             ];
         }
         
@@ -311,10 +447,18 @@ class HostRackManager {
      * @param int $uStart 起始U位
      * @param int $uEnd 结束U位
      * @param string|null $excludeHostId 排除的主机ID（用于编辑时）
+     * @param string $side 正面 front / 背面 back
      * @return bool 是否可用
      */
-    public static function isPositionAvailable(string $roomName, string $rackName, int $uStart, int $uEnd, ?string $excludeHostId = null): bool {
-        $hosts = self::getHostsInRack($roomName, $rackName);
+    public static function isPositionAvailable(
+        string $roomName,
+        string $rackName,
+        int $uStart,
+        int $uEnd,
+        ?string $excludeHostId = null,
+        string $side = self::SIDE_FRONT
+    ): bool {
+        $hosts = self::getHostsInRack($roomName, $rackName, $side);
         
         foreach ($hosts as $host) {
             if ($excludeHostId && $host['hostid'] === $excludeHostId) {
@@ -335,6 +479,46 @@ class HostRackManager {
         }
         
         return true;
+    }
+
+    /**
+     * 合并告警信息并规范化主机字段（供视图展示）。
+     *
+     * @param array<int, array<string, mixed>> $hosts
+     * @return array<int, array<string, mixed>>
+     */
+    public static function enrichHostsWithProblems(array $hosts): array {
+        if ($hosts === []) {
+            return $hosts;
+        }
+
+        $hostProblemsData = self::getHostProblems(array_column($hosts, 'hostid'));
+
+        foreach ($hosts as &$host) {
+            $hostId = $host['hostid'];
+            if (isset($hostProblemsData[$hostId])) {
+                $host['problem_count'] = $hostProblemsData[$hostId]['count'];
+                $host['problems'] = $hostProblemsData[$hostId]['problems'];
+                $host['max_severity'] = 0;
+                foreach ($hostProblemsData[$hostId]['problems'] as $problem) {
+                    if ((int) $problem['severity'] > $host['max_severity']) {
+                        $host['max_severity'] = (int) $problem['severity'];
+                    }
+                }
+            } else {
+                $host['problem_count'] = 0;
+                $host['problems'] = [];
+                $host['max_severity'] = -1;
+            }
+
+            if (is_array($host['groups'] ?? null)) {
+                $host['groups'] = implode(', ', $host['groups']);
+            }
+            $host['ip'] = $host['main_ip'] ?? '';
+        }
+        unset($host);
+
+        return $hosts;
     }
     
     /**
@@ -360,32 +544,18 @@ class HostRackManager {
         
         $result = [];
         foreach ($hosts as $host) {
-            $roomName = '';
-            $rackName = '';
-            $uStart = null;
-            $uEnd = null;
-            
-            foreach ($host['tags'] as $tag) {
-                switch ($tag['tag']) {
-                    case self::TAG_ROOM:
-                        $roomName = $tag['value'];
-                        break;
-                    case self::TAG_RACK:
-                        $rackName = $tag['value'];
-                        break;
-                    case self::TAG_U_START:
-                        $uStart = (int)$tag['value'];
-                        break;
-                    case self::TAG_U_END:
-                        $uEnd = (int)$tag['value'];
-                        break;
-                }
-            }
+            $parsed = self::parseRackTagsFromList($host['tags'] ?? []);
             
             // 只返回已分配到机柜的主机
-            if (empty($rackName)) {
+            if ($parsed['rack'] === '') {
                 continue;
             }
+            
+            $roomName = $parsed['room'];
+            $rackName = $parsed['rack'];
+            $uStart = $parsed['u_start'];
+            $uEnd = $parsed['u_end'];
+            $side = $parsed['side'];
             
             // 获取主接口IP
             $mainIp = '';
@@ -405,7 +575,8 @@ class HostRackManager {
                 'room_name' => $roomName,
                 'rack_name' => $rackName,
                 'u_start' => $uStart,
-                'u_end' => $uEnd
+                'u_end' => $uEnd,
+                'side' => $side,
             ];
         }
         

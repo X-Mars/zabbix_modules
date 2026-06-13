@@ -8,9 +8,11 @@ namespace Modules\ZabbixRack\Actions;
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackPermission;
 use Modules\ZabbixRack\Lib\HostRackManager;
 
 class HostRemove extends CController {
@@ -49,14 +51,25 @@ class HostRemove extends CController {
     
     protected function doAction(): void {
         $hostId = $this->getInput('hostid');
+
+        if (!RackPermission::userCanAccessHostId($hostId)) {
+            RackPermission::denyAccessJson();
+        }
         
         $success = HostRackManager::removeHost($hostId);
         
         header('Content-Type: application/json');
-        echo json_encode([
+        $response = [
             'success' => $success,
-            'message' => $success ? LanguageManager::t('remove_success') : LanguageManager::t('remove_failed')
-        ]);
+            'message' => $success ? LanguageManager::t('remove_success') : LanguageManager::t('remove_failed'),
+        ];
+        if (!$success) {
+            $detail = HostRackManager::getLastError();
+            if ($detail !== '') {
+                $response['error'] = $detail;
+            }
+        }
+        echo json_encode($response);
         exit;
     }
 }

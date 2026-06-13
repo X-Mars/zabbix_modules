@@ -9,10 +9,12 @@ use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
 use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\RackPermission;
 use Modules\ZabbixRack\Lib\HostRackManager;
 
 class HostAssign extends CController {
@@ -32,7 +34,8 @@ class HostAssign extends CController {
             'room_id' => 'required|string',
             'rack_id' => 'required|string',
             'u_start' => 'required|int32',
-            'u_end' => 'required|int32'
+            'u_end' => 'required|int32',
+            'side' => 'string',
         ];
         
         $ret = $this->validateInput($fields);
@@ -59,6 +62,7 @@ class HostAssign extends CController {
         $rackId = $this->getInput('rack_id');
         $uStart = $this->getInput('u_start');
         $uEnd = $this->getInput('u_end');
+        $side = HostRackManager::normalizeSide($this->getInput('side', HostRackManager::SIDE_FRONT));
         
         // 获取机房和机柜信息
         $room = RackConfig::getRoom($roomId);
@@ -72,6 +76,10 @@ class HostAssign extends CController {
             ]);
             exit;
         }
+
+        if (!RackPermission::userCanAccessRoomId($roomId)) {
+            RackPermission::denyAccessJson();
+        }
         
         // 验证U位范围
         if ($uStart < 1 || $uEnd < 1 || $uStart > $rack['height'] || $uEnd > $rack['height'] || $uStart > $uEnd) {
@@ -83,8 +91,8 @@ class HostAssign extends CController {
             exit;
         }
         
-        // 检查U位是否可用
-        if (!HostRackManager::isPositionAvailable($room['name'], $rack['name'], $uStart, $uEnd)) {
+        // 检查U位是否可用（同一机柜面内不可重叠）
+        if (!HostRackManager::isPositionAvailable($room['name'], $rack['name'], $uStart, $uEnd, null, $side)) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
@@ -94,13 +102,20 @@ class HostAssign extends CController {
         }
         
         // 分配主机
-        $success = HostRackManager::assignHost($hostId, $room['name'], $rack['name'], $uStart, $uEnd);
+        $success = HostRackManager::assignHost($hostId, $room['name'], $rack['name'], $uStart, $uEnd, $side);
         
         header('Content-Type: application/json');
-        echo json_encode([
+        $response = [
             'success' => $success,
-            'message' => $success ? LanguageManager::t('assign_success') : LanguageManager::t('assign_failed')
-        ]);
+            'message' => $success ? LanguageManager::t('assign_success') : LanguageManager::t('assign_failed'),
+        ];
+        if (!$success) {
+            $detail = HostRackManager::getLastError();
+            if ($detail !== '') {
+                $response['error'] = $detail;
+            }
+        }
+        echo json_encode($response);
         exit;
     }
 }

@@ -11,11 +11,13 @@ use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
 use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\RackPermission;
 use Modules\ZabbixRack\Lib\HostRackManager;
 use Modules\ZabbixRack\Lib\ViewRenderer;
 
@@ -34,7 +36,8 @@ class RackView extends CController {
         $fields = [
             'room_id' => 'string',
             'rack_id' => 'string',
-            'search' => 'string'
+            'search' => 'string',
+            'side' => 'string',
         ];
         
         $ret = $this->validateInput($fields);
@@ -51,22 +54,36 @@ class RackView extends CController {
         $rackId = $this->getInput('rack_id', '');
         $search = $this->getInput('search', '');
         
-        // 获取所有机房
-        $rooms = RackConfig::getRooms();
+        // 按当前用户权限过滤机房
+        $rooms = RackPermission::filterRoomsForCurrentUser(RackConfig::getRooms());
+        $allowedRoomNames = [];
+        foreach ($rooms as $room) {
+            $allowedRoomNames[(string) ($room['name'] ?? '')] = true;
+        }
+
+        if ($roomId !== '' && !RackPermission::userCanAccessRoomId($roomId, $rooms)) {
+            $roomId = '';
+            $rackId = '';
+        }
+        if ($rackId !== '' && !RackPermission::userCanAccessRackId($rackId)) {
+            $rackId = '';
+        }
         
         // 获取机柜列表
         $racks = [];
         if ($roomId) {
-            $racks = RackConfig::getRacks($roomId);
+            $racks = RackPermission::filterRacksForCurrentUser(RackConfig::getRacks($roomId), $rooms);
         } elseif (!empty($rooms)) {
-            // 默认选择第一个机房
+            // 默认选择第一个可访问机房
             $roomId = $rooms[0]['id'];
-            $racks = RackConfig::getRacks($roomId);
+            $racks = RackPermission::filterRacksForCurrentUser(RackConfig::getRacks($roomId), $rooms);
         }
         
         // 获取当前选中的机柜
         $currentRack = null;
         $hosts = [];
+        $hostsFront = [];
+        $hostsBack = [];
         
         // 新增：所有机柜的数据（用于多机柜展示）
         $allRacksData = [];
@@ -75,7 +92,11 @@ class RackView extends CController {
         if ($rackId) {
             // 用户选择了特定机柜，展示单机柜详情
             $currentRack = RackConfig::getRack($rackId);
-            $showOverview = false;
+            if ($currentRack !== null && !RackPermission::userCanAccessRackId($rackId)) {
+                $currentRack = null;
+                $rackId = '';
+            }
+            $showOverview = ($currentRack === null);
         } else {
             // 没有选择机柜，展示当前机房所有机柜概览
             $showOverview = true;
@@ -85,34 +106,19 @@ class RackView extends CController {
         if ($currentRack) {
             $roomInfo = RackConfig::getRoom($currentRack['room_id']);
             $roomName = $roomInfo ? $roomInfo['name'] : '';
-            $hosts = HostRackManager::getHostsInRack($roomName, $currentRack['name']);
-            
-            // 获取主机告警数据
-            if (!empty($hosts)) {
-                $hostIds = array_column($hosts, 'hostid');
-                $hostProblems = HostRackManager::getHostProblems($hostIds);
-                
-                // 将告警数据合并到主机数据中
-                foreach ($hosts as &$host) {
-                    $hostId = $host['hostid'];
-                    if (isset($hostProblems[$hostId])) {
-                        $host['problem_count'] = $hostProblems[$hostId]['count'];
-                        $host['problems'] = $hostProblems[$hostId]['problems'];
-                        // 获取最高严重程度
-                        $host['max_severity'] = 0;
-                        foreach ($hostProblems[$hostId]['problems'] as $problem) {
-                            if ($problem['severity'] > $host['max_severity']) {
-                                $host['max_severity'] = $problem['severity'];
-                            }
-                        }
-                    } else {
-                        $host['problem_count'] = 0;
-                        $host['problems'] = [];
-                        $host['max_severity'] = -1; // 无告警
-                    }
-                }
-                unset($host);
-            }
+            $hostsFront = HostRackManager::getHostsInRack(
+                $roomName,
+                $currentRack['name'],
+                HostRackManager::SIDE_FRONT
+            );
+            $hostsBack = HostRackManager::getHostsInRack(
+                $roomName,
+                $currentRack['name'],
+                HostRackManager::SIDE_BACK
+            );
+            $hostsFront = HostRackManager::enrichHostsWithProblems($hostsFront);
+            $hostsBack = HostRackManager::enrichHostsWithProblems($hostsBack);
+            $hosts = array_merge($hostsFront, $hostsBack);
         }
         
         // 获取所有机柜的数据 - 概览模式
@@ -121,51 +127,42 @@ class RackView extends CController {
             $roomName = $roomInfo ? $roomInfo['name'] : '';
             
             foreach ($racks as $rack) {
-                $rackHosts = HostRackManager::getHostsInRack($roomName, $rack['name']);
+                $rackHostsFront = HostRackManager::getHostsInRack(
+                    $roomName,
+                    $rack['name'],
+                    HostRackManager::SIDE_FRONT
+                );
+                $rackHostsBack = HostRackManager::getHostsInRack(
+                    $roomName,
+                    $rack['name'],
+                    HostRackManager::SIDE_BACK
+                );
                 $rackProblems = 0;
-                $maxSeverity = -1; // -1 表示无告警
-                $hostCount = count($rackHosts);
-                $usedU = 0;
-                
-                // 获取主机告警
-                if (!empty($rackHosts)) {
-                    $hostIds = array_column($rackHosts, 'hostid');
-                    $hostProblemsData = HostRackManager::getHostProblems($hostIds);
-                    
-                    // 遍历主机并添加告警信息
-                    foreach ($rackHosts as &$host) {
-                        $usedU += ($host['u_end'] - $host['u_start'] + 1);
-                        $hostId = $host['hostid'];
-                        
-                        if (isset($hostProblemsData[$hostId])) {
-                            $host['problem_count'] = $hostProblemsData[$hostId]['count'];
-                            $host['problems'] = $hostProblemsData[$hostId]['problems'];
-                            // 获取最高严重程度
-                            $host['max_severity'] = 0;
-                            foreach ($hostProblemsData[$hostId]['problems'] as $problem) {
-                                if ($problem['severity'] > $host['max_severity']) {
-                                    $host['max_severity'] = $problem['severity'];
-                                }
-                                // 更新机柜级别的最高严重程度
-                                if ($problem['severity'] > $maxSeverity) {
-                                    $maxSeverity = $problem['severity'];
-                                }
-                            }
-                            $rackProblems += $hostProblemsData[$hostId]['count'];
-                        } else {
-                            $host['problem_count'] = 0;
-                            $host['problems'] = [];
-                            $host['max_severity'] = -1; // 无告警
+                $maxSeverity = -1;
+                $hostCount = count($rackHostsFront) + count($rackHostsBack);
+                $usedUFront = 0;
+                $usedUBack = 0;
+
+                foreach ($rackHostsFront as $host) {
+                    $usedUFront += ($host['u_end'] - $host['u_start'] + 1);
+                }
+                foreach ($rackHostsBack as $host) {
+                    $usedUBack += ($host['u_end'] - $host['u_start'] + 1);
+                }
+                $usedU = max($usedUFront, $usedUBack);
+
+                $rackHostsFront = HostRackManager::enrichHostsWithProblems($rackHostsFront);
+                $rackHostsBack = HostRackManager::enrichHostsWithProblems($rackHostsBack);
+                $rackHosts = array_merge($rackHostsFront, $rackHostsBack);
+
+                foreach ($rackHosts as $host) {
+                    if (($host['problem_count'] ?? 0) > 0) {
+                        $rackProblems += (int) $host['problem_count'];
+                        $hostSeverity = (int) ($host['max_severity'] ?? -1);
+                        if ($hostSeverity > $maxSeverity) {
+                            $maxSeverity = $hostSeverity;
                         }
-                        
-                        // 将groups数组转换为字符串，方便前端显示
-                        if (is_array($host['groups'])) {
-                            $host['groups'] = implode(', ', $host['groups']);
-                        }
-                        // 添加ip别名，确保前端可以访问
-                        $host['ip'] = $host['main_ip'] ?? '';
                     }
-                    unset($host); // 解除引用
                 }
                 
                 $allRacksData[] = [
@@ -178,7 +175,9 @@ class RackView extends CController {
                     'used_u' => $usedU,
                     'problem_count' => $rackProblems,
                     'max_severity' => $maxSeverity,
-                    'hosts' => $rackHosts
+                    'hosts' => $rackHosts,
+                    'hosts_front' => $rackHostsFront,
+                    'hosts_back' => $rackHostsBack,
                 ];
             }
         }
@@ -187,6 +186,10 @@ class RackView extends CController {
         $searchResults = [];
         if ($search) {
             $searchResults = HostRackManager::searchAssignedHosts($search);
+            $searchResults = array_values(array_filter($searchResults, static function ($row) use ($allowedRoomNames) {
+                $roomName = (string) ($row['room_name'] ?? '');
+                return $roomName !== '' && isset($allowedRoomNames[$roomName]);
+            }));
 
             // 在概览模式下，按搜索关键字过滤机柜显示
             if ($showOverview && !empty($allRacksData)) {
@@ -221,12 +224,14 @@ class RackView extends CController {
             'current_rack_id' => $rackId,
             'current_rack' => $currentRack,
             'hosts' => $hosts,
+            'hosts_front' => $hostsFront,
+            'hosts_back' => $hostsBack,
             'search' => $search,
             'search_results' => $searchResults,
             'host_groups' => $hostGroups,
             'lang' => LanguageManager::class,
             'show_overview' => $showOverview,
-            'all_racks_data' => $allRacksData
+            'all_racks_data' => $allRacksData,
         ];
         
         $response = new CControllerResponseData($data);

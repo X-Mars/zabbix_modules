@@ -9,9 +9,11 @@ use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
 use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\RackPermission;
 
 class RackSave extends CController {
     
@@ -48,7 +50,7 @@ class RackSave extends CController {
     }
     
     protected function checkPermissions(): bool {
-        return $this->checkAccess('ui.monitoring.hosts');
+        return RackPermission::canAccessManage();
     }
     
     protected function doAction(): void {
