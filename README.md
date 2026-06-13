@@ -145,6 +145,28 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 7. IM同步助手
+
+**简介**：将**企业微信**、**飞书**、**钉钉**的组织架构同步到 Zabbix **用户组**，并将 IM 成员匹配或创建为 Zabbix 用户、加入对应用户组的 Zabbix 前端模块。
+
+![1](zabbix_im/images/1.png)
+![2](zabbix_im/images/2.png)
+![3](zabbix_im/images/3.png)
+
+**功能特性**：
+
+- 多平台支持：企业微信（WeCom）、飞书（Feishu）、钉钉（DingTalk）
+- Web 界面管理同步凭据（**Users → 同步设置**），同一时间仅启用一套配置
+- 部门同步：按 IM 部门创建/更新 Zabbix 用户组，可选完整路径命名
+- 用户同步：匹配或自动创建 Zabbix 用户并加入用户组；新用户密码自动生成（12 位）并在结果中展示一次
+- 钉钉用户：无手机号时自动将姓名转为拼音作为 Zabbix 用户名
+- 预览模式：同步前预览部门与用户匹配情况
+- 支持中英文界面国际化
+
+**文档链接**：[zabbix_im/README.md](./zabbix_im/README.md)（[English](./zabbix_im/README_en.md)）
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
 ### 安装模块
@@ -184,6 +206,9 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 
 # 修改 zabbix_jumpserver 模块
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
+
+# 修改 zabbix_im 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
@@ -210,6 +235,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/ma
 - **Inventory → Rack Management** (机柜管理)
 - **数据采集 → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
 - **资产记录 → JumpServer** (JumpServer 同步)
+- **Users → IM同步助手** (IM 同步 / 同步设置)
 
 ### 单独安装模块
 
