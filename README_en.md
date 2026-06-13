@@ -79,6 +79,17 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_jumpserver/README.md](./zabbix_jumpserver/README.md)
 
+### 7. IM Sync Assistant
+
+- **Purpose**: Sync **WeCom**, **Feishu**, and **DingTalk** org structures into Zabbix **user groups**, and match or create Zabbix users with group membership.
+- **Features**: multi-platform support; web UI for sync credentials (**Users → Sync Settings**, one active setting at a time); department sync with optional full-path group names; user sync with match/auto-create (12-char password shown once in results); DingTalk users without mobile get pinyin usernames from display name; preview before sync; bilingual UI.
+
+![1](images/1.png)
+![2](images/2.png)
+![3](images/3.png)
+
+- **Docs**: [zabbix_im/README_en.md](./zabbix_im/README_en.md)（[中文](./zabbix_im/README.md)）
+
 ## Installation
 
 ### Deploy all modules (recommended)
@@ -105,6 +116,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
 ```
 
 For Zabbix 7.0+ / 8.0+, no change is required.
@@ -123,6 +135,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → Rack Management**
 - **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
 - **Inventory → JumpServer**
+- **Users → IM Sync Assistant** (IM Sync / Sync Settings)
 
 Each module contains its own README with specific installation and usage details.
 
