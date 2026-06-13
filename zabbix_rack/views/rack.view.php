@@ -19,6 +19,8 @@ $currentRack = $data['current_rack'];
 $hosts = $data['hosts'];
 $hostsFront = $data['hosts_front'] ?? [];
 $hostsBack = $data['hosts_back'] ?? [];
+$chassisFront = $data['chassis_front'] ?? [];
+$chassisBack = $data['chassis_back'] ?? [];
 $search = $data['search'];
 $searchResults = $data['search_results'];
 $hostGroups = $data['host_groups'];
@@ -111,6 +113,13 @@ $buildRackVisualSide = static function (array $rack, array $sideHosts, string $s
             $hostGroupsText = is_array($host['groups'] ?? null)
                 ? implode(', ', $host['groups'])
                 : (string) ($host['groups'] ?? '');
+            $hostIpText = (string) ($host['main_ip'] ?? ($host['ip'] ?? ''));
+            if ($hostIpText === '') {
+                $hostIpText = '-';
+            }
+            if ($hostGroupsText === '') {
+                $hostGroupsText = '-';
+            }
 
             $hostDataJson = json_encode([
                 'hostid' => $host['hostid'],
@@ -132,9 +141,13 @@ $buildRackVisualSide = static function (array $rack, array $sideHosts, string $s
                 ->setAttribute('onclick', 'openEditModal(this)');
 
             $slotContent = (new CDiv())->addClass('host-slot-content');
-            $slotContent->addItem(
-                (new CSpan(htmlspecialchars($host['name'])))->addClass('host-name')
+            $hostNameSpan = (new CSpan())->addClass('host-name');
+            $hostNameSpan->addItem(htmlspecialchars($host['name']));
+            $hostNameSpan->addItem(
+                (new CSpan(' (' . htmlspecialchars($hostIpText) . ', ' . htmlspecialchars($hostGroupsText) . ')'))
+                    ->addClass('host-slot-meta')
             );
+            $slotContent->addItem($hostNameSpan);
             if ($hasProblem) {
                 $slotContent->addItem(
                     (new CSpan((string)$problemCount))
@@ -194,16 +207,20 @@ $styleTag = new CTag('style', true, '
     margin-bottom: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-.rack-top-filter form {
+.rack-top-filter form,
+#filter-form {
     display: flex;
     align-items: flex-end;
-    gap: 25px;
-    flex-wrap: wrap;
+    gap: 15px;
+    flex-wrap: nowrap;
+    width: 100%;
 }
 .rack-top-filter .filter-item {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 .rack-top-filter label {
     font-weight: 600;
@@ -213,7 +230,8 @@ $styleTag = new CTag('style', true, '
 }
 .rack-top-filter z-select, 
 .rack-top-filter input[type="text"] {
-    min-width: 200px;
+    width: 100%;
+    min-width: 0;
     padding: 10px 14px;
     border: 1px solid #ced4da;
     border-radius: 6px;
@@ -224,7 +242,11 @@ $styleTag = new CTag('style', true, '
     box-sizing: border-box;
 }
 .rack-top-filter z-select {
-    min-width: 200px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+.rack-top-filter .filter-item .btn {
+    width: 100%;
 }
 /* z-select 圆角样式 */
 z-select button.focusable {
@@ -944,6 +966,11 @@ z-select .list {
 .host-slot-content .host-name {
     flex: 0 1 auto;
 }
+.host-slot-content .host-slot-meta {
+    font-size: 10px;
+    opacity: 0.92;
+    font-weight: 400;
+}
 
 /* 告警弹窗样式 - z-index 设为 4000，确保在所有其他弹窗之上 */
 .problem-modal {
@@ -1453,9 +1480,11 @@ z-select .list {
         padding: 15px;
     }
     
-    .rack-top-filter form {
+    .rack-top-filter form,
+    #filter-form {
         flex-direction: column;
         align-items: stretch;
+        flex-wrap: wrap;
     }
     
     .rack-top-filter .filter-item {
@@ -1631,24 +1660,44 @@ if (empty($rooms)) {
 
 // ── 统计卡片 ──
 $totalHosts = count($hosts);
-$usedU = 0;
+$rackHeight = $currentRack ? ($currentRack['height'] ?? 42) : 42;
+$usedFront = 0;
+$usedBack = 0;
 if (!$showOverview && $currentRack) {
-    $usedFront = 0;
-    $usedBack = 0;
     foreach ($hostsFront as $host) {
-        $usedFront += ($host['u_end'] - $host['u_start'] + 1);
+        if (!empty($host['u_start']) && !empty($host['u_end'])) {
+            $usedFront += ((int) $host['u_end'] - (int) $host['u_start'] + 1);
+        }
     }
     foreach ($hostsBack as $host) {
-        $usedBack += ($host['u_end'] - $host['u_start'] + 1);
+        if (!empty($host['u_start']) && !empty($host['u_end'])) {
+            $usedBack += ((int) $host['u_end'] - (int) $host['u_start'] + 1);
+        }
     }
-    $usedU = max($usedFront, $usedBack);
-} else {
-    foreach ($hosts as $host) {
-        $usedU += ($host['u_end'] - $host['u_start'] + 1);
+    foreach ($chassisFront as $chassis) {
+        $cStart = (int) ($chassis['u_start'] ?? 0);
+        $cEnd = (int) ($chassis['u_end'] ?? 0);
+        if ($cStart > 0 && $cEnd >= $cStart) {
+            $usedFront += ($cEnd - $cStart + 1);
+        }
+    }
+    foreach ($chassisBack as $chassis) {
+        $cStart = (int) ($chassis['u_start'] ?? 0);
+        $cEnd = (int) ($chassis['u_end'] ?? 0);
+        if ($cStart > 0 && $cEnd >= $cStart) {
+            $usedBack += ($cEnd - $cStart + 1);
+        }
     }
 }
-$rackHeight = $currentRack ? ($currentRack['height'] ?? 42) : 42;
-$usagePercent = $rackHeight > 0 ? round(($usedU / $rackHeight) * 100, 1) : 0;
+$usedTotal = $usedFront + $usedBack;
+$totalCapacity = $rackHeight * 2;
+$usagePercentTotal = $totalCapacity > 0 ? round(($usedTotal / $totalCapacity) * 100, 1) : 0;
+$usagePercentFront = $rackHeight > 0 ? round(($usedFront / $rackHeight) * 100, 1) : 0;
+$usagePercentBack = $rackHeight > 0 ? round(($usedBack / $rackHeight) * 100, 1) : 0;
+
+$formatSpaceStat = static function (int $used, int $capacity, float $percent): string {
+    return $used . 'U/' . $capacity . '（' . $percent . '%）';
+};
 
 $statsRow = (new CDiv())->addClass('stats-row');
 
@@ -1707,28 +1756,28 @@ if ($showOverview) {
                     ->addItem((new CSpan(LanguageManager::t('total_hosts')))->addClass('stat-label'))
             )
     );
-    $statsRow->addItem(
-        (new CDiv())
-            ->addClass('stat-card')
-            ->addItem((new CSpan('📊'))->addClass('stat-icon'))
-            ->addItem(
-                (new CDiv())
-                    ->addClass('stat-content')
-                    ->addItem((new CSpan($usedU . 'U / ' . $rackHeight . 'U'))->addClass('stat-number'))
-                    ->addItem((new CSpan(LanguageManager::t('space_usage')))->addClass('stat-label'))
-            )
-    );
-    $statsRow->addItem(
-        (new CDiv())
-            ->addClass('stat-card')
-            ->addItem((new CSpan('📈'))->addClass('stat-icon'))
-            ->addItem(
-                (new CDiv())
-                    ->addClass('stat-content')
-                    ->addItem((new CSpan($usagePercent . '%'))->addClass('stat-number'))
-                    ->addItem((new CSpan(LanguageManager::t('usage_rate')))->addClass('stat-label'))
-            )
-    );
+    $spaceStatCards = [
+        ['icon' => '📊', 'label' => 'total_space', 'used' => $usedTotal, 'capacity' => $totalCapacity, 'percent' => $usagePercentTotal],
+        ['icon' => '⬆️', 'label' => 'front_space', 'used' => $usedFront, 'capacity' => $rackHeight, 'percent' => $usagePercentFront],
+        ['icon' => '⬇️', 'label' => 'back_space', 'used' => $usedBack, 'capacity' => $rackHeight, 'percent' => $usagePercentBack],
+    ];
+    foreach ($spaceStatCards as $spaceStat) {
+        $statsRow->addItem(
+            (new CDiv())
+                ->addClass('stat-card')
+                ->addItem((new CSpan($spaceStat['icon']))->addClass('stat-icon'))
+                ->addItem(
+                    (new CDiv())
+                        ->addClass('stat-content')
+                        ->addItem((new CSpan($formatSpaceStat(
+                            (int) $spaceStat['used'],
+                            (int) $spaceStat['capacity'],
+                            (float) $spaceStat['percent']
+                        )))->addClass('stat-number'))
+                        ->addItem((new CSpan(LanguageManager::t($spaceStat['label'])))->addClass('stat-label'))
+                )
+        );
+    }
 }
 $container->addItem($statsRow);
 
@@ -2273,6 +2322,18 @@ $content->addItem(new CJsScript('<script>
         return div.innerHTML;
     }
 
+    function formatHostSlotLabel(name, ip, groups) {
+        var ipText = ip || "-";
+        var groupsText = groups || "-";
+        if (Array.isArray(groups)) {
+            groupsText = groups.length ? groups.join(", ") : "-";
+        }
+        return escapeHtml(name || i18n.unnamed_host)
+            + " <span class=\\"host-slot-meta\\">("
+            + escapeHtml(String(ipText)) + ", "
+            + escapeHtml(String(groupsText)) + ")</span>";
+    }
+
     function setModalRackSide(side) {
         var select = document.getElementById("modal-rack-side");
         if (select) {
@@ -2438,7 +2499,7 @@ $content->addItem(new CJsScript('<script>
 
                 html += "<div class=\\"" + classes.join(" ") + "\\" data-host=\\"" + hostDataJson + "\\" data-u-span=\\"" + span + "\\" onclick=\\"openEditModalFromDetail(this)\\" style=\\"cursor:pointer;\\">";
                 html += "<div class=\\"host-slot-content\\">";
-                html += "<span class=\\"host-name\\">" + escapeHtml(hostName) + "</span>";
+                html += "<span class=\\"host-name\\">" + formatHostSlotLabel(hostName, host.ip || host.main_ip || "", host.groups || "") + "</span>";
                 if (problemCount > 0) {
                     html += "<span class=\\"problem-badge\\" onclick=\\"event.stopPropagation();showProblemsFromDetail(\x27" + hostId + "\x27,\x27" + escapeHtml(hostName).replace(/\x27/g, "\\\x27") + "\x27)\\">" + problemCount + "</span>";
                 }
