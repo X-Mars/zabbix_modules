@@ -9,9 +9,11 @@ use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
 use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\RackPermission;
 
 class RoomSave extends CController {
     
@@ -28,7 +30,9 @@ class RoomSave extends CController {
         $fields = [
             'id' => 'string',
             'name' => 'required|string',
-            'description' => 'string'
+            'description' => 'string',
+            'user_groups' => 'string',
+            'users' => 'string',
         ];
         
         $ret = $this->validateInput($fields);
@@ -46,15 +50,27 @@ class RoomSave extends CController {
     }
     
     protected function checkPermissions(): bool {
-        return $this->checkAccess('ui.monitoring.hosts');
+        return RackPermission::canAccessManage();
     }
     
     protected function doAction(): void {
+        $allPermissionIds = RackPermission::getAllPermissionOptionIds();
         $room = [
             'id' => $this->getInput('id', ''),
             'name' => $this->getInput('name'),
-            'description' => $this->getInput('description', '')
+            'description' => $this->getInput('description', ''),
+            'user_groups' => RackPermission::normalizeIdList(
+                $this->parseJsonIdList($this->getInput('user_groups', ''))
+            ),
+            'users' => RackPermission::normalizeIdList(
+                $this->parseJsonIdList($this->getInput('users', ''))
+            ),
         ];
+        $room = RackPermission::finalizeRoomPermissions(
+            $room,
+            $allPermissionIds['user_groups'],
+            $allPermissionIds['users']
+        );
         
         $success = RackConfig::saveRoom($room);
         
@@ -73,5 +89,27 @@ class RoomSave extends CController {
             'message' => $message
         ]);
         exit;
+    }
+
+    /**
+     * @param mixed $input
+     * @return array<int, string>
+     */
+    private function parseJsonIdList($input): array {
+        if (is_array($input)) {
+            return $input;
+        }
+
+        $input = trim((string) $input);
+        if ($input === '') {
+            return [];
+        }
+
+        $decoded = json_decode($input, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return preg_split('/\s*,\s*/', $input) ?: [];
     }
 }

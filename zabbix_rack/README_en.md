@@ -26,12 +26,23 @@ This is a Zabbix frontend module for data center rack visualization and host pla
 - **Room Management**:
   - Create, edit, and delete rooms
   - Room description management
+  - Assign Zabbix user groups and users to rooms (access control)
+- **Access Control**:
+  - Rooms can be linked to Zabbix user groups and individual users
+  - Permission UI defaults to all user groups and users selected (visible to everyone)
+  - Rack view shows only rooms/racks the current user may access
+  - Rooms without user groups or users are visible to everyone
+  - **Super Admin** can view all rooms in rack view regardless of room permissions
+- **Rack Config (manage page)**:
+  - Only **Super Admin** can access the config page and related save/delete APIs
+  - Other users can use rack view only
 - **Rack Management**:
   - Create, edit, and delete racks
   - Configure rack height (supports 1-60U)
   - Associate racks with rooms
 - **Rack Visualization**:
   - 42U rack vertical layout display
+  - **Front / rear** view toggle (same U slot can host different devices on each side)
   - Real-time U position occupancy status
   - Host information hover tooltips
   - Click on free U positions for assignment
@@ -77,7 +88,39 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 
 - **Performance**: For large environments, consider limiting query result quantities appropriately.
 - **Data Accuracy**: Displayed information is based on the current state of the Zabbix database.
-- **Permission Requirements**: Users need appropriate permissions to access rack management functionality.
+- **Permission Requirements**: Users need appropriate permissions to access rack view. Rack view is filtered by room-level settings; **Super Admin** can view all rooms. **Rack Config** is available to **Super Admin** only.
+
+### Room access control (config.json)
+
+You may **optionally** add `user_groups` and `users` (arrays of string IDs) to each room in `data/config.json`. When omitted, behavior matches older versions and the room is visible to all users:
+
+```json
+{
+    "id": "room1",
+    "name": "Room 1",
+    "description": "Test Room",
+    "user_groups": ["7"],
+    "users": ["1"]
+}
+```
+
+- `user_groups`: Zabbix user group IDs allowed to access the room
+- `users`: Zabbix user IDs allowed to access the room
+- Empty or missing both fields: visible to all users
+- Access is granted if the user matches **either** a listed group **or** user
+- Saving with all groups **and** all users selected is normalized to public (no permission fields written)
+
+### Rack front / rear (host tags)
+
+Host placement can be tagged for front or rear side:
+
+| Tag | Value | Meaning |
+|-----|-------|---------|
+| `rack_side` | `back` | **Rear** side; missing tag or any other value means **front** |
+
+- Use the **Front / Rear** toggle in rack view; the same U slot can host different devices on each side
+- Front assignments omit the `rack_side` tag (backward compatible)
+- Rear assignments write `rack_side=back`
 
 ## Development
 
@@ -93,6 +136,7 @@ The module is built on the Zabbix module framework. File structure:
 - `lib/ViewRenderer.php`: View rendering utilities
 - `lib/ZabbixVersion.php`: Version compatibility utilities
 - `lib/RackConfig.php`: Rack configuration management
+- `lib/RackPermission.php`: Room access control (Zabbix user groups/users)
 - `lib/HostRackManager.php`: Host-rack association management
 
 For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).

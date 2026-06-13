@@ -11,10 +11,12 @@ use CControllerResponseData;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/RackConfig.php';
+require_once dirname(__DIR__) . '/lib/RackPermission.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
 use Modules\ZabbixRack\Lib\RackConfig;
+use Modules\ZabbixRack\Lib\RackPermission;
 use Modules\ZabbixRack\Lib\HostRackManager;
 
 class RackManage extends CController {
@@ -33,12 +35,33 @@ class RackManage extends CController {
     }
     
     protected function checkPermissions(): bool {
-        return $this->checkAccess('ui.monitoring.hosts');
+        return RackPermission::canAccessManage();
     }
     
     protected function doAction(): void {
+        $userGroupOptions = RackPermission::getUserGroupOptions();
+        $userOptions = RackPermission::getUserOptions();
+        $userGroupMap = [];
+        foreach ($userGroupOptions as $group) {
+            $userGroupMap[$group['usrgrpid']] = $group;
+        }
+        $userMap = [];
+        foreach ($userOptions as $user) {
+            $userMap[$user['userid']] = $user;
+        }
+
         // 获取所有机房
         $rooms = RackConfig::getRooms();
+        foreach ($rooms as &$room) {
+            $room['user_groups'] = RackPermission::normalizeIdList($room['user_groups'] ?? []);
+            $room['users'] = RackPermission::normalizeIdList($room['users'] ?? []);
+            $room['permission_summary'] = RackPermission::formatRoomPermissionSummary(
+                $room,
+                $userGroupMap,
+                $userMap
+            );
+        }
+        unset($room);
         
         // 获取所有机柜
         $racks = RackConfig::getRacks();
@@ -73,6 +96,8 @@ class RackManage extends CController {
         $data = [
             'rooms' => $rooms,
             'racks' => $racks,
+            'user_groups' => $userGroupOptions,
+            'users' => $userOptions,
             'lang' => LanguageManager::class
         ];
         

@@ -17,21 +17,154 @@ $currentRoomId = $data['current_room_id'];
 $currentRackId = $data['current_rack_id'];
 $currentRack = $data['current_rack'];
 $hosts = $data['hosts'];
+$hostsFront = $data['hosts_front'] ?? [];
+$hostsBack = $data['hosts_back'] ?? [];
 $search = $data['search'];
 $searchResults = $data['search_results'];
 $hostGroups = $data['host_groups'];
 $showOverview = $data['show_overview'] ?? false;
 $allRacksData = $data['all_racks_data'] ?? [];
 
-// 构建机柜占用映射
-$occupiedSlots = [];
-foreach ($hosts as $host) {
-    if ($host['u_start'] && $host['u_end']) {
-        for ($u = $host['u_start']; $u <= $host['u_end']; $u++) {
-            $occupiedSlots[$u] = $host;
+/**
+ * 构建单面机柜可视化
+ *
+ * @param array<string, mixed> $rack
+ * @param array<int, array<string, mixed>> $sideHosts
+ */
+$buildRackVisualSide = static function (array $rack, array $sideHosts, string $side) {
+    $rackHeight = $rack['height'] ?? 42;
+    $sideClass = ($side === 'back') ? ' rack-side-back' : ' rack-side-front';
+    $sideLabel = ($side === 'back')
+        ? LanguageManager::t('rack_side_back')
+        : LanguageManager::t('rack_side_front');
+
+    $occupiedSlots = [];
+    foreach ($sideHosts as $host) {
+        if ($host['u_start'] && $host['u_end']) {
+            for ($u = $host['u_start']; $u <= $host['u_end']; $u++) {
+                $occupiedSlots[$u] = $host;
+            }
         }
     }
-}
+
+    $rackVisual = (new CDiv())
+        ->addClass('rack-visual' . $sideClass)
+        ->setAttribute('data-side', $side);
+    $rackHeader = (new CDiv())->addClass('rack-header');
+    $rackHeader->addItem('🗄️ ' . htmlspecialchars($rack['name']) . ' (' . $rackHeight . 'U)');
+    $rackHeader->addItem(
+        (new CSpan($sideLabel))->addClass('rack-side-badge')
+    );
+    $rackVisual->addItem($rackHeader);
+
+    $rackUnits = (new CDiv())->addClass('rack-units');
+
+    for ($u = $rackHeight; $u >= 1; $u--) {
+        if (isset($occupiedSlots[$u])) {
+            $host = $occupiedSlots[$u];
+            if ((int) $u !== (int) $host['u_end']) {
+                continue;
+            }
+
+            $uStart = (int) $host['u_start'];
+            $uEnd = (int) $host['u_end'];
+            $span = $uEnd - $uStart + 1;
+
+            $unitRow = (new CDiv())
+                ->addClass('rack-unit')
+                ->setAttribute('data-u-span', (string) $span)
+                ->setAttribute('style', '--u-span: ' . $span);
+
+            if ($span > 1) {
+                $numberCol = (new CDiv())->addClass('rack-unit-number rack-unit-number-span');
+                $numberCol->addItem(new CSpan('U' . $uEnd));
+                $numberCol->addItem(
+                    (new CSpan('U' . $uStart))->addClass('u-label-small')
+                );
+            } else {
+                $numberCol = (new CDiv('U' . $u))->addClass('rack-unit-number');
+            }
+            $unitRow->addItem($numberCol);
+
+            $problemCount = $host['problem_count'] ?? 0;
+            $maxSeverity = $host['max_severity'] ?? -1;
+            $hasProblem = $problemCount > 0;
+
+            $slotClasses = ['rack-unit-slot', 'occupied'];
+
+            if ($host['status'] == 1) {
+                $slotClasses[] = 'status-disabled';
+            } elseif ($hasProblem && $maxSeverity >= 0) {
+                switch ($maxSeverity) {
+                    case 5: $slotClasses[] = 'severity-disaster'; break;
+                    case 4: $slotClasses[] = 'severity-high'; break;
+                    case 3: $slotClasses[] = 'severity-average'; break;
+                    case 2: $slotClasses[] = 'severity-warning'; break;
+                    case 1: $slotClasses[] = 'severity-info'; break;
+                    case 0: $slotClasses[] = 'severity-not-classified'; break;
+                    default: $slotClasses[] = 'has-problem';
+                }
+            } else {
+                $slotClasses[] = 'no-problem';
+            }
+
+            $hostGroupsText = is_array($host['groups'] ?? null)
+                ? implode(', ', $host['groups'])
+                : (string) ($host['groups'] ?? '');
+
+            $hostDataJson = json_encode([
+                'hostid' => $host['hostid'],
+                'name' => $host['name'],
+                'host' => $host['host'],
+                'ip' => $host['main_ip'] ?? ($host['ip'] ?? ''),
+                'groups' => $hostGroupsText,
+                'u_start' => $host['u_start'],
+                'u_end' => $host['u_end'],
+                'side' => $host['side'] ?? $side,
+                'status' => $host['status'] == 0 ? LanguageManager::t('enabled') : LanguageManager::t('disabled'),
+                'problem_count' => $problemCount
+            ]);
+
+            $slotDiv = (new CDiv())
+                ->addClass(implode(' ', $slotClasses))
+                ->setAttribute('data-host', $hostDataJson)
+                ->setAttribute('data-u-span', (string) $span)
+                ->setAttribute('onclick', 'openEditModal(this)');
+
+            $slotContent = (new CDiv())->addClass('host-slot-content');
+            $slotContent->addItem(
+                (new CSpan(htmlspecialchars($host['name'])))->addClass('host-name')
+            );
+            if ($hasProblem) {
+                $slotContent->addItem(
+                    (new CSpan((string)$problemCount))
+                        ->addClass('problem-badge')
+                        ->setAttribute('onclick', "event.stopPropagation();showProblems('" . $host['hostid'] . "','" . htmlspecialchars(addslashes($host['name'])) . "')")
+                        ->setAttribute('title', $problemCount . ' ' . LanguageManager::t('problems'))
+                );
+            }
+            $slotDiv->addItem($slotContent);
+            $unitRow->addItem($slotDiv);
+            $rackUnits->addItem($unitRow);
+            continue;
+        }
+
+        $unitRow = (new CDiv())->addClass('rack-unit');
+        $unitRow->addItem(
+            (new CDiv('U' . $u))->addClass('rack-unit-number')
+        );
+        $unitRow->addItem(
+            (new CDiv())
+                ->addClass('rack-unit-slot')
+                ->setAttribute('data-u', (string)$u)
+        );
+        $rackUnits->addItem($unitRow);
+    }
+
+    $rackVisual->addItem($rackUnits);
+
+    return $rackVisual;
+};
 
 $pageTitle = LanguageManager::t('rack_view');
 
@@ -179,6 +312,25 @@ z-select .list {
     min-width: 400px;
 }
 
+.rack-dual-view {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.rack-dual-side-panel {
+    flex: 1 1 320px;
+    max-width: 480px;
+    min-width: 280px;
+}
+
+.rack-dual-side-panel .rack-visual {
+    max-width: 100%;
+    margin: 0;
+}
+
 /* 侧边栏卡片样式 */
 .sidebar-card {
     background: #fff;
@@ -267,6 +419,20 @@ z-select .list {
     margin: 0 auto;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
+.rack-visual.rack-side-back {
+    background: linear-gradient(180deg, #1f1a2e 0%, #2d2545 100%);
+}
+.rack-side-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.15);
+    color: #ecf0f1;
+    vertical-align: middle;
+}
 .rack-header {
     color: #fff;
     text-align: center;
@@ -286,9 +452,13 @@ z-select .list {
 }
 .rack-unit {
     display: flex;
-    align-items: center;
-    height: 26px;
+    align-items: stretch;
+    min-height: 26px;
+    height: 28px;
     margin: 1px 0;
+}
+.rack-unit[data-u-span] {
+    height: calc(26px * var(--u-span) + 2px * (var(--u-span) - 1));
 }
 .rack-unit-number {
     width: 35px;
@@ -297,9 +467,26 @@ z-select .list {
     text-align: right;
     padding-right: 10px;
     font-weight: 500;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.rack-unit-number-span {
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    line-height: 1.1;
+}
+.rack-unit-number-span .u-label-small {
+    font-size: 10px;
+    opacity: 0.85;
 }
 .rack-unit-slot {
     flex: 1;
+    min-height: 26px;
     height: 100%;
     background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
     border-radius: 3px;
@@ -312,21 +499,35 @@ z-select .list {
     color: #fff;
     position: relative;
     border: 1px solid #3d566e;
+    box-sizing: border-box;
 }
 .rack-unit-slot:hover {
     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     border-color: #2980b9;
     box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
 }
+.rack-unit-slot.u-range-selecting {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    border-color: #85c1e9 !important;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+}
+.rack-units.u-selecting-active {
+    user-select: none;
+    -webkit-user-select: none;
+}
+.rack-units.u-selecting-active .rack-unit-slot:not(.occupied) {
+    cursor: crosshair;
+}
 .rack-unit-slot.occupied {
     background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
     border-color: #1e8449;
     cursor: pointer;
+    border-radius: 6px;
 }
 .rack-unit-slot.occupied:hover {
     background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
     box-shadow: 0 0 10px rgba(46, 204, 113, 0.6);
-    transform: scale(1.02);
+    transform: scale(1.01);
 }
 .rack-unit-slot.occupied.status-disabled {
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
@@ -336,25 +537,16 @@ z-select .list {
     background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
     box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
 }
-.rack-unit-slot.occupied-start {
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-}
-.rack-unit-slot.occupied-end {
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
-}
-.rack-unit-slot.occupied-middle {
-    border-radius: 0;
-    border-top: none;
-    border-bottom: none;
-}
 .rack-unit-slot .host-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 0 8px;
     font-weight: 500;
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* 提示框 */
@@ -738,11 +930,19 @@ z-select .list {
 }
 .host-slot-content {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     width: 100%;
-    padding: 0 8px;
+    height: 100%;
+    min-height: 100%;
+    padding: 4px 8px;
     position: relative;
+    text-align: center;
+    box-sizing: border-box;
+}
+.host-slot-content .host-name {
+    flex: 0 1 auto;
 }
 
 /* 告警弹窗样式 - z-index 设为 4000，确保在所有其他弹窗之上 */
@@ -1107,7 +1307,7 @@ z-select .list {
     background: #fff;
     border-radius: 12px;
     width: 90%;
-    max-width: 900px;
+    max-width: 1100px;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
@@ -1164,11 +1364,40 @@ z-select .list {
 }
 
 .rack-detail-visual {
-    background: linear-gradient(180deg, #1a252f 0%, #2c3e50 100%);
-    border-radius: 10px;
-    padding: 24px;
-    max-width: 400px;
-    margin: 0 auto;
+    padding: 0;
+    max-width: none;
+    margin: 0;
+    background: transparent;
+}
+
+.rack-detail-dual-view {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.rack-detail-side-panel {
+    flex: 1 1 320px;
+    max-width: 480px;
+    min-width: 280px;
+}
+
+.rack-detail-side-panel .rack-visual {
+    max-width: 100%;
+    margin: 0;
+}
+
+.rack-detail-side-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    padding: 4px 12px;
+    background: #e9ecef;
+    border-radius: 4px;
 }
 
 /* 加载动画 */
@@ -1390,11 +1619,33 @@ $filterForm->addItem($filterBtnItem);
 $filterBar->addItem($filterForm);
 $container->addItem($filterBar);
 
+if (empty($rooms)) {
+    $container->addItem(
+        (new CDiv())
+            ->addClass('no-data')
+            ->setAttribute('style', 'text-align:center;padding:60px 20px;margin-top:20px;background:#f8f9fa;border-radius:8px;border:1px dashed #dee2e6;')
+            ->addItem((new CDiv('🔒'))->setAttribute('style', 'font-size:48px;margin-bottom:16px;'))
+            ->addItem(new CDiv(LanguageManager::t('no_accessible_rooms')))
+    );
+} else {
+
 // ── 统计卡片 ──
 $totalHosts = count($hosts);
 $usedU = 0;
-foreach ($hosts as $host) {
-    $usedU += ($host['u_end'] - $host['u_start'] + 1);
+if (!$showOverview && $currentRack) {
+    $usedFront = 0;
+    $usedBack = 0;
+    foreach ($hostsFront as $host) {
+        $usedFront += ($host['u_end'] - $host['u_start'] + 1);
+    }
+    foreach ($hostsBack as $host) {
+        $usedBack += ($host['u_end'] - $host['u_start'] + 1);
+    }
+    $usedU = max($usedFront, $usedBack);
+} else {
+    foreach ($hosts as $host) {
+        $usedU += ($host['u_end'] - $host['u_start'] + 1);
+    }
 }
 $rackHeight = $currentRack ? ($currentRack['height'] ?? 42) : 42;
 $usagePercent = $rackHeight > 0 ? round(($usedU / $rackHeight) * 100, 1) : 0;
@@ -1682,8 +1933,11 @@ if ($showOverview) {
             $hostItem->addItem(
                 (new CDiv('📍 ' . htmlspecialchars($host['main_ip'])))->addClass('host-ip')
             );
+            $sideLabel = (($host['side'] ?? 'front') === 'back')
+                ? LanguageManager::t('rack_side_back')
+                : LanguageManager::t('rack_side_front');
             $hostItem->addItem(
-                (new CDiv('📦 U' . $host['u_start'] . '-U' . $host['u_end'] . ' (' . $host['u_height'] . 'U)'))
+                (new CDiv('📦 U' . $host['u_start'] . '-U' . $host['u_end'] . ' (' . $host['u_height'] . 'U) · ' . $sideLabel))
                     ->addClass('host-position')
             );
             $hostList->addItem($hostItem);
@@ -1695,117 +1949,27 @@ if ($showOverview) {
 
     $rackContainer->addItem($sidebar);
 
-    // 主区域 - 机柜可视化
+    // 主区域 - 机柜可视化（正/背面并排）
     $rackMainDiv = (new CDiv())->addClass('rack-main');
 
-    // 重新构建机柜占用映射
-    $occupiedSlots = [];
-    foreach ($hosts as $host) {
-        if ($host['u_start'] && $host['u_end']) {
-            for ($u = $host['u_start']; $u <= $host['u_end']; $u++) {
-                $occupiedSlots[$u] = $host;
-            }
-        }
-    }
-
     if ($currentRack) {
-        $rackHeight = $currentRack['height'] ?? 42;
+        $dualView = (new CDiv())->addClass('rack-dual-view');
 
-        $rackVisual = (new CDiv())->addClass('rack-visual');
-        $rackVisual->addItem(
-            (new CDiv('🗄️ ' . htmlspecialchars($currentRack['name']) . ' (' . $rackHeight . 'U)'))
-                ->addClass('rack-header')
+        $frontPanel = (new CDiv())->addClass('rack-dual-side-panel');
+        $frontPanel->addItem(
+            (new CDiv(LanguageManager::t('rack_side_front')))->addClass('rack-detail-side-label')
         );
+        $frontPanel->addItem($buildRackVisualSide($currentRack, $hostsFront, 'front'));
+        $dualView->addItem($frontPanel);
 
-        $rackUnits = (new CDiv())->addClass('rack-units');
+        $backPanel = (new CDiv())->addClass('rack-dual-side-panel');
+        $backPanel->addItem(
+            (new CDiv(LanguageManager::t('rack_side_back')))->addClass('rack-detail-side-label')
+        );
+        $backPanel->addItem($buildRackVisualSide($currentRack, $hostsBack, 'back'));
+        $dualView->addItem($backPanel);
 
-        // 从上到下渲染U位（U42到U1）
-        for ($u = $rackHeight; $u >= 1; $u--) {
-            $unitRow = (new CDiv())->addClass('rack-unit');
-            $unitRow->addItem(
-                (new CDiv('U' . $u))->addClass('rack-unit-number')
-            );
-
-            if (isset($occupiedSlots[$u])) {
-                $host = $occupiedSlots[$u];
-                $isStart = ($u == $host['u_end']);
-                $isEnd = ($u == $host['u_start']);
-                $isMiddle = !$isStart && !$isEnd;
-
-                $problemCount = $host['problem_count'] ?? 0;
-                $maxSeverity = $host['max_severity'] ?? -1;
-                $hasProblem = $problemCount > 0;
-
-                $slotClasses = ['rack-unit-slot', 'occupied'];
-
-                if ($host['status'] == 1) {
-                    $slotClasses[] = 'status-disabled';
-                } elseif ($hasProblem && $maxSeverity >= 0) {
-                    switch ($maxSeverity) {
-                        case 5: $slotClasses[] = 'severity-disaster'; break;
-                        case 4: $slotClasses[] = 'severity-high'; break;
-                        case 3: $slotClasses[] = 'severity-average'; break;
-                        case 2: $slotClasses[] = 'severity-warning'; break;
-                        case 1: $slotClasses[] = 'severity-info'; break;
-                        case 0: $slotClasses[] = 'severity-not-classified'; break;
-                        default: $slotClasses[] = 'has-problem';
-                    }
-                } else {
-                    $slotClasses[] = 'no-problem';
-                }
-
-                if ($isStart) $slotClasses[] = 'occupied-start';
-                if ($isEnd) $slotClasses[] = 'occupied-end';
-                if ($isMiddle) $slotClasses[] = 'occupied-middle';
-
-                $hostDataJson = json_encode([
-                    'hostid' => $host['hostid'],
-                    'name' => $host['name'],
-                    'host' => $host['host'],
-                    'ip' => $host['main_ip'],
-                    'groups' => implode(', ', $host['groups']),
-                    'u_start' => $host['u_start'],
-                    'u_end' => $host['u_end'],
-                    'status' => $host['status'] == 0 ? LanguageManager::t('enabled') : LanguageManager::t('disabled'),
-                    'problem_count' => $problemCount
-                ]);
-
-                $slotDiv = (new CDiv())
-                    ->addClass(implode(' ', $slotClasses))
-                    ->setAttribute('data-host', $hostDataJson)
-                    ->setAttribute('onclick', 'openEditModal(this)');
-
-                if ($isStart) {
-                    $slotContent = (new CDiv())->addClass('host-slot-content');
-                    $slotContent->addItem(
-                        (new CSpan(htmlspecialchars($host['name'])))->addClass('host-name')
-                    );
-                    if ($hasProblem) {
-                        $slotContent->addItem(
-                            (new CSpan((string)$problemCount))
-                                ->addClass('problem-badge')
-                                ->setAttribute('onclick', "event.stopPropagation();showProblems('" . $host['hostid'] . "','" . htmlspecialchars(addslashes($host['name'])) . "')")
-                                ->setAttribute('title', $problemCount . ' ' . LanguageManager::t('problems'))
-                        );
-                    }
-                    $slotDiv->addItem($slotContent);
-                }
-
-                $unitRow->addItem($slotDiv);
-            } else {
-                $unitRow->addItem(
-                    (new CDiv())
-                        ->addClass('rack-unit-slot')
-                        ->setAttribute('data-u', (string)$u)
-                        ->setAttribute('onclick', 'openAssignModal(' . $u . ')')
-                );
-            }
-
-            $rackUnits->addItem($unitRow);
-        }
-
-        $rackVisual->addItem($rackUnits);
-        $rackMainDiv->addItem($rackVisual);
+        $rackMainDiv->addItem($dualView);
     } else {
         $rackMainDiv->addItem(
             (new CDiv('📭 ' . LanguageManager::t('no_rack_selected')))->addClass('no-data')
@@ -1816,6 +1980,8 @@ if ($showOverview) {
 }
 
 $container->addItem($rackContainer);
+}
+
 $content->addItem($container);
 
 // ==================== 主机信息提示框 ====================
@@ -1978,6 +2144,18 @@ $uEndGroup->addItem(
 $formRow->addItem($uEndGroup);
 $assignModalBody->addItem($formRow);
 
+$sideGroup = (new CDiv())->addClass('form-group');
+$sideGroup->addItem(
+    (new CTag('label', true, '↔️ ' . LanguageManager::t('rack_side')))->addClass('form-label')
+);
+$sideSelect = (new CSelect('rack_side'))
+    ->setAttribute('id', 'modal-rack-side');
+$sideSelect->addOption(new CSelectOption('front', LanguageManager::t('rack_side_front')));
+$sideSelect->addOption(new CSelectOption('back', LanguageManager::t('rack_side_back')));
+$sideSelect->setValue('front');
+$sideGroup->addItem($sideSelect);
+$assignModalBody->addItem($sideGroup);
+
 $assignModalContent->addItem($assignModalBody);
 
 // 弹窗底部
@@ -2064,6 +2242,11 @@ $i18n = [
     'loading' => LanguageManager::t('loading'),
     'no_active_problems' => LanguageManager::t('no_active_problems'),
     'fetch_problems_failed' => LanguageManager::t('fetch_problems_failed'),
+    'rack_side_front' => LanguageManager::t('rack_side_front'),
+    'rack_side_back' => LanguageManager::t('rack_side_back'),
+    'rack_side' => LanguageManager::t('rack_side'),
+    'rack_side_front_view' => LanguageManager::t('rack_side_front_view'),
+    'rack_side_back_view' => LanguageManager::t('rack_side_back_view'),
 ];
 $i18nJson = json_encode($i18n, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
@@ -2090,13 +2273,29 @@ $content->addItem(new CJsScript('<script>
         return div.innerHTML;
     }
 
+    function setModalRackSide(side) {
+        var select = document.getElementById("modal-rack-side");
+        if (select) {
+            select.value = (side === "back") ? "back" : "front";
+        }
+    }
+
+    function getModalRackSide() {
+        var select = document.getElementById("modal-rack-side");
+        if (!select) {
+            return "front";
+        }
+        return select.value === "back" ? "back" : "front";
+    }
+
     // ============ 筛选栏联动（z-select 事件监听） ============
     var roomSelect = document.getElementById("room-select");
     if (roomSelect) {
         roomSelect.addEventListener("change", function() {
             var roomId = this.value;
             if (roomId) {
-                window.location.href = "zabbix.php?action=rack.view&room_id=" + encodeURIComponent(roomId);
+                window.location.href = "zabbix.php?action=rack.view&room_id="
+                    + encodeURIComponent(roomId);
             }
         });
     }
@@ -2106,7 +2305,9 @@ $content->addItem(new CJsScript('<script>
         rackSelect.addEventListener("change", function() {
             var rackId = this.value;
             if (rackId) {
-                window.location.href = "zabbix.php?action=rack.view&room_id=" + encodeURIComponent(currentRoomId) + "&rack_id=" + encodeURIComponent(rackId);
+                window.location.href = "zabbix.php?action=rack.view&room_id="
+                    + encodeURIComponent(currentRoomId)
+                    + "&rack_id=" + encodeURIComponent(rackId);
             }
         });
     }
@@ -2126,11 +2327,13 @@ $content->addItem(new CJsScript('<script>
     occupiedSlots.forEach(function(slot) {
         slot.addEventListener("mouseenter", function(e) {
             var hostData = JSON.parse(this.getAttribute("data-host"));
+            var sideLabel = (hostData.side === "back") ? i18n.rack_side_back : i18n.rack_side_front;
             tooltip.innerHTML = "<h4>" + escapeHtml(hostData.name) + "</h4>" +
                 "<p><span class=\\"label\\">" + i18n.host_name_label + "</span> " + escapeHtml(hostData.host) + "</p>" +
                 "<p><span class=\\"label\\">" + i18n.ip_label + "</span> " + escapeHtml(hostData.ip) + "</p>" +
                 "<p><span class=\\"label\\">" + i18n.host_group_label + "</span> " + escapeHtml(hostData.groups) + "</p>" +
                 "<p><span class=\\"label\\">" + i18n.position_label + "</span> U" + hostData.u_start + "-U" + hostData.u_end + "</p>" +
+                "<p><span class=\\"label\\">" + i18n.rack_side + "</span> " + escapeHtml(sideLabel) + "</p>" +
                 "<p><span class=\\"label\\">" + i18n.status_label + "</span> " + escapeHtml(hostData.status) + "</p>";
             tooltip.classList.add("visible");
         });
@@ -2150,26 +2353,11 @@ $content->addItem(new CJsScript('<script>
         viewRackDetail(rackId);
     };
 
-    window.viewRackDetail = function(rackId) {
-        var rackData = null;
-        for (var i = 0; i < allRacksData.length; i++) {
-            if (allRacksData[i].id === rackId) {
-                rackData = allRacksData[i];
-                break;
-            }
-        }
-        if (!rackData) {
-            console.error("viewRackDetail: rackData not found for id:", rackId);
-            return;
-        }
-
-        var hosts = rackData.hosts || [];
+    function buildRackVisualHtml(rackData, hosts, side) {
         if (!Array.isArray(hosts)) {
-            console.error("viewRackDetail: hosts is not an array:", hosts);
             hosts = [];
         }
 
-        // 构建 U 位映射
         var occupiedMap = {};
         for (var i = 0; i < hosts.length; i++) {
             var host = hosts[i];
@@ -2182,29 +2370,33 @@ $content->addItem(new CJsScript('<script>
             }
         }
 
-        detailRackData = rackData;
-        currentRackId = rackData.id;
-        currentRoomId = rackData.room_id;
-
-        document.getElementById("detail-rack-name").textContent = rackData.name;
-
         var rackHeight = parseInt(rackData.height) || 42;
-        var html = "<div class=\\"rack-visual\\" style=\\"max-width:600px;margin:0 auto;\\">";
-        html += "<div class=\\"rack-header\\">🗄️ " + escapeHtml(rackData.name) + " (" + rackHeight + "U)</div>";
+        var sideClass = side === "back" ? " rack-side-back" : " rack-side-front";
+        var sideLabel = side === "back" ? i18n.rack_side_back : i18n.rack_side_front;
+        var html = "<div class=\\"rack-visual" + sideClass + "\\" data-side=\\"" + side + "\\">";
+        html += "<div class=\\"rack-header\\">🗄️ " + escapeHtml(rackData.name) + " (" + rackHeight + "U) <span class=\\"rack-side-badge\\">" + sideLabel + "</span></div>";
         html += "<div class=\\"rack-units\\">";
 
         for (var u = rackHeight; u >= 1; u--) {
-            html += "<div class=\\"rack-unit\\">";
-            html += "<div class=\\"rack-unit-number\\">U" + u + "</div>";
-
             if (occupiedMap[u]) {
                 var host = occupiedMap[u];
                 var uStart = parseInt(host.u_start);
                 var uEnd = parseInt(host.u_end);
-                var isStart = (u == uEnd);
-                var isEnd = (u == uStart);
-                var isMiddle = !isStart && !isEnd;
-                var hostUHeight = uEnd - uStart + 1;
+                if (u !== uEnd) {
+                    continue;
+                }
+
+                var span = uEnd - uStart + 1;
+                html += "<div class=\\"rack-unit\\" data-u-span=\\"" + span + "\\" style=\\"--u-span:" + span + "\\">";
+
+                if (span > 1) {
+                    html += "<div class=\\"rack-unit-number rack-unit-number-span\\">";
+                    html += "<span>U" + uEnd + "</span>";
+                    html += "<span class=\\"u-label-small\\">U" + uStart + "</span>";
+                    html += "</div>";
+                } else {
+                    html += "<div class=\\"rack-unit-number\\">U" + u + "</div>";
+                }
 
                 var hostName = host.name || host.host || i18n.unnamed_host;
                 var hostId = host.hostid || "";
@@ -2231,10 +2423,6 @@ $content->addItem(new CJsScript('<script>
                     classes.push("no-problem");
                 }
 
-                if (isStart) classes.push("occupied-start");
-                if (isEnd) classes.push("occupied-end");
-                if (isMiddle) classes.push("occupied-middle");
-
                 var hostDataJson = JSON.stringify({
                     hostid: hostId,
                     name: hostName,
@@ -2243,40 +2431,81 @@ $content->addItem(new CJsScript('<script>
                     groups: host.groups || "",
                     u_start: uStart,
                     u_end: uEnd,
+                    side: host.side || side,
                     status: hostStatus === 0 ? i18n.enabled : i18n.disabled,
                     problem_count: problemCount
                 }).replace(/\x27/g, "\\\x27").replace(/"/g, "&quot;");
 
-                html += "<div class=\\"" + classes.join(" ") + "\\" data-host=\\"" + hostDataJson + "\\" onclick=\\"openEditModalFromDetail(this)\\" style=\\"cursor:pointer;\\">";
-
-                if (isStart) {
-                    html += "<div class=\\"host-slot-content\\">";
-                    var displayName = escapeHtml(hostName);
-                    if (hostUHeight > 1) {
-                        displayName += " <span style=\\"font-size:10px;opacity:0.8;\\">(" + hostUHeight + "U)</span>";
-                    }
-                    html += "<span class=\\"host-name\\">" + displayName + "</span>";
-                    if (problemCount > 0) {
-                        html += "<span class=\\"problem-badge\\" onclick=\\"event.stopPropagation();showProblemsFromDetail(\x27" + hostId + "\x27,\x27" + escapeHtml(hostName).replace(/\x27/g, "\\\x27") + "\x27)\\">" + problemCount + "</span>";
-                    }
-                    html += "</div>";
+                html += "<div class=\\"" + classes.join(" ") + "\\" data-host=\\"" + hostDataJson + "\\" data-u-span=\\"" + span + "\\" onclick=\\"openEditModalFromDetail(this)\\" style=\\"cursor:pointer;\\">";
+                html += "<div class=\\"host-slot-content\\">";
+                html += "<span class=\\"host-name\\">" + escapeHtml(hostName) + "</span>";
+                if (problemCount > 0) {
+                    html += "<span class=\\"problem-badge\\" onclick=\\"event.stopPropagation();showProblemsFromDetail(\x27" + hostId + "\x27,\x27" + escapeHtml(hostName).replace(/\x27/g, "\\\x27") + "\x27)\\">" + problemCount + "</span>";
                 }
-                html += "</div>";
-            } else {
-                html += "<div class=\\"rack-unit-slot\\" data-u=\\"" + u + "\\" onclick=\\"openAssignModalFromDetail(" + u + ")\\" style=\\"cursor:pointer;\\"></div>";
+                html += "</div></div></div>";
+                continue;
             }
 
+            html += "<div class=\\"rack-unit\\">";
+            html += "<div class=\\"rack-unit-number\\">U" + u + "</div>";
+            html += "<div class=\\"rack-unit-slot\\" data-u=\\"" + u + "\\"></div>";
             html += "</div>";
         }
 
         html += "</div></div>";
+        return html;
+    }
+
+    window.viewRackDetail = function(rackId) {
+        var rackData = null;
+        for (var i = 0; i < allRacksData.length; i++) {
+            if (allRacksData[i].id === rackId) {
+                rackData = allRacksData[i];
+                break;
+            }
+        }
+        if (!rackData) {
+            console.error("viewRackDetail: rackData not found for id:", rackId);
+            return;
+        }
+
+        var hostsFront = rackData.hosts_front || rackData.hosts || [];
+        var hostsBack = rackData.hosts_back || [];
+        if (!Array.isArray(hostsFront)) {
+            hostsFront = [];
+        }
+        if (!Array.isArray(hostsBack)) {
+            hostsBack = [];
+        }
+
+        detailRackData = rackData;
+        currentRackId = rackData.id;
+        currentRoomId = rackData.room_id;
+
+        document.getElementById("detail-rack-name").textContent = rackData.name;
+
+        var html = "<div class=\\"rack-detail-dual-view\\">";
+        html += "<div class=\\"rack-detail-side-panel\\">";
+        html += "<div class=\\"rack-detail-side-label\\">" + escapeHtml(i18n.rack_side_front) + "</div>";
+        html += buildRackVisualHtml(rackData, hostsFront, "front");
+        html += "</div>";
+        html += "<div class=\\"rack-detail-side-panel\\">";
+        html += "<div class=\\"rack-detail-side-label\\">" + escapeHtml(i18n.rack_side_back) + "</div>";
+        html += buildRackVisualHtml(rackData, hostsBack, "back");
+        html += "</div>";
+        html += "</div>";
+
         document.getElementById("detail-rack-visual").innerHTML = html;
         document.getElementById("rack-detail-modal").classList.add("visible");
     };
 
-    window.openAssignModalFromDetail = function(u) {
+    window.openAssignModalFromDetail = function(uStart, uEndOrSide, maybeSide) {
         closeRackDetail();
-        openAssignModal(u);
+        if (typeof uEndOrSide === "string") {
+            openAssignModal(uStart, uEndOrSide);
+        } else {
+            openAssignModal(uStart, uEndOrSide, maybeSide);
+        }
     };
 
     window.openEditModalFromDetail = function(elem) {
@@ -2292,6 +2521,7 @@ $content->addItem(new CJsScript('<script>
         document.getElementById("edit-host-ip").textContent = (hostData.ip || "-") + " | " + (hostData.groups || "-");
         document.getElementById("modal-u-start").value = hostData.u_start;
         document.getElementById("modal-u-end").value = hostData.u_end;
+        setModalRackSide(hostData.side || "front");
         document.getElementById("host-select-section").style.display = "none";
         document.getElementById("edit-host-info").style.display = "block";
         document.getElementById("btn-remove-host").style.display = "inline-block";
@@ -2314,14 +2544,236 @@ $content->addItem(new CJsScript('<script>
         }
     });
 
+    function getSideFromRackVisual(slot) {
+        var visual = slot.closest(".rack-visual");
+        if (!visual) {
+            return "front";
+        }
+        return visual.getAttribute("data-side") === "back" ? "back" : "front";
+    }
+
+    function getEmptySlotFromElement(el) {
+        if (!el) {
+            return null;
+        }
+        var slot = el.closest(".rack-unit-slot:not(.occupied)");
+        if (!slot || !slot.hasAttribute("data-u")) {
+            return null;
+        }
+        return slot;
+    }
+
+    function getEmptySlotAtPoint(x, y) {
+        var el = document.elementFromPoint(x, y);
+        return getEmptySlotFromElement(el);
+    }
+
+    function clearURangeSelectionHighlight() {
+        document.querySelectorAll(".rack-unit-slot.u-range-selecting").forEach(function(slot) {
+            slot.classList.remove("u-range-selecting");
+        });
+    }
+
+    function isURangeAvailable(unitsContainer, minU, maxU) {
+        if (!unitsContainer) {
+            return false;
+        }
+        for (var u = minU; u <= maxU; u++) {
+            var slot = unitsContainer.querySelector(".rack-unit-slot[data-u=\"" + u + "\"]");
+            if (!slot || slot.classList.contains("occupied")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function updateURangeSelectionHighlight(unitsContainer, startU, endU) {
+        clearURangeSelectionHighlight();
+        if (!unitsContainer) {
+            return false;
+        }
+
+        var minU = Math.min(startU, endU);
+        var maxU = Math.max(startU, endU);
+        if (!isURangeAvailable(unitsContainer, minU, maxU)) {
+            return false;
+        }
+
+        for (var u = minU; u <= maxU; u++) {
+            var slot = unitsContainer.querySelector(".rack-unit-slot[data-u=\"" + u + "\"]");
+            if (slot) {
+                slot.classList.add("u-range-selecting");
+            }
+        }
+        return true;
+    }
+
+    function finishURangeSelection(unitsContainer, startU, endU, side) {
+        if (!unitsContainer) {
+            return;
+        }
+
+        var minU = Math.min(startU, endU);
+        var maxU = Math.max(startU, endU);
+        if (!isURangeAvailable(unitsContainer, minU, maxU)) {
+            if (maxU > minU) {
+                alert(i18n.invalid_u_range);
+            }
+            return;
+        }
+
+        var detailModal = document.getElementById("rack-detail-modal");
+        if (detailModal && detailModal.classList.contains("visible") && unitsContainer.closest("#rack-detail-modal")) {
+            openAssignModalFromDetail(minU, maxU, side);
+        } else {
+            openAssignModal(minU, maxU, side);
+        }
+    }
+
+    var uRangeSelection = {
+        active: false,
+        rackUnits: null,
+        side: "front",
+        startU: 0,
+        endU: 0
+    };
+
+    function beginURangeSelection(slot) {
+        var rackUnits = slot.closest(".rack-units");
+        if (!rackUnits) {
+            return;
+        }
+
+        uRangeSelection.active = true;
+        uRangeSelection.rackUnits = rackUnits;
+        uRangeSelection.side = getSideFromRackVisual(slot);
+        uRangeSelection.startU = parseInt(slot.getAttribute("data-u"), 10);
+        uRangeSelection.endU = uRangeSelection.startU;
+        rackUnits.classList.add("u-selecting-active");
+        updateURangeSelectionHighlight(rackUnits, uRangeSelection.startU, uRangeSelection.endU);
+    }
+
+    function moveURangeSelection(clientX, clientY) {
+        if (!uRangeSelection.active || !uRangeSelection.rackUnits) {
+            return;
+        }
+
+        var slot = getEmptySlotAtPoint(clientX, clientY);
+        if (!slot) {
+            clearURangeSelectionHighlight();
+            return;
+        }
+
+        var rackUnits = slot.closest(".rack-units");
+        if (rackUnits !== uRangeSelection.rackUnits) {
+            return;
+        }
+
+        uRangeSelection.endU = parseInt(slot.getAttribute("data-u"), 10);
+        updateURangeSelectionHighlight(uRangeSelection.rackUnits, uRangeSelection.startU, uRangeSelection.endU);
+    }
+
+    function endURangeSelection() {
+        if (!uRangeSelection.active) {
+            return;
+        }
+
+        var rackUnits = uRangeSelection.rackUnits;
+        var startU = uRangeSelection.startU;
+        var endU = uRangeSelection.endU;
+        var side = uRangeSelection.side;
+
+        uRangeSelection.active = false;
+        uRangeSelection.rackUnits = null;
+
+        if (rackUnits) {
+            rackUnits.classList.remove("u-selecting-active");
+        }
+        clearURangeSelectionHighlight();
+        finishURangeSelection(rackUnits, startU, endU, side);
+    }
+
+    document.addEventListener("mousedown", function(e) {
+        if (e.button !== 0) {
+            return;
+        }
+        var slot = getEmptySlotFromElement(e.target);
+        if (!slot) {
+            return;
+        }
+        e.preventDefault();
+        beginURangeSelection(slot);
+    });
+
+    document.addEventListener("mousemove", function(e) {
+        if (!uRangeSelection.active) {
+            return;
+        }
+        moveURangeSelection(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("mouseup", function() {
+        endURangeSelection();
+    });
+
+    document.addEventListener("touchstart", function(e) {
+        if (e.touches.length !== 1) {
+            return;
+        }
+        var touch = e.touches[0];
+        var slot = getEmptySlotAtPoint(touch.clientX, touch.clientY);
+        if (!slot) {
+            return;
+        }
+        e.preventDefault();
+        beginURangeSelection(slot);
+    }, {passive: false});
+
+    document.addEventListener("touchmove", function(e) {
+        if (!uRangeSelection.active || e.touches.length !== 1) {
+            return;
+        }
+        e.preventDefault();
+        moveURangeSelection(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+
+    document.addEventListener("touchend", function() {
+        endURangeSelection();
+    });
+
+    document.addEventListener("touchcancel", function() {
+        if (!uRangeSelection.active) {
+            return;
+        }
+        uRangeSelection.active = false;
+        if (uRangeSelection.rackUnits) {
+            uRangeSelection.rackUnits.classList.remove("u-selecting-active");
+        }
+        uRangeSelection.rackUnits = null;
+        clearURangeSelectionHighlight();
+    });
+
     // ============ 单机柜管理函数 ============
-    window.openAssignModal = function(u) {
+    window.openAssignModal = function(uStart, uEndOrSide, maybeSide) {
+        var uEnd = uStart;
+        var side = "front";
+        if (typeof uEndOrSide === "string") {
+            side = uEndOrSide === "back" ? "back" : "front";
+        } else if (typeof uEndOrSide === "number" && !isNaN(uEndOrSide)) {
+            uEnd = uEndOrSide;
+            side = maybeSide === "back" ? "back" : "front";
+        }
+
+        var minU = Math.min(uStart, uEnd);
+        var maxU = Math.max(uStart, uEnd);
+
         isEditMode = false;
         editingHostId = null;
         selectedHostId = null;
         document.getElementById("modal-title").textContent = i18n.assign_host;
-        document.getElementById("modal-u-start").value = u;
-        document.getElementById("modal-u-end").value = u;
+        document.getElementById("modal-u-start").value = minU;
+        document.getElementById("modal-u-end").value = maxU;
+        setModalRackSide(side);
         document.getElementById("modal-group-select").value = "";
         document.getElementById("modal-host-search").value = "";
         document.getElementById("host-select-list").innerHTML = "";
@@ -2343,6 +2795,7 @@ $content->addItem(new CJsScript('<script>
         document.getElementById("edit-host-ip").textContent = hostData.ip + " | " + hostData.groups;
         document.getElementById("modal-u-start").value = hostData.u_start;
         document.getElementById("modal-u-end").value = hostData.u_end;
+        setModalRackSide(hostData.side || "front");
         document.getElementById("host-select-section").style.display = "none";
         document.getElementById("edit-host-info").style.display = "block";
         document.getElementById("btn-remove-host").style.display = "inline-block";
@@ -2453,6 +2906,7 @@ $content->addItem(new CJsScript('<script>
         formData.append("rack_id", currentRackId);
         formData.append("u_start", uStart);
         formData.append("u_end", uEnd);
+        formData.append("side", getModalRackSide());
 
         fetch("zabbix.php", {
             method: "POST",
@@ -2597,13 +3051,16 @@ $content->addItem(new CJsScript('<script>
      */
     function collectAllHostIds() {
         var hostIds = [];
+        var hostKeys = ["hosts", "hosts_front", "hosts_back"];
         // 从概览模式的 allRacksData 中收集
         if (allRacksData && allRacksData.length > 0) {
             for (var i = 0; i < allRacksData.length; i++) {
-                var hosts = allRacksData[i].hosts || [];
-                for (var j = 0; j < hosts.length; j++) {
-                    if (hosts[j].hostid && hostIds.indexOf(hosts[j].hostid) === -1) {
-                        hostIds.push(hosts[j].hostid);
+                for (var k = 0; k < hostKeys.length; k++) {
+                    var hosts = allRacksData[i][hostKeys[k]] || [];
+                    for (var j = 0; j < hosts.length; j++) {
+                        if (hosts[j].hostid && hostIds.indexOf(hosts[j].hostid) === -1) {
+                            hostIds.push(hosts[j].hostid);
+                        }
                     }
                 }
             }
@@ -2653,6 +3110,31 @@ $content->addItem(new CJsScript('<script>
         }
     }
 
+    function applyProblemDataToHosts(hosts, problemData) {
+        var totalProblems = 0;
+        var maxSeverity = -1;
+
+        for (var j = 0; j < hosts.length; j++) {
+            var hostId = hosts[j].hostid;
+            if (problemData[hostId]) {
+                hosts[j].problem_count = problemData[hostId].problem_count;
+                hosts[j].max_severity = problemData[hostId].max_severity;
+                totalProblems += problemData[hostId].problem_count;
+                if (problemData[hostId].max_severity > maxSeverity) {
+                    maxSeverity = problemData[hostId].max_severity;
+                }
+            } else {
+                hosts[j].problem_count = 0;
+                hosts[j].max_severity = -1;
+            }
+        }
+
+        return {
+            totalProblems: totalProblems,
+            maxSeverity: maxSeverity
+        };
+    }
+
     /**
      * 更新概览模式中的机柜卡片和 allRacksData 中的告警数据
      */
@@ -2662,24 +3144,13 @@ $content->addItem(new CJsScript('<script>
         for (var i = 0; i < allRacksData.length; i++) {
             var rackData = allRacksData[i];
             var hosts = rackData.hosts || [];
-            var totalProblems = 0;
-            var maxSeverity = -1;
-
-            // 更新每个主机的告警状态
-            for (var j = 0; j < hosts.length; j++) {
-                var hostId = hosts[j].hostid;
-                if (problemData[hostId]) {
-                    hosts[j].problem_count = problemData[hostId].problem_count;
-                    hosts[j].max_severity = problemData[hostId].max_severity;
-                    totalProblems += problemData[hostId].problem_count;
-                    if (problemData[hostId].max_severity > maxSeverity) {
-                        maxSeverity = problemData[hostId].max_severity;
-                    }
-                } else {
-                    hosts[j].problem_count = 0;
-                    hosts[j].max_severity = -1;
-                }
-            }
+            var hostsFront = rackData.hosts_front || [];
+            var hostsBack = rackData.hosts_back || [];
+            var summary = applyProblemDataToHosts(hosts, problemData);
+            applyProblemDataToHosts(hostsFront, problemData);
+            applyProblemDataToHosts(hostsBack, problemData);
+            var totalProblems = summary.totalProblems;
+            var maxSeverity = summary.maxSeverity;
 
             // 更新 allRacksData
             rackData.problem_count = totalProblems;
@@ -2842,17 +3313,19 @@ $content->addItem(new CJsScript('<script>
                 // 如果详情弹窗打开着，也更新详情弹窗
                 var detailModal = document.getElementById("rack-detail-modal");
                 if (detailModal && detailModal.classList.contains("visible") && detailRackData) {
-                    // 更新 detailRackData 中的告警状态然后重新渲染
-                    var hosts = detailRackData.hosts || [];
+                    var hostKeys = ["hosts", "hosts_front", "hosts_back"];
                     var needRerender = false;
-                    for (var i = 0; i < hosts.length; i++) {
-                        var hid = hosts[i].hostid;
-                        if (problemData[hid]) {
-                            var oldCount = parseInt(hosts[i].problem_count) || 0;
-                            var newCount = problemData[hid].problem_count;
-                            if (oldCount !== newCount) needRerender = true;
-                            hosts[i].problem_count = newCount;
-                            hosts[i].max_severity = problemData[hid].max_severity;
+                    for (var k = 0; k < hostKeys.length; k++) {
+                        var hosts = detailRackData[hostKeys[k]] || [];
+                        for (var i = 0; i < hosts.length; i++) {
+                            var hid = hosts[i].hostid;
+                            if (problemData[hid]) {
+                                var oldCount = parseInt(hosts[i].problem_count) || 0;
+                                var newCount = problemData[hid].problem_count;
+                                if (oldCount !== newCount) needRerender = true;
+                                hosts[i].problem_count = newCount;
+                                hosts[i].max_severity = problemData[hid].max_severity;
+                            }
                         }
                     }
                     if (needRerender) {

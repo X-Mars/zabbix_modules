@@ -6,6 +6,8 @@
 
 namespace Modules\ZabbixRack\Lib;
 
+require_once __DIR__ . '/RackPermission.php';
+
 class RackConfig {
     
     private static $configFile = null;
@@ -116,7 +118,7 @@ class RackConfig {
      */
     public static function saveRoom(array $room): bool {
         $config = self::load();
-        
+        $room = RackPermission::applyRoomPermissions($room);
         if (empty($room['id'])) {
             // 新建机房
             $room['id'] = self::generateId();
@@ -129,6 +131,12 @@ class RackConfig {
                 if ($existingRoom['id'] === $room['id']) {
                     $room['updated_at'] = date('Y-m-d H:i:s');
                     $existingRoom = array_merge($existingRoom, $room);
+                    if (!isset($room['user_groups'])) {
+                        unset($existingRoom['user_groups']);
+                    }
+                    if (!isset($room['users'])) {
+                        unset($existingRoom['users']);
+                    }
                     $found = true;
                     break;
                 }

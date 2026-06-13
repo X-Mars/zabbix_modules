@@ -4,8 +4,10 @@ namespace Modules\ZabbixRack;
 
 // 动态导入版本兼容工具
 require_once __DIR__ . '/lib/ZabbixVersion.php';
+require_once __DIR__ . '/lib/RackPermission.php';
 use Modules\ZabbixRack\Lib\ZabbixVersion;
 use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackPermission;
 use CMenu;
 use CMenuItem;
 
@@ -41,10 +43,14 @@ class Module extends ModuleBase {
                         ->getSubmenu()
                         ->add(
                             (new CMenuItem($lm->t('Rack Module')))->setSubMenu(
-                                new CMenu([
-                                    (new CMenuItem($lm->t('Rack View')))->setAction('rack.view'),
-                                    (new CMenuItem($lm->t('Rack Config')))->setAction('rack.manage')
-                                ])
+                                new CMenu(array_merge(
+                                    [
+                                        (new CMenuItem($lm->t('Rack View')))->setAction('rack.view'),
+                                    ],
+                                    RackPermission::canAccessManage()
+                                        ? [(new CMenuItem($lm->t('Rack Config')))->setAction('rack.manage')]
+                                        : []
+                                ))
                             )
                         );
                 }
