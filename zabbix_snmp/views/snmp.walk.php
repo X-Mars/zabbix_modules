@@ -88,28 +88,6 @@ $styleTag = new CTag('style', true, '
     padding: 16px;
 }
 
-.snmp-title {
-    margin: 0 0 6px;
-    color: #243b53;
-    font-size: 24px;
-}
-
-.snmp-subtitle {
-    margin: 0;
-    color: #627d98;
-}
-
-.snmp-testbox {
-    margin-top: 14px;
-    border: 1px solid #d9e3ec;
-    border-radius: 8px;
-    padding: 12px;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
 .snmp-test-title {
     margin: 0;
     font-size: 15px;
@@ -227,13 +205,6 @@ $styleTag = new CTag('style', true, '
     background: #fff3f2;
     color: #9b1c1c;
     border: 1px solid #f3c7c6;
-}
-
-.snmp-result-meta {
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #486581;
-    border-bottom: 1px solid #e5edf5;
 }
 
 .snmp-result-head-right {
@@ -663,9 +634,9 @@ $styleTag = new CTag('style', true, '
     color: #627d98;
 }
 
-.snmp-walk-value {
+.snmp-walk-table td.snmp-walk-value {
     word-break: break-word;
-    color: #243b53;
+    color: #127c56;
 }
 
 .snmp-walk-pager {
@@ -730,11 +701,8 @@ $styleTag = new CTag('style', true, '
 $content = (new CDiv())->addClass('snmp-walk-page');
 
 $top = (new CDiv())->addClass('snmp-top');
-$top->addItem((new CTag('h1', true, LanguageManager::t('Zabbix Walk')))->addClass('snmp-title'));
-$top->addItem((new CDiv(LanguageManager::t('SNMP Walk Runner')))->addClass('snmp-subtitle'));
 
-$testBox = (new CDiv())->addClass('snmp-testbox');
-$testBox->addItem((new CTag('h2', true, LanguageManager::t('SNMP Connection Test')))->addClass('snmp-test-title'));
+$top->addItem((new CTag('h2', true, LanguageManager::t('SNMP Connection Test')))->addClass('snmp-test-title'));
 
 $filterForm = new CTag('form', true);
 $filterForm->setAttribute('method', 'get');
@@ -785,7 +753,7 @@ if (empty($hosts)) {
 $hostField->addItem($hostSelect);
 $filterForm->addItem($hostField);
 
-$testBox->addItem($filterForm);
+$top->addItem($filterForm);
 
 if (!empty($hostConnection)) {
     $profile = (new CDiv())->addClass('snmp-profile');
@@ -799,7 +767,7 @@ if (!empty($hostConnection)) {
         $profile->addItem((new CDiv(LanguageManager::t('Community') . ': ' . ($hostConnection['community'] ?? '-')))->addClass('snmp-profile-item'));
     }
 
-    $testBox->addItem($profile);
+    $top->addItem($profile);
 }
 
 $runForm = new CTag('form', true);
@@ -820,10 +788,9 @@ $oidInput = (new CTag('input'))
 $runForm->addItem($oidInput);
 $runForm->addItem((new CTag('button', true, LanguageManager::t('Run')))->addClass('snmp-btn')->setAttribute('type', 'submit'));
 
-$testBox->addItem((new CSpan(LanguageManager::t('Walk OID')))->addClass('snmp-field-label'));
-$testBox->addItem($runForm);
+$top->addItem((new CSpan(LanguageManager::t('Walk OID')))->addClass('snmp-field-label'));
+$top->addItem($runForm);
 
-$top->addItem($testBox);
 $content->addItem($top);
 
 if ($walkResult !== null) {
@@ -874,8 +841,6 @@ if ($walkResult !== null) {
                 'label_oid' => (string) ($entry['oid'] ?? '-')
             ];
         }
-
-        $resultBlock->addItem((new CDiv(LanguageManager::t('Total lines') . ': ' . count($entries)))->addClass('snmp-result-meta'));
 
         if (!empty($walkTableRows)) {
             $toolbar = (new CDiv())->addClass('snmp-walk-toolbar');
@@ -988,9 +953,6 @@ if ($walkResult !== null) {
                     ->setAttribute('id', 'snmp-walk-raw-data')
             );
         }
-    } else {
-        $message = (string) ($walkResult['message'] ?? LanguageManager::t('No walk results'));
-        $resultBlock->addItem((new CDiv($message))->addClass('snmp-result-meta'));
     }
 
     $content->addItem($resultBlock);

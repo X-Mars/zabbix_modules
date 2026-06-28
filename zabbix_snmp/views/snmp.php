@@ -138,19 +138,7 @@ $styleTag = new CTag('style', true, '
     padding: 16px;
 }
 
-.snmp-title {
-    margin: 0 0 6px;
-    color: #243b53;
-    font-size: 24px;
-}
-
-.snmp-subtitle {
-    margin: 0;
-    color: #627d98;
-}
-
 .snmp-controls {
-    margin-top: 12px;
     display: grid;
     grid-template-columns: minmax(200px, 1fr) minmax(200px, 1fr) minmax(160px, 0.9fr) minmax(160px, 0.9fr) auto;
     gap: 10px;
@@ -199,12 +187,6 @@ $styleTag = new CTag('style', true, '
     border-color: #1b6ec2;
     color: #1b6ec2;
     cursor: pointer;
-}
-
-.snmp-testbox {
-    margin-top: 14px;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .snmp-test-title {
@@ -782,8 +764,6 @@ $styleTag = new CTag('style', true, '
 $content = (new CDiv())->addClass('snmp-page');
 
 $top = (new CDiv())->addClass('snmp-top');
-$top->addItem((new CTag('h1', true, LanguageManager::t('Zabbix Mibs')))->addClass('snmp-title'));
-$top->addItem((new CDiv(LanguageManager::t('Browse operating system MIB files from common SNMP directories.')))->addClass('snmp-subtitle'));
 
 $topForm = new CTag('form', true);
 $topForm->addClass('snmp-controls');
@@ -895,8 +875,6 @@ $topForm->addItem(
 
 $top->addItem($topForm);
 
-$testBox = (new CDiv())->addClass('snmp-testbox');
-
 $profile = (new CDiv())->addClass('snmp-profile');
 $profile->addItem((new CTag('h3', true, LanguageManager::t('Current Host SNMP Profile')))->addClass('snmp-profile-title'));
 
@@ -922,9 +900,7 @@ if (!empty($hostConnection)) {
 } else {
     $profile->addItem((new CDiv(LanguageManager::t('No SNMP interface found on this host.')))->addClass('snmp-profile-item'));
 }
-$testBox->addItem($profile);
-
-$top->addItem($testBox);
+$top->addItem($profile);
 $content->addItem($top);
 
 $layout = (new CDiv())->addClass('snmp-layout');

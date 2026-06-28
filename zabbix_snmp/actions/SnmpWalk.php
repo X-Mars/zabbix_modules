@@ -8,9 +8,11 @@ use API;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/MibRepository.php';
+require_once dirname(__DIR__) . '/lib/SnmpConnectionMapper.php';
 
 use Modules\ZabbixSnmp\Lib\LanguageManager;
 use Modules\ZabbixSnmp\Lib\MibRepository;
+use Modules\ZabbixSnmp\Lib\SnmpConnectionMapper;
 
 class SnmpWalk extends CController {
 
@@ -213,10 +215,10 @@ class SnmpWalk extends CController {
             'version' => $this->mapVersion((string) ($details['version'] ?? '2')),
             'community' => $this->resolveMacros((string) ($details['community'] ?? ''), $hostid),
             'securityname' => $this->resolveMacros((string) ($details['securityname'] ?? ''), $hostid),
-            'securitylevel' => (string) ($details['securitylevel'] ?? 'noAuthNoPriv'),
-            'authprotocol' => (string) ($details['authprotocol'] ?? 'SHA'),
+            'securitylevel' => SnmpConnectionMapper::normalizeSecurityLevel($details['securitylevel'] ?? 'noAuthNoPriv'),
+            'authprotocol' => SnmpConnectionMapper::normalizeAuthProtocol($details['authprotocol'] ?? 'SHA'),
             'authpassphrase' => $this->resolveMacros((string) ($details['authpassphrase'] ?? ''), $hostid),
-            'privprotocol' => (string) ($details['privprotocol'] ?? 'AES'),
+            'privprotocol' => SnmpConnectionMapper::normalizePrivProtocol($details['privprotocol'] ?? 'AES'),
             'privpassphrase' => $this->resolveMacros((string) ($details['privpassphrase'] ?? ''), $hostid),
             'contextname' => $this->resolveMacros((string) ($details['contextname'] ?? ''), $hostid)
         ];
