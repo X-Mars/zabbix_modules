@@ -8,9 +8,11 @@ use API;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/MibRepository.php';
+require_once dirname(__DIR__) . '/lib/SnmpConnectionMapper.php';
 
 use Modules\ZabbixSnmp\Lib\LanguageManager;
 use Modules\ZabbixSnmp\Lib\MibRepository;
+use Modules\ZabbixSnmp\Lib\SnmpConnectionMapper;
 
 class Snmp extends CController {
 
@@ -275,10 +277,10 @@ class Snmp extends CController {
             'version' => $version,
             'community' => $community,
             'securityname' => $securityname,
-            'securitylevel' => (string) ($details['securitylevel'] ?? 'noAuthNoPriv'),
-            'authprotocol' => (string) ($details['authprotocol'] ?? 'SHA'),
+            'securitylevel' => SnmpConnectionMapper::normalizeSecurityLevel($details['securitylevel'] ?? 'noAuthNoPriv'),
+            'authprotocol' => SnmpConnectionMapper::normalizeAuthProtocol($details['authprotocol'] ?? 'SHA'),
             'authpassphrase' => $authpassphrase,
-            'privprotocol' => (string) ($details['privprotocol'] ?? 'AES'),
+            'privprotocol' => SnmpConnectionMapper::normalizePrivProtocol($details['privprotocol'] ?? 'AES'),
             'privpassphrase' => $privpassphrase,
             'contextname' => $contextname
         ];
