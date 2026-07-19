@@ -167,6 +167,32 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 8. Zabbix Clonehosts
+
+**简介**：基于已有监控主机的配置批量克隆导入大量主机的 Zabbix 前端模块，支持 CSV 文件导入和在线表格录入两种方式，并提供预览、冲突检测、选择性导入和实时导入进度反馈功能。
+
+**功能特性**：
+
+- 源主机克隆：选择任意已有监控主机作为克隆模板，其接口、群组、模板、标签、宏、TLS、IPMI、资产模式等全部配置均可被继承
+- 双模式数据录入：CSV 文件上传（UTF-8/GBK 自动识别，可下载模板）/ 在线表格录入（增删行、清空、实时校验）
+- 智能字段继承：仅主机名称和接口 IP 必填，其他字段留空时自动继承源主机配置
+- 主机群组自动创建：CSV 中指定的主机群组若不存在，自动调用 API 创建后再关联
+- 预览与冲突检测：导入前全面预览，自动检测主机名冲突、必填字段缺失、批次内重复、与已有主机/模板同名冲突；状态标识区分「已存在」「将新建」「未找到」「继承自源主机」
+- 选择性导入：预览页支持勾选/取消要导入的主机，冲突主机自动跳过，就绪主机可单独取消导入
+- 返回编辑：预览页可一键带着数据返回在线表格录入页，方便对非就绪主机进行编辑，不会清空已录入数据
+- 导入进度反馈：逐台 AJAX 创建主机，实时进度条和成功/失败计数
+- 结果报告导出：导入完成后可下载 CSV 格式的结果报告（含主机名、IP、主机ID、结果、错误信息）
+- 支持中英文界面国际化
+
+![1](zabbix_clonehosts/images/image.png)
+![2](zabbix_clonehosts/images/image-1.png)
+![3](zabbix_clonehosts/images/image-2.png)
+![4](zabbix_clonehosts/images/image-3.png)
+
+**文档链接**：[zabbix_clonehosts/README.md](./zabbix_clonehosts/README.md)（[English](./zabbix_clonehosts/README_en.md)）
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
 ### 安装模块
@@ -209,6 +235,9 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/ma
 
 # 修改 zabbix_im 模块
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
+
+# 修改 zabbix_clonehosts 模块
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
@@ -236,6 +265,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 - **数据采集 → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
 - **资产记录 → JumpServer** (JumpServer 同步)
 - **Users → IM同步助手** (IM 同步 / 同步设置)
+- **数据采集 → 主机批量导入** (基于源主机批量克隆主机)
 
 ### 单独安装模块
 
