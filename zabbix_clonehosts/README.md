@@ -58,7 +58,7 @@
 # Zabbix 6.0 / 7.0 部署方法
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 
-# Zabbix 7.4 / 8.0 部署方法
+# Zabbix 7.2+ / 7.4 / 8.0 部署方法
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
 ```
 

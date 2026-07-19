@@ -195,9 +195,60 @@
 
 ## 安装说明
 
-### 安装模块
+### 方式一：下载 Releases 压缩包（适合生产部署，按需选择）
 
-这是最简单快捷的安装方式，一次性部署所有模块：
+Releases 页面提供两种压缩包，无需安装 git：
+
+- **整体打包压缩包**：`zabbix_modules-<版本号>.tar.gz`（包含所有模块，版本号格式：`模块数量.大版本.小版本`，如 `8.2.0`）
+- **单模块压缩包**：`zabbix_<模块名>-<版本号>.tar.gz`（按需下载单个模块）
+
+#### 选项 A：下载所有模块整体压缩包
+
+1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载 `zabbix_modules-<版本号>.tar.gz` 文件（如 `zabbix_modules-8.2.0.tar.gz`）
+2. 上传到 Zabbix 服务器并解压到模块目录：
+
+```bash
+# Zabbix 6.0 / 7.0
+tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0
+tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
+```
+
+3. **如果使用 Zabbix 6.0，修改所有模块的 manifest_version**
+
+```bash
+for mod in /usr/share/zabbix/modules/zabbix_*/; do
+  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' ${mod}manifest.json
+done
+```
+
+如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+
+#### 选项 B：下载单个模块
+
+1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载所需模块的 `zabbix_<模块名>-<版本号>.tar.gz` 文件
+2. 上传到 Zabbix 服务器并解压到模块目录：
+
+```bash
+# Zabbix 6.0 / 7.0
+tar -xzf zabbix_<模块名>-<版本号>.tar.gz -C /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0
+tar -xzf zabbix_<模块名>-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
+```
+
+3. **如果使用 Zabbix 6.0，修改 manifest_version**
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_<模块名>/manifest.json
+```
+
+如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+
+### 方式二：git clone 直接部署（适合开发/跟踪更新）
+
+一次性部署所有模块：
 
 1. **Zabbix 6.0 / 7.0 部署方法**
 
@@ -205,7 +256,7 @@
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 ```
 
-2. **Zabbix 7.4 / 8.0 部署方法**
+2. **Zabbix 7.2+ / 7.4 / 8.0 部署方法**
 
 ```bash
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
@@ -213,31 +264,16 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 
 3. **如果使用Zabbix 6.0，修改manifest_version**
 
+一键修改所有模块：
+
 ```bash
-cd /usr/share/zabbix/modules/
-# 修改 zabbix_reports 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json
+```
 
-# 修改 zabbix_cmdb 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+单独修改某个模块（如 zabbix_reports）：
 
-# 修改 zabbix_graphtrees 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-
-# 修改 zabbix_rack 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
-
-# 修改 zabbix_snmp 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
-
-# 修改 zabbix_jumpserver 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
-
-# 修改 zabbix_im 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
-
-# 修改 zabbix_clonehosts 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/manifest.json
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_reports/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
