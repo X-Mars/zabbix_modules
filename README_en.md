@@ -90,6 +90,18 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_im/README_en.md](./zabbix_im/README_en.md)（[中文](./zabbix_im/README.md)）
 
+### 8. Zabbix Clonehosts
+
+- **Purpose**: Batch-clone and import a large number of hosts based on an existing monitored host's configuration, with CSV upload and online table entry, plus preview, conflict detection, selective import and real-time progress feedback.
+- **Features**: source host cloning (interfaces, groups, templates, tags, macros, TLS, IPMI, inventory_mode inheritable); dual-mode data entry (CSV upload with UTF-8/GBK auto-detection and template download / online table with add-remove rows and live validation); smart field inheritance (only host name and IP required, others fall back to source); auto-create missing host groups; full preview with conflict detection (host name conflicts, missing required fields, in-batch duplicates, name clashes with hosts/templates) and status badges (exists / new / not found / inherited); selective import via per-row checkboxes; back-to-edit from preview with all data preserved; sequential AJAX import with real-time progress bar and counters; CSV result report download (host name, IP, host ID, result, error); bilingual UI.
+
+![1](zabbix_clonehosts/images/image.png)
+![2](zabbix_clonehosts/images/image-1.png)
+![3](zabbix_clonehosts/images/image-2.png)
+![4](zabbix_clonehosts/images/image-3.png)
+
+- **Docs**: [zabbix_clonehosts/README_en.md](./zabbix_clonehosts/README_en.md)（[中文](./zabbix_clonehosts/README.md)）
+
 ## Installation
 
 ### Deploy all modules (recommended)
@@ -117,6 +129,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/manifest.json
 ```
 
 For Zabbix 7.0+ / 8.0+, no change is required.
@@ -136,6 +149,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
 - **Inventory → JumpServer**
 - **Users → IM Sync Assistant** (IM Sync / Sync Settings)
+- **Data collection → Host Batch Import** (batch clone hosts from a source host)
 
 Each module contains its own README with specific installation and usage details.
 
