@@ -181,6 +181,9 @@
 		var percent = Math.round((processedCount / importQueue.length) * 100);
 		$('#progress-bar').css('width', percent + '%');
 		$('#progress-text').text(processedCount + ' / ' + importQueue.length);
+		$('#progress-success').text(successCount);
+		$('#progress-failed').text(failedCount);
+		$('#progress-pending').text(importQueue.length - processedCount);
 		$('#success-count').text(successCount);
 		$('#failed-count').text(failedCount);
 	}

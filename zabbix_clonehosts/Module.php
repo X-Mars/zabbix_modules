@@ -23,6 +23,7 @@ namespace Modules\ZabbixClonehosts;
 use APP,
 	CMenu,
 	CMenuItem;
+use Modules\ZabbixClonehosts\CompatHelper;
 
 /**
  * Trait containing the module initialization logic shared across Zabbix versions.
@@ -32,8 +33,13 @@ trait ModuleInitTrait {
 	public function init(): void {
 		$menu_label = LangHelper::t('menu.clonehosts');
 
+		// Zabbix menu structure differs by version:
+		// - Zabbix 6.0: Configuration → Hosts
+		// - Zabbix 6.4+: Data collection → Hosts
+		$main_menu_name = CompatHelper::isZabbix60() ? _('Configuration') : _('Data collection');
+
 		APP::Component()->get('menu.main')
-			->findOrAdd(_('Data collection'))
+			->findOrAdd($main_menu_name)
 			->getSubmenu()
 			->insertAfter(_('Hosts'),
 				(new CMenuItem($menu_label))->setAction('clonehosts')

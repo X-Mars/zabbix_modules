@@ -338,7 +338,8 @@ class ClonehostsImport extends CController {
 				$result['success'] = true;
 				$result['hostid'] = $created['hostids'][0];
 			} else {
-				$result['error'] = LangHelper::t('err.unknown_api_response');
+				$result['error'] = LangHelper::t('err.unknown_api_response')
+					. ': ' . json_encode($created, JSON_UNESCAPED_UNICODE);
 			}
 		} catch (\Exception $e) {
 			$result['error'] = $e->getMessage();
