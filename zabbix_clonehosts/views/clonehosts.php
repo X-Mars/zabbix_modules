@@ -24,6 +24,12 @@
  */
 
 use Modules\ZabbixClonehosts\LangHelper;
+use Modules\ZabbixClonehosts\CompatHelper;
+
+// Zabbix 6.0 does not auto-load assets declared in manifest.json.
+// Detect once and emit manual <link>/<script> tags at the right places.
+$need_manual_assets = CompatHelper::isZabbix60();
+$module_asset_base = 'modules/zabbix_clonehosts/assets';
 
 // Build group and template name lists for JavaScript reference.
 $group_names = [];
@@ -58,6 +64,10 @@ foreach ($data['host_groups'] as $group) {
 	];
 }
 ?>
+
+<?php if ($need_manual_assets): ?>
+<link rel="stylesheet" href="<?= $module_asset_base ?>/css/clonehosts.css?v=<?= rawurlencode($data['module_version'] ?? '1.2.0') ?>">
+<?php endif; ?>
 
 <div class="clonehosts-page">
 	<!-- Step 1: Source Host Selection -->
@@ -209,3 +219,7 @@ foreach ($data['host_groups'] as $group) {
 		returnHostData: <?= json_encode($data['return_host_data'] ?? []) ?>
 	};
 </script>
+
+<?php if ($need_manual_assets): ?>
+<script type="text/javascript" src="<?= $module_asset_base ?>/js/clonehosts.js.php?v=<?= rawurlencode($data['module_version'] ?? '1.2.0') ?>"></script>
+<?php endif; ?>

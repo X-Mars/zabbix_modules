@@ -24,6 +24,11 @@
  */
 
 use Modules\ZabbixClonehosts\LangHelper;
+use Modules\ZabbixClonehosts\CompatHelper;
+
+// Zabbix 6.0 does not auto-load assets declared in manifest.json.
+$need_manual_assets = CompatHelper::isZabbix60();
+$module_asset_base = 'modules/zabbix_clonehosts/assets';
 
 $source_host = $data['source_host'];
 $host_data = $data['host_data'];
@@ -88,6 +93,10 @@ foreach ($host_data as $item) {
 	];
 }
 ?>
+
+<?php if ($need_manual_assets): ?>
+<link rel="stylesheet" href="<?= $module_asset_base ?>/css/clonehosts.css?v=<?= rawurlencode($data['module_version'] ?? '1.2.0') ?>">
+<?php endif; ?>
 
 <div class="clonehosts-page">
 	<!-- Source Host Summary -->
@@ -276,6 +285,12 @@ foreach ($host_data as $item) {
 			<span id="progress-text" class="progress-text">0 / <?= $total_count ?></span>
 		</div>
 
+		<div id="progress-stats" class="progress-stats">
+			<span class="progress-stat progress-success"><?= LangHelper::t('import.status_success') ?> <span id="progress-success">0</span></span>
+			<span class="progress-stat progress-failed"><?= LangHelper::t('import.status_failed') ?> <span id="progress-failed">0</span></span>
+			<span class="progress-stat progress-pending"><?= LangHelper::t('import.status_pending') ?> <span id="progress-pending"><?= $total_count ?></span></span>
+		</div>
+
 		<div id="import-results-section" style="display:none;">
 			<h3><?= LangHelper::t('import.results_title') ?></h3>
 			<div class="results-summary">
@@ -312,3 +327,7 @@ foreach ($host_data as $item) {
 		lang: <?= json_encode(LangHelper::getAllForJs()) ?>
 	};
 </script>
+
+<?php if ($need_manual_assets): ?>
+<script type="text/javascript" src="<?= $module_asset_base ?>/js/clonehosts.preview.js.php?v=<?= rawurlencode($data['module_version'] ?? '1.2.0') ?>"></script>
+<?php endif; ?>

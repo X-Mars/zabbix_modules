@@ -464,6 +464,18 @@ class LangHelper {
 			'en_GB' => 'Import Progress',
 			'zh_CN' => '导入进度'
 		],
+		'import.status_success' => [
+			'en_GB' => 'Success:',
+			'zh_CN' => '成功：'
+		],
+		'import.status_failed' => [
+			'en_GB' => 'Failed:',
+			'zh_CN' => '失败：'
+		],
+		'import.status_pending' => [
+			'en_GB' => 'Pending:',
+			'zh_CN' => '待处理：'
+		],
 		'import.importing' => [
 			'en_GB' => 'Importing...',
 			'zh_CN' => '导入中...'

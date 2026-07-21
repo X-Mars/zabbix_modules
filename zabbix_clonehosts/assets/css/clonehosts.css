@@ -889,6 +889,32 @@
 	min-width: 80px;
 }
 
+.progress-stats {
+	display: flex;
+	gap: 20px;
+	padding: 10px 15px;
+	background: #f4f6f8;
+	border-radius: 3px;
+	margin-bottom: 15px;
+}
+
+.progress-stat {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.progress-success {
+	color: #4caf50;
+}
+
+.progress-failed {
+	color: #f44336;
+}
+
+.progress-pending {
+	color: #768390;
+}
+
 /* ===== Results ===== */
 .results-summary {
 	display: flex;
