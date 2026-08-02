@@ -1,0 +1,202 @@
+name: Release Zabbix Modules
+
+# 当任意模块的 manifest.json 中 version 字段升级并推送到主分支时，
+# 自动打包所有模块和整体项目到一个 Release 中。
+# 版本号格式：模块数量.大版本.小版本（如 8.1.0）
+# Release Assets 包含：
+#   - zabbix_modules-<版本号>.tar.gz（整体打包）
+#   - zabbix_<模块名>-<版本号>.tar.gz（每个模块独立打包）
+# 也支持手动触发。
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'zabbix_*/manifest.json'
+  workflow_dispatch:
+
+jobs:
+  detect-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed modules with version bump
+        id: detect
+        run: |
+          # Find all module directories
+          modules=()
+          for dir in zabbix_*/; do
+            [ -d "$dir" ] || continue
+            [ -f "${dir}manifest.json" ] || continue
+            modules+=("${dir%/}")
+          done
+
+          echo "Found modules: ${modules[*]}"
+
+          # Determine whether to release:
+          # - Manual trigger: always release
+          # - Push trigger: only when at least one module's version changed
+          should_release="false"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            should_release="true"
+            echo "Manual trigger: will release"
+          else
+            for mod in "${modules[@]}"; do
+              mf="${mod}/manifest.json"
+              current_ver=$(python3 -c "import json; print(json.load(open('$mf'))['version'])")
+              prev_ver=$(git show HEAD~1:"${mf}" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['version'])" 2>/dev/null || echo "")
+              if [ -z "$prev_ver" ] || [ "$current_ver" != "$prev_ver" ]; then
+                echo "  $mod: version changed (${prev_ver:-new} -> ${current_ver}), will release"
+                should_release="true"
+              else
+                echo "  $mod: version unchanged (${current_ver}), skip"
+              fi
+            done
+          fi
+
+          echo "should_release=${should_release}" >> $GITHUB_OUTPUT
+
+      - name: Package all modules and project into single Release
+        if: steps.detect.outputs.should_release == 'true'
+        run: |
+          # Count modules
+          MODULE_COUNT=$(ls -d zabbix_*/ 2>/dev/null | wc -l)
+          echo "Module count: ${MODULE_COUNT}"
+
+          # Find the latest major version for this module count
+          # Version format: {module_count}.{major}.{minor} (e.g., 8.1.0)
+          LATEST_MAJOR=0
+          for tag in $(git tag --list "v${MODULE_COUNT}.*"); do
+            major=$(echo "${tag}" | sed "s/v${MODULE_COUNT}\.\([0-9]*\)\.[0-9]*/\1/")
+            if [[ "${major}" =~ ^[0-9]+$ ]] && [ "${major}" -gt "${LATEST_MAJOR}" ] 2>/dev/null; then
+              LATEST_MAJOR="${major}"
+            fi
+          done
+
+          MAJOR_VER=$((LATEST_MAJOR + 1))
+          VERSION="${MODULE_COUNT}.${MAJOR_VER}.0"
+          echo "Release version: ${VERSION}"
+
+          tag="v${VERSION}"
+
+          # Check if tag already exists
+          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists, skipping release"
+            exit 0
+          fi
+
+          mkdir -p assets
+
+          # Package each module
+          echo "=== Packaging individual modules ==="
+          MODULE_LIST=""
+          for mod in zabbix_*/; do
+            mod="${mod%/}"
+            [ -f "${mod}/manifest.json" ] || continue
+            mod_ver=$(python3 -c "import json; print(json.load(open('${mod}/manifest.json'))['version'])")
+            echo "Packaging ${mod} v${mod_ver}..."
+            tar -czf "assets/${mod}-${mod_ver}.tar.gz" "${mod}"
+            ls -lh "assets/${mod}-${mod_ver}.tar.gz"
+            MODULE_LIST="${MODULE_LIST}- ${mod} - v${mod_ver}\n"
+          done
+
+          # Package entire project (all modules together)
+          echo "=== Packaging entire project ==="
+          tar -czf "assets/zabbix_modules-${VERSION}.tar.gz" \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude="*.md" \
+            --exclude="*.csv" \
+            --exclude="images" \
+            zabbix_*/
+
+          echo "Packaged zabbix_modules-${VERSION}.tar.gz:"
+          ls -lh "assets/zabbix_modules-${VERSION}.tar.gz"
+
+          # Create release notes file
+          {
+            echo "## Zabbix Modules ${VERSION}"
+            echo ""
+            echo "### Included Modules"
+            echo ""
+            for mod in zabbix_*/; do
+              mod="${mod%/}"
+              if [ -f "${mod}/manifest.json" ]; then
+                mod_ver=$(python3 -c "import json; print(json.load(open('${mod}/manifest.json'))['version'])")
+                echo "- ${mod} - v${mod_ver}"
+              fi
+            done
+            echo ""
+            echo "### Assets"
+            echo ""
+            echo "- \`zabbix_modules-${VERSION}.tar.gz\` - 所有模块整体打包（All modules in one package）"
+            echo "- \`zabbix_<module>-<version>.tar.gz\` - 单个模块独立打包（Individual module packages）"
+            echo ""
+            echo "### Deployment"
+            echo ""
+            echo "#### 选项 A：部署所有模块（整体包）"
+            echo ""
+            echo "1. Download \`zabbix_modules-${VERSION}.tar.gz\` below"
+            echo "2. Upload to Zabbix server and extract:"
+            echo ""
+            echo '```bash'
+            echo "# Zabbix 6.0 / 7.0"
+            echo "tar -xzf zabbix_modules-${VERSION}.tar.gz -C /usr/share/zabbix/modules/"
+            echo ""
+            echo "# Zabbix 7.2+ / 7.4 / 8.0"
+            echo "tar -xzf zabbix_modules-${VERSION}.tar.gz -C /usr/share/zabbix/ui/modules/"
+            echo '```'
+            echo ""
+            echo "3. If using Zabbix 6.0, change manifest_version for all modules:"
+            echo '```bash'
+            echo "sed -i 's/\"manifest_version\": 2.0/\"manifest_version\": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json"
+            echo '```'
+            echo ""
+            echo "#### Option B: Deploy a single module"
+            echo ""
+            echo "1. Download the \`zabbix_<module>-<version>.tar.gz\` file for the module you want"
+            echo "2. Upload to Zabbix server and extract:"
+            echo ""
+            echo '```bash'
+            echo "# Zabbix 6.0 / 7.0"
+            echo "tar -xzf zabbix_<module>-<version>.tar.gz -C /usr/share/zabbix/modules/"
+            echo ""
+            echo "# Zabbix 7.2+ / 7.4 / 8.0"
+            echo "tar -xzf zabbix_<module>-<version>.tar.gz -C /usr/share/zabbix/ui/modules/"
+            echo '```'
+            echo ""
+            echo "3. If using Zabbix 6.0, change manifest_version:"
+            echo '```bash'
+            echo "sed -i 's/\"manifest_version\": 2.0/\"manifest_version\": 1.0/' /usr/share/zabbix/modules/zabbix_<module>/manifest.json"
+            echo '```'
+            echo ""
+            echo "### Enable modules in Zabbix Web"
+            echo ""
+            echo "1. Open Zabbix Web UI → Administration → General → Modules"
+            echo "2. Click **Scan directory** to detect new modules"
+            echo "3. Enable the modules you need"
+          } > release_notes.md
+
+          # Create single Release with all assets
+          echo "=== Creating release ${tag} with all assets ==="
+          gh release create "${tag}" \
+            assets/*.tar.gz \
+            --title "Zabbix Modules ${VERSION}" \
+            --notes-file release_notes.md \
+            --repo "${{ github.repository }}"
+
+          echo "=== Released ${tag} ==="
+          echo "Assets in release:"
+          gh release view "${tag}" --json assets --jq '.assets[].name' \
+            --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

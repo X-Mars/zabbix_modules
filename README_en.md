@@ -90,9 +90,72 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 - **Docs**: [zabbix_im/README_en.md](./zabbix_im/README_en.md)（[中文](./zabbix_im/README.md)）
 
+### 8. Zabbix Clonehosts
+
+- **Purpose**: Batch-clone and import a large number of hosts based on an existing monitored host's configuration, with CSV upload and online table entry, plus preview, conflict detection, selective import and real-time progress feedback.
+- **Features**: source host cloning (interfaces, groups, templates, tags, macros, TLS, IPMI, inventory_mode inheritable); dual-mode data entry (CSV upload with UTF-8/GBK auto-detection and template download / online table with add-remove rows and live validation); smart field inheritance (only host name and IP required, others fall back to source); auto-create missing host groups; full preview with conflict detection (host name conflicts, missing required fields, in-batch duplicates, name clashes with hosts/templates) and status badges (exists / new / not found / inherited); selective import via per-row checkboxes; back-to-edit from preview with all data preserved; sequential AJAX import with real-time progress bar and counters; CSV result report download (host name, IP, host ID, result, error); bilingual UI.
+
+![1](zabbix_clonehosts/images/image.png)
+![2](zabbix_clonehosts/images/image-1.png)
+![3](zabbix_clonehosts/images/image-2.png)
+![4](zabbix_clonehosts/images/image-3.png)
+
+- **Docs**: [zabbix_clonehosts/README_en.md](./zabbix_clonehosts/README_en.md)（[中文](./zabbix_clonehosts/README.md)）
+
 ## Installation
 
-### Deploy all modules (recommended)
+### Option 1: Download Release packages (for production, choose what you need)
+
+The Releases page offers two types of packages — no git required:
+
+- **All-in-one package**: `zabbix_modules-<version>.tar.gz` (includes all modules; version format: `module_count.major.minor`, e.g., `8.2.0`)
+- **Single-module package**: `zabbix_<module>-<version>.tar.gz` (download only the modules you need)
+
+#### Option A: Download the all-in-one package
+
+1. Go to the [Releases page](https://github.com/X-Mars/zabbix_modules/releases) and download the `zabbix_modules-<version>.tar.gz` file (e.g., `zabbix_modules-8.2.0.tar.gz`).
+2. Upload to the Zabbix server and extract to the modules directory:
+
+   ```bash
+   # Zabbix 6.0 / 7.0
+   tar -xzf zabbix_modules-<version>.tar.gz -C /usr/share/zabbix/modules/
+
+   # Zabbix 7.2+ / 7.4 / 8.0
+   tar -xzf zabbix_modules-<version>.tar.gz -C /usr/share/zabbix/ui/modules/
+   ```
+
+3. If you run Zabbix 6.0, change `manifest_version` for every module:
+
+   ```bash
+   for mod in /usr/share/zabbix/modules/zabbix_*/; do
+     sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' ${mod}manifest.json
+   done
+   ```
+
+   For Zabbix 7.0+ / 8.0+, no change is required.
+
+#### Option B: Download a single module
+
+1. Go to the [Releases page](https://github.com/X-Mars/zabbix_modules/releases) and download the `zabbix_<module>-<version>.tar.gz` file for the module you want.
+2. Upload to the Zabbix server and extract to the modules directory:
+
+   ```bash
+   # Zabbix 6.0 / 7.0
+   tar -xzf zabbix_<module>-<version>.tar.gz -C /usr/share/zabbix/modules/
+
+   # Zabbix 7.2+ / 7.4 / 8.0
+   tar -xzf zabbix_<module>-<version>.tar.gz -C /usr/share/zabbix/ui/modules/
+   ```
+
+3. If you run Zabbix 6.0, change `manifest_version`:
+
+   ```bash
+   sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_<module>/manifest.json
+   ```
+
+   For Zabbix 7.0+ / 8.0+, no change is required.
+
+### Option 2: Deploy all modules via git clone (for development / tracking updates)
 
 1. For Zabbix 6.0 / 7.0:
 
@@ -100,7 +163,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 ```
 
-2. For Zabbix 7.4 / 8.0:
+2. For Zabbix 7.2+ / 7.4 / 8.0:
 
 ```bash
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
@@ -108,15 +171,16 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 
 3. If you run Zabbix 6.0, change `manifest_version` for each module:
 
+One-liner for all modules:
+
 ```bash
-cd /usr/share/zabbix/modules/
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json
+```
+
+For a single module (e.g., zabbix_reports):
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_reports/manifest.json
 ```
 
 For Zabbix 7.0+ / 8.0+, no change is required.
@@ -136,6 +200,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Data collection → SNMP Assistant** (Zabbix Mibs / Zabbix Walk)
 - **Inventory → JumpServer**
 - **Users → IM Sync Assistant** (IM Sync / Sync Settings)
+- **Data collection → Host Batch Import** (batch clone hosts from a source host)
 
 Each module contains its own README with specific installation and usage details.
 

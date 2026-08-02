@@ -1,0 +1,37 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-clonehosts",
+    "name": "Zabbix Clonehosts",
+    "author": "火星小刘/先龍",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "namespace": "ZabbixClonehosts",
+    "version": "1.3.0",
+    "description": "Batch clone/import hosts based on an existing monitored host. Supports CSV/online table entry, preview with conflict detection, auto-creation of host groups, existence status indicators, and progress feedback. Compatible with Zabbix 6.0/6.4/7.x. Auto-syncs language with Zabbix system settings (Chinese/English).",
+    "actions": {
+        "clonehosts": {
+            "class": "Clonehosts",
+            "view": "clonehosts"
+        },
+        "clonehosts.preview": {
+            "class": "ClonehostsPreview",
+            "view": "clonehosts.preview"
+        },
+        "clonehosts.import": {
+            "class": "ClonehostsImport",
+            "view": "clonehosts.import"
+        },
+        "clonehosts.source": {
+            "class": "ClonehostsSource",
+            "view": "clonehosts.import"
+        }
+    },
+    "assets": {
+        "js": [
+            "clonehosts.js.php",
+            "clonehosts.preview.js.php"
+        ],
+        "css": [
+            "clonehosts.css"
+        ]
+    }
+}

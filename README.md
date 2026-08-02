@@ -167,11 +167,88 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 8. Zabbix Clonehosts
+
+**简介**：基于已有监控主机的配置批量克隆导入大量主机的 Zabbix 前端模块，支持 CSV 文件导入和在线表格录入两种方式，并提供预览、冲突检测、选择性导入和实时导入进度反馈功能。
+
+**功能特性**：
+
+- 源主机克隆：选择任意已有监控主机作为克隆模板，其接口、群组、模板、标签、宏、TLS、IPMI、资产模式等全部配置均可被继承
+- 双模式数据录入：CSV 文件上传（UTF-8/GBK 自动识别，可下载模板）/ 在线表格录入（增删行、清空、实时校验）
+- 智能字段继承：仅主机名称和接口 IP 必填，其他字段留空时自动继承源主机配置
+- 主机群组自动创建：CSV 中指定的主机群组若不存在，自动调用 API 创建后再关联
+- 预览与冲突检测：导入前全面预览，自动检测主机名冲突、必填字段缺失、批次内重复、与已有主机/模板同名冲突；状态标识区分「已存在」「将新建」「未找到」「继承自源主机」
+- 选择性导入：预览页支持勾选/取消要导入的主机，冲突主机自动跳过，就绪主机可单独取消导入
+- 返回编辑：预览页可一键带着数据返回在线表格录入页，方便对非就绪主机进行编辑，不会清空已录入数据
+- 导入进度反馈：逐台 AJAX 创建主机，实时进度条和成功/失败计数
+- 结果报告导出：导入完成后可下载 CSV 格式的结果报告（含主机名、IP、主机ID、结果、错误信息）
+- 支持中英文界面国际化
+
+![1](zabbix_clonehosts/images/image.png)
+![2](zabbix_clonehosts/images/image-1.png)
+![3](zabbix_clonehosts/images/image-2.png)
+![4](zabbix_clonehosts/images/image-3.png)
+
+**文档链接**：[zabbix_clonehosts/README.md](./zabbix_clonehosts/README.md)（[English](./zabbix_clonehosts/README_en.md)）
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
-### 安装模块
+### 方式一：下载 Releases 压缩包（适合生产部署，按需选择）
 
-这是最简单快捷的安装方式，一次性部署所有模块：
+Releases 页面提供两种压缩包，无需安装 git：
+
+- **整体打包压缩包**：`zabbix_modules-<版本号>.tar.gz`（包含所有模块，版本号格式：`模块数量.大版本.小版本`，如 `8.2.0`）
+- **单模块压缩包**：`zabbix_<模块名>-<版本号>.tar.gz`（按需下载单个模块）
+
+#### 选项 A：下载所有模块整体压缩包
+
+1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载 `zabbix_modules-<版本号>.tar.gz` 文件（如 `zabbix_modules-8.2.0.tar.gz`）
+2. 上传到 Zabbix 服务器并解压到模块目录：
+
+```bash
+# Zabbix 6.0 / 7.0
+tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0
+tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
+```
+
+3. **如果使用 Zabbix 6.0，修改所有模块的 manifest_version**
+
+```bash
+for mod in /usr/share/zabbix/modules/zabbix_*/; do
+  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' ${mod}manifest.json
+done
+```
+
+如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+
+#### 选项 B：下载单个模块
+
+1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载所需模块的 `zabbix_<模块名>-<版本号>.tar.gz` 文件
+2. 上传到 Zabbix 服务器并解压到模块目录：
+
+```bash
+# Zabbix 6.0 / 7.0
+tar -xzf zabbix_<模块名>-<版本号>.tar.gz -C /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0
+tar -xzf zabbix_<模块名>-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
+```
+
+3. **如果使用 Zabbix 6.0，修改 manifest_version**
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_<模块名>/manifest.json
+```
+
+如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+
+### 方式二：git clone 直接部署（适合开发/跟踪更新）
+
+一次性部署所有模块：
 
 1. **Zabbix 6.0 / 7.0 部署方法**
 
@@ -179,7 +256,7 @@
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 ```
 
-2. **Zabbix 7.4 / 8.0 部署方法**
+2. **Zabbix 7.2+ / 7.4 / 8.0 部署方法**
 
 ```bash
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
@@ -187,28 +264,16 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 
 3. **如果使用Zabbix 6.0，修改manifest_version**
 
+一键修改所有模块：
+
 ```bash
-cd /usr/share/zabbix/modules/
-# 修改 zabbix_reports 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manifest.json
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json
+```
 
-# 修改 zabbix_cmdb 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest.json
+单独修改某个模块（如 zabbix_reports）：
 
-# 修改 zabbix_graphtrees 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/manifest.json
-
-# 修改 zabbix_rack 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest.json
-
-# 修改 zabbix_snmp 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest.json
-
-# 修改 zabbix_jumpserver 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
-
-# 修改 zabbix_im 模块
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_reports/manifest.json
 ```
 
 如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
@@ -236,6 +301,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 - **数据采集 → SNMP Assistant** (SNMP 助手：Zabbix Mibs / Zabbix Walk)
 - **资产记录 → JumpServer** (JumpServer 同步)
 - **Users → IM同步助手** (IM 同步 / 同步设置)
+- **数据采集 → 主机批量导入** (基于源主机批量克隆主机)
 
 ### 单独安装模块
 

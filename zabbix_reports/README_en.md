@@ -47,7 +47,7 @@ Zabbix Reports is a frontend module for Zabbix that generates daily, weekly, and
 # For Zabbix 6.0 / 7.0 deployment
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
 
-# For Zabbix 7.4 / 8.0 deployment
+# For Zabbix 7.2+ / 7.4 / 8.0 deployment
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
 ```
 
