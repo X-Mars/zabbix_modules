@@ -1,0 +1,160 @@
+.ipam {
+    width: calc(100vw - 215px);
+    max-width: 1440px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.ipam-head,
+.ipam-toolbar,
+.ipam-table-wrap {
+    width: 100%;
+    min-width: 0;
+}
+
+.ipam-head-actions {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.ipam-toolbar label {
+    flex: 1 1 180px;
+    min-width: 150px;
+}
+
+.ipam-toolbar label:first-of-type {
+    flex: 2 1 260px;
+    min-width: 220px;
+}
+
+.ipam-table {
+    table-layout: fixed;
+}
+
+.ipam-range-table th:nth-child(1) {
+    width: 32%;
+}
+
+.ipam-range-table th:nth-child(2) {
+    width: 20%;
+}
+
+.ipam-task-table th:nth-child(1) { width: 28%; }
+.ipam-task-table th:nth-child(2) { width: 13%; }
+.ipam-task-table th:nth-child(3) { width: 20%; }
+.ipam-task-table th:nth-child(4) { width: 8%; }
+.ipam-task-table th:nth-child(5) { width: 9%; }
+.ipam-task-table th:nth-child(6) { width: 14%; }
+.ipam-task-table th:nth-child(7) { width: 8%; }
+
+.ipam-detail-table th:nth-child(1) { width: 14%; }
+.ipam-detail-table th:nth-child(2) { width: 18%; }
+.ipam-detail-table th:nth-child(3) { width: 18%; }
+.ipam-detail-table th:nth-child(4) { width: 13%; }
+.ipam-detail-table th:nth-child(5) { width: 15%; }
+.ipam-detail-table th:nth-child(6) { width: 22%; }
+
+.ip-address {
+    font-size: 14px;
+}
+
+.ip-status,
+.association-state {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ip-status-alive,
+.association-state.is-associated {
+    background: #e7f6ee;
+    color: #20784b;
+}
+
+.ip-status-down {
+    background: #fdeaea;
+    color: #a92e2e;
+}
+
+.ip-status-unscanned,
+.association-state.is-unassociated {
+    background: #eef1f3;
+    color: #687784;
+}
+
+.ipam-host-link {
+    color: var(--ipam-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.ipam-host-link:hover,
+.ip-cell.is-linked:hover {
+    text-decoration: underline;
+}
+
+.ipam-muted {
+    color: var(--ipam-muted);
+}
+
+.ip-cell.is-linked {
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .45);
+}
+
+.ipam-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 2px;
+    color: var(--ipam-muted);
+}
+
+.ipam-pagination nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ipam-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.ipam-actions > * {
+    margin-left: 0;
+}
+
+.ipam a.btn-primary,
+.ipam a.btn-primary:hover {
+    color: #fff !important;
+}
+
+@media (max-width: 760px) {
+    .ipam {
+        width: calc(100vw - 16px);
+    }
+
+    .ipam-table {
+        min-width: 680px;
+    }
+
+    .ipam-detail-table,
+    .ipam-task-table {
+        min-width: 920px;
+    }
+
+    .ipam-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
