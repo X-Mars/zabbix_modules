@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2.0,
+  "id": "zabbix-ipam",
+  "name": "IPAM",
+  "author": "Zabbix IPAM contributors",
+  "url": "https://github.com/X-Mars/zabbix_modules",
+  "version": "1.2.0",
+  "namespace": "ZabbixIpam",
+  "description": "IP address management and asynchronous network discovery for Zabbix",
+  "actions": {
+    "ip.manager": {"class": "IpManager", "view": "ip.manager"},
+    "ip.detail": {"class": "IpDetail", "view": "ip.detail"},
+    "ip.scan": {"class": "IpScan", "view": "ip.scan"},
+    "ip.ajax": {"class": "IpAjax"}
+  }
+}
