@@ -37,7 +37,6 @@ class IpAjax extends CController {
             'name' => 'string',
             'range' => 'string',
             'enabled' => 'in 0,1',
-            'scan_interval' => 'int32',
             'shard_size' => 'int32'
         ]);
     }
@@ -60,7 +59,6 @@ class IpAjax extends CController {
                         'name' => trim($this->getInput('name', '')) ?: $value,
                         'range' => $value,
                         'enabled' => $this->getInput('enabled', '1') === '1',
-                        'scan_interval' => max(1, $this->getInput('scan_interval', 60)),
                         'ports' => ''
                     ]);
                     $output = ['ok' => true, 'message' => LanguageManager::t('Range saved.'), 'range' => $range];

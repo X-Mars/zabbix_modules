@@ -21,5 +21,6 @@ class TaskManager {
     private function findCli():?string{foreach(['/usr/bin/php','/usr/local/bin/php','/opt/remi/php83/root/usr/bin/php'] as $p)if(is_executable($p))return $p;if(PHP_SAPI==='cli'&&is_executable(PHP_BINARY)&&strpos(basename(PHP_BINARY),'fpm')===false)return PHP_BINARY;return null;}
     private function fail(string $id,string $message):void{$t=$this->storage->task($id);if(!$t)return;$t['status']='failed';$t['error']=$message;$t['updated_at']=gmdate('c');$this->storage->saveTask($t);}
     public function stop(string $id):void{$t=$this->storage->task($id);if(!$t)throw new \InvalidArgumentException('Task not found');if(in_array($t['status'],['pending','running'],true)){$t['status']='stopped';$t['updated_at']=gmdate('c');$this->storage->saveTask($t);}}
-    public function due():array{$out=[];$now=time();foreach($this->storage->ranges() as $r){if(empty($r['enabled']))continue;$last=strtotime($r['last_scan']??'')?:0;$interval=max(1,(int)($r['scan_interval']??60))*60;if($now-$last>=$interval)$out[]=$r;}return $out;}
+    /** Every cron invocation schedules all enabled ranges; the crontab expression defines the interval. */
+    public function due():array{return array_values(array_filter($this->storage->ranges(),fn($r)=>!empty($r['enabled'])));}
 }

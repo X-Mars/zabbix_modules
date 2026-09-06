@@ -1,9 +1,13 @@
 <?php
 
 require_once dirname(__DIR__).'/lib/LanguageManager.php';
+require_once dirname(__DIR__).'/lib/TimeFormatter.php';
+require_once dirname(__DIR__).'/lib/ViewPagination.php';
 require_once dirname(__DIR__).'/lib/ViewRenderer.php';
 
 use Modules\ZabbixIpam\Lib\LanguageManager;
+use Modules\ZabbixIpam\Lib\TimeFormatter;
+use Modules\ZabbixIpam\Lib\ViewPagination;
 use Modules\ZabbixIpam\Lib\ViewRenderer;
 
 $t = [LanguageManager::class, 't'];
@@ -28,56 +32,41 @@ foreach (['all' => 'All associations', 'yes' => 'Associated', 'no' => 'Unassocia
 }
 
 $rows = '';
+$row_number = (($data['pagination']['page'] - 1) * $data['pagination']['per_page']) + 1;
 foreach ($data['rows'] as $row) {
     $host_links = [];
     foreach ($row['hosts'] as $host) {
         $host_links[] = '<a class="ipam-host-link" href="'.$e($host['url']).'">'.$e($host['name']).'</a>';
     }
 
+    $status_updated_at = TimeFormatter::display($row['status_updated_at']);
     $rows .= '<tr>'
+        .'<td class="ipam-index">'.$row_number++.'</td>'
         .'<td><strong class="ip-address">'.$e($row['ip']).'</strong></td>'
         .'<td>'.$e($row['range_name']).'</td>'
         .'<td><code>'.$e($row['range']).'</code></td>'
         .'<td><span class="ip-status ip-status-'.$e($row['state']).'">'.$t($row['state'] === 'alive' ? 'Alive' : ($row['state'] === 'down' ? 'Unreachable' : 'Not scanned')).'</span></td>'
+        .'<td>'.($status_updated_at !== '' ? '<time datetime="'.$e($row['status_updated_at']).'">'.$e($status_updated_at).'</time>' : '<span class="ipam-muted">'.$t('Never').'</span>').'</td>'
         .'<td><span class="association-state '.($row['associated'] ? 'is-associated' : 'is-unassociated').'">'.$t($row['associated'] ? 'Associated' : 'Unassociated').'</span></td>'
         .'<td>'.($host_links ? implode('<br>', $host_links) : '<span class="ipam-muted">'.$t('No associated host').'</span>').'</td>'
         .'</tr>';
 }
 
 $filters = $data['filters'];
-$page_url = static function (int $page) use ($filters): string {
-    return 'zabbix.php?'.http_build_query([
-        'action' => 'ip.detail',
-        'search' => $filters['search'],
-        'rangeid' => $filters['rangeid'],
-        'status' => $filters['status'],
-        'associated' => $filters['associated'],
-        'page' => $page
-    ]);
-};
+$pagination = ViewPagination::render('ip.detail', $data['pagination'], $filters);
 
-$pagination = '<div class="ipam-pagination"><span>'.sprintf($t('%1$d IPs in total'), $data['pagination']['total']).'</span><nav>';
-if ($data['pagination']['page'] > 1) {
-    $pagination .= '<a class="btn-alt" href="'.$e($page_url($data['pagination']['page'] - 1)).'">'.$t('Previous').'</a>';
-}
-$pagination .= '<span>'.sprintf($t('Page %1$d of %2$d'), $data['pagination']['page'], $data['pagination']['pages']).'</span>';
-if ($data['pagination']['page'] < $data['pagination']['pages']) {
-    $pagination .= '<a class="btn-alt" href="'.$e($page_url($data['pagination']['page'] + 1)).'">'.$t('Next').'</a>';
-}
-$pagination .= '</nav></div>';
-
-$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.2.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.2.0">'
+$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.5.0">'
     .'<div class="ipam"><header class="ipam-head"><div><h1>'.$t('IP Details').'</h1><p>'.$t('Browse every address, its latest ICMP status, and its matched Zabbix host.').'</p></div>'
-    .'<div class="ipam-head-actions"><a class="btn-link" href="zabbix.php?action=ip.manager">'.$t('IP Management').'</a><a class="btn-link" href="zabbix.php?action=ip.scan">'.$t('Task Management').'</a></div></header>'
-    .'<div class="ipam-help"><strong>'.$t('Association rules').'</strong><span>'.$t('A host is associated automatically when one of its Zabbix interfaces uses the same IPv4 address. Click the host name to open its Zabbix configuration page.').'</span></div>'
-    .'<form class="ipam-toolbar ip-detail-toolbar" method="get"><input type="hidden" name="action" value="ip.detail">'
+    .'<div class="ipam-head-actions"><a class="btn-alt" href="zabbix.php?action=ip.manager">'.$t('IP Management').'</a><a class="btn-alt" href="zabbix.php?action=ip.scan">'.$t('Task Management').'</a></div></header>'
+    .'<div class="ipam-help"><strong>'.$t('Association rules').'</strong><span>'.$t('A host is associated automatically when one of its Zabbix interfaces uses the same IPv4 address. Click the host name to open its latest data page.').'</span></div>'
+    .'<form class="ipam-toolbar ip-detail-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.detail"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
     .'<label><span>'.$t('Search').'</span><input name="search" value="'.$e($filters['search']).'" placeholder="'.$t('Search IP, range, or host name').'"></label>'
     .'<label><span>'.$t('IP range').'</span><select name="rangeid">'.$range_options.'</select></label>'
     .'<label><span>'.$t('IP status').'</span><select name="status">'.$status_options.'</select></label>'
-    .'<label><span>'.$t('Host association').'</span><select name="associated">'.$association_options.'</select></label>'
-    .'<button class="btn-alt">'.$t('Filter').'</button><a class="btn-link" href="zabbix.php?action=ip.detail">'.$t('Reset').'</a></form>'
+    .'<label><span>'.$t('Host association').'</span><select name="associated">'.$association_options.'</select></label></form>'
     .'<div class="ipam-table-wrap"><table class="ipam-table ipam-detail-table"><thead><tr>'
-    .'<th>'.$t('IP').'</th><th>'.$t('IP range name').'</th><th>'.$t('IP range').'</th><th>'.$t('IP status').'</th><th>'.$t('Host association').'</th><th>'.$t('Associated host').'</th>'
-    .'</tr></thead><tbody>'.($rows ?: '<tr><td colspan="6" class="ipam-empty">'.$t('No IP addresses found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div>';
+    .'<th>'.$t('No.').'</th><th>'.$t('IP').'</th><th>'.$t('IP range name').'</th><th>'.$t('IP range').'</th><th>'.$t('IP status').'</th><th>'.$t('Status last updated').'</th><th>'.$t('Host association').'</th><th>'.$t('Associated host').'</th>'
+    .'</tr></thead><tbody>'.($rows ?: '<tr><td colspan="8" class="ipam-empty">'.$t('No IP addresses found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div>'
+    .'<script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.5.0"></script>';
 
 ViewRenderer::render($data['title'], $html);
