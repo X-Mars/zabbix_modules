@@ -15,7 +15,7 @@
 
 ## 描述
 
-这是一个 Zabbix 前端 IP 地址管理模块，用于集中维护 IPv4 地址段、执行异步 ICMP 存活扫描，并根据 Zabbix 主机接口 IP 自动建立主机关联。模块在 Zabbix Web 的资产记录菜单下新增“IP 管理”菜单，包含“IP 管理”“IP 详情”和“任务管理”三个页面。
+这是一个 Zabbix 前端 IP 地址管理模块，用于集中维护 IPv4 地址段、执行异步 ICMP 存活扫描，并根据 Zabbix 主机接口 IP 自动建立主机关联。模块在 Zabbix Web 的 **Inventory（资产记录）→ IPAM** 下提供“IP 管理”“IP 详情”和“任务管理”三个页面。
 
 扫描仅使用 ICMP，不会连接目标 TCP 端口。大网段会自动分片，并由后台 PHP CLI 任务执行，避免阻塞 Zabbix Web 请求。
 
@@ -41,6 +41,25 @@
 - **响应式设计**：取消固定最大宽度，适配普通、宽屏和窄屏浏览器
 - **安全限制**：仅 Zabbix 管理员可访问，输入均经过 IPv4 和数值校验
 
+## 工作方式
+
+```text
+IP 管理页面 / crontab
+        ↓
+创建地址段扫描任务
+        ↓
+PHP CLI 后台进程
+        ↓
+按 64 个地址分片 → fping ICMP 探测
+        ↓
+JSON 结果与任务进度 → IP 矩阵 / IP 详情 / 任务管理
+```
+
+- 在 Web 页面点击“开始扫描”时，模块通过 PHP `exec()` 和 `nohup` 启动独立的 PHP CLI 进程。
+- 定时扫描由 `cli/scan_cron.php` 直接执行；每次 cron 运行都会为所有已启用且没有待处理/运行中任务的地址段创建扫描任务。
+- CLI 环境支持 `pcntl_fork()` 时最多并行运行 4 个工作进程；不支持时自动串行执行。
+- 扫描状态和结果以 JSON 文件保存，写入时使用文件锁及临时文件原子替换，便于 Web 与 cron 同时访问。
+
 ## 安装步骤
 
 ### 安装模块
@@ -64,7 +83,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_ipam/manifest
 
 ### 配置目录权限
 
-运行 Web 服务和 cron 的用户必须能够读写 `data/`、`data/scan_tasks/` 和 `data/results/`。
+运行 Web 服务和 cron 的用户都必须能够读写 `data/`、`data/scan_tasks/` 和 `data/results/`。建议使用同一用户；如使用不同用户，请通过共同用户组授予读写权限。以下命令中的路径应替换为模块的实际安装路径。
 
 ```bash
 # Debian / Ubuntu 示例
@@ -86,7 +105,21 @@ apt install fping php-cli php-pcntl
 dnf install fping php-cli php-process
 ```
 
-`php-pcntl` 或 `php-process` 用于多进程扫描；未安装 `pcntl` 时会自动降级为后台串行扫描。PHP CLI 和 `fping` 是后台扫描的必要依赖。
+`php-pcntl` 或 `php-process` 用于多进程扫描；未安装 `pcntl` 时会自动降级为后台串行扫描。PHP CLI 和 `fping` 是扫描的必要依赖。
+
+安装后建议使用 Web 服务用户检查运行环境：
+
+```bash
+# Debian / Ubuntu
+sudo -u www-data /usr/bin/php -r 'echo PHP_SAPI, PHP_EOL;'
+sudo -u www-data /usr/bin/fping -c 1 -t 350 127.0.0.1
+
+# RHEL / Rocky Linux
+sudo -u apache /usr/bin/php -r 'echo PHP_SAPI, PHP_EOL;'
+sudo -u apache /usr/sbin/fping -c 1 -t 350 127.0.0.1
+```
+
+如需从 Web 页面手动启动扫描，请确认 PHP 未禁用 `exec`，并允许 Web 服务用户运行 PHP CLI。若安全策略禁止 `exec`，仍可仅使用下文的 cron 定时扫描入口。
 
 ### 启用模块
 
@@ -97,13 +130,30 @@ dnf install fping php-cli php-process
 
 ## 定时扫描
 
-`cli/scan_cron.php` 是唯一定时扫描入口，crontab 的执行频率就是扫描间隔。以下示例每 5 分钟扫描一次所有已启用的 IP 段；已有待处理或运行中的任务不会被重复创建。
+`cli/scan_cron.php` 是唯一定时扫描入口，crontab 的执行频率就是扫描间隔。以下示例每 5 分钟扫描一次所有已启用的 IP 段；已有待处理或运行中的任务不会被重复创建。请勿使用 `root` 运行扫描。
+
+写入 `/etc/cron.d/zabbix-ipam` 时需要包含运行用户：
 
 ```cron
 */5 * * * * apache /usr/bin/php /usr/share/zabbix/modules/zabbix_ipam/cli/scan_cron.php >> /var/log/zabbix/ipam-cron.log 2>&1
 ```
 
-Debian / Ubuntu 通常将运行用户改为 `www-data`。任务状态文件和工作锁会避免同一 IP 段被重复提交。
+Debian / Ubuntu 通常将运行用户改为 `www-data`。如果使用 `crontab -u apache -e` 或 `crontab -u www-data -e`，则不要在表达式中再次写用户名：
+
+```cron
+*/5 * * * * /usr/bin/php /usr/share/zabbix/modules/zabbix_ipam/cli/scan_cron.php >> /var/log/zabbix/ipam-cron.log 2>&1
+```
+
+Zabbix 7.2+ / 7.4 / 8.0 的脚本路径通常是 `/usr/share/zabbix/ui/modules/zabbix_ipam/cli/scan_cron.php`。请确保日志目录也允许对应用户写入；任务状态文件和工作锁会避免同一 IP 段被重复提交。
+
+### 手动验证 cron 入口
+
+```bash
+# 按实际环境选择 apache 或 www-data，并替换模块路径
+sudo -u apache /usr/bin/php /usr/share/zabbix/modules/zabbix_ipam/cli/scan_cron.php
+```
+
+命令无输出且任务页出现新任务通常表示执行成功；错误信息会输出到标准错误流。
 
 ## 页面说明
 
@@ -119,9 +169,19 @@ Debian / Ubuntu 通常将运行用户改为 `www-data`。任务状态文件和�
 - **地址限制**：仅支持 IPv4，单个 IP 段最多 65,536 个地址。
 - **系统权限**：Zabbix Web 用户和 cron 用户必须能够写入模块 `data/` 目录。
 - **ICMP 权限**：请确保服务器防火墙允许 ICMP，并允许 `fping` 正常运行。
+- **命令执行**：Web 手动扫描依赖 PHP `exec()`；使用 cron 时不依赖 Web 请求启动后台进程。
 - **性能考虑**：大网段会分片处理；并行工作进程默认最多为 4 个。
 - **主机匹配**：关联结果来自当前用户有权访问的 Zabbix 主机接口数据。
 - **数据存储**：当前使用 JSON 文件，生产环境请定期备份 `data/` 目录。
+
+## 故障排查
+
+- **点击开始扫描后立即失败**：检查 PHP CLI 是否存在、PHP `exec()` 是否被禁用，以及 `data/scan_tasks/` 是否可写。
+- **所有地址均显示不可达**：以 Web/cron 用户直接运行 `fping`，确认安装路径、执行权限、防火墙和 ICMP 策略。模块会依次查找 `/usr/sbin/fping`、`/usr/bin/fping` 和 `/sbin/fping`。
+- **任务一直处于待处理状态**：检查 `data/scan_tasks/<任务 ID>.log`、PHP CLI 路径和 SELinux/AppArmor 限制。
+- **cron 没有创建任务**：确认地址段已启用，并检查是否已经存在同一地址段的 `pending` 或 `running` 任务。
+- **页面无法保存地址段**：检查 `data/` 所有权与权限；模块需要创建锁文件和临时 JSON 文件。
+- **没有关联到主机**：确认 Zabbix 主机接口使用的是相同 IPv4 地址，并确认当前登录用户有权查看该主机。
 
 ## 开发
 

@@ -25,7 +25,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![1](zabbix_reports/images/1.png)
 ![2](zabbix_reports/images/2.png)
 
-- **Docs**: [zabbix_reports/README.md](./zabbix_reports/README.md)
+- **Docs**: [zabbix_reports/README_en.md](./zabbix_reports/README_en.md)
 
 ### 2. Zabbix CMDB
 
@@ -36,7 +36,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![2](zabbix_cmdb/images/2.png)
 ![3](zabbix_cmdb/images/3.jpg)
 
-- **Docs**: [zabbix_cmdb/README.md](./zabbix_cmdb/README.md)
+- **Docs**: [zabbix_cmdb/README_en.md](./zabbix_cmdb/README_en.md)
 
 ### 3. Zabbix Graph Trees
 
@@ -46,7 +46,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![1](zabbix_graphtrees/images/1.png)
 ![2](zabbix_graphtrees/images/2.png)
 
-- **Docs**: [zabbix_graphtrees/README.md](./zabbix_graphtrees/README.md)
+- **Docs**: [zabbix_graphtrees/README_en.md](./zabbix_graphtrees/README_en.md)
 
 ### 4. Zabbix Rack
 
@@ -57,7 +57,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![2](zabbix_rack/images/2.png)
 ![3](zabbix_rack/images/3.png)
 
-- **Docs**: [zabbix_rack/README.md](./zabbix_rack/README.md)
+- **Docs**: [zabbix_rack/README_en.md](./zabbix_rack/README_en.md)
 
 ### 5. Zabbix SNMP
 
@@ -68,7 +68,7 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![2](zabbix_snmp/images/2.png)
 ![3](zabbix_snmp/images/3.png)
 
-- **Docs**: [zabbix_snmp/README.md](./zabbix_snmp/README.md)
+- **Docs**: [zabbix_snmp/README_en.md](./zabbix_snmp/README_en.md)
 
 ### 6. Zabbix JumpServer
 
@@ -77,18 +77,18 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 ![1](zabbix_jumpserver/images/1.png)
 
-- **Docs**: [zabbix_jumpserver/README.md](./zabbix_jumpserver/README.md)
+- **Docs**: [zabbix_jumpserver/README_en.md](./zabbix_jumpserver/README_en.md)
 
 ### 7. IM Sync Assistant
 
 - **Purpose**: Sync **WeCom**, **Feishu**, and **DingTalk** org structures into Zabbix **user groups**, and match or create Zabbix users with group membership.
 - **Features**: multi-platform support; web UI for sync credentials (**Users → Sync Settings**, one active setting at a time); department sync with optional full-path group names; user sync with match/auto-create (12-char password shown once in results); DingTalk users without mobile get pinyin usernames from display name; preview before sync; bilingual UI.
 
-![1](images/1.png)
-![2](images/2.png)
-![3](images/3.png)
+![1](zabbix_im/images/1.png)
+![2](zabbix_im/images/2.png)
+![3](zabbix_im/images/3.png)
 
-- **Docs**: [zabbix_im/README_en.md](./zabbix_im/README_en.md)（[中文](./zabbix_im/README.md)）
+- **Docs**: [zabbix_im/README_en.md](./zabbix_im/README_en.md) ([中文](./zabbix_im/README.md))
 
 ### 8. Zabbix Clonehosts
 
@@ -100,7 +100,43 @@ This repository contains a collection of independent Zabbix frontend modules tha
 ![3](zabbix_clonehosts/images/image-2.png)
 ![4](zabbix_clonehosts/images/image-3.png)
 
-- **Docs**: [zabbix_clonehosts/README_en.md](./zabbix_clonehosts/README_en.md)（[中文](./zabbix_clonehosts/README.md)）
+- **Docs**: [zabbix_clonehosts/README_en.md](./zabbix_clonehosts/README_en.md) ([中文](./zabbix_clonehosts/README.md))
+
+### 9. Zabbix IPAM
+
+- **Purpose**: Centrally manage IPv4 ranges, run asynchronous ICMP availability scans, and associate addresses with Zabbix hosts by interface IP.
+- **Features**: CIDR and start-end ranges up to 65,536 addresses; `fping`-based ICMP-only scans; automatic sharding and optional `pcntl` workers; manual and cron scans; live task progress; address matrix, filtering, pagination, and host links; bilingual UI.
+
+![1](zabbix_ipam/images/1.png)
+![2](zabbix_ipam/images/2.png)
+![3](zabbix_ipam/images/3.png)
+
+- **Docs**: [zabbix_ipam/README_en.md](./zabbix_ipam/README_en.md) ([中文](./zabbix_ipam/README.md))
+
+### 10. Zabbix LLDP Topology
+
+- **Purpose**: Visualize LLDP neighbor relationships from Zabbix LLDP discovery items.
+- **Features**: filter hosts/groups by **Lldp Discovery** template; group/host dropdowns with all-groups/all-hosts defaults; on-demand query loading `lldp.remote.info[*]` values; SVG circles and lines (local left, remote right); hover tooltips with ports and update time; bilingual UI.
+
+- **Docs**: [zabbix_lldp/README_en.md](./zabbix_lldp/README_en.md) ([中文](./zabbix_lldp/README.md))
+
+### 11. Zabbix Clouds
+
+- **Purpose**: Synchronize Alibaba Cloud ECS, Huawei Cloud ECS, and Tencent Cloud CVM instances to Zabbix.
+- **Features**: preview-before-sync workflow; idempotent matching through the `cloud_instance_id` tag; automatic `Clouds/{Provider}/{Region}` host groups; soft marking for cloud-deleted managed hosts; cloud account configuration.
+- **Docs**: [zabbix_clouds/README_en.md](./zabbix_clouds/README_en.md) ([中文](./zabbix_clouds/README.md))
+
+### 12. Zabbix Rightsizing
+
+- **Purpose**: Generate CPU and memory sizing recommendations from Zabbix data over a selected period.
+- **Features**: trends-first analysis with history fallback; CPU and memory recommendations; result export; configurable analysis parameters; bilingual UI.
+- **Docs**: [zabbix_rightsizing/README_en.md](./zabbix_rightsizing/README_en.md) ([中文](./zabbix_rightsizing/README.md))
+
+### 13. Zabbix Switch Backup
+
+- **Purpose**: List, preview, and download switch configuration backup files from Zabbix.
+- **Features**: file metadata and newest-first ordering; text preview and downloads; traversal and symlink protection; role-based access controls; bilingual UI.
+- **Docs**: [zabbix_switch_backup/README_en.md](./zabbix_switch_backup/README_en.md) ([中文](./zabbix_switch_backup/README.md))
 
 ## Installation
 
@@ -108,12 +144,12 @@ This repository contains a collection of independent Zabbix frontend modules tha
 
 The Releases page offers two types of packages — no git required:
 
-- **All-in-one package**: `zabbix_modules-<version>.tar.gz` (includes all modules; version format: `module_count.major.minor`, e.g., `8.2.0`)
+- **All-in-one package**: `zabbix_modules-<version>.tar.gz` (includes all modules; version format: `module_count.major.minor`, e.g., `13.2.0`)
 - **Single-module package**: `zabbix_<module>-<version>.tar.gz` (download only the modules you need)
 
 #### Option A: Download the all-in-one package
 
-1. Go to the [Releases page](https://github.com/X-Mars/zabbix_modules/releases) and download the `zabbix_modules-<version>.tar.gz` file (e.g., `zabbix_modules-8.2.0.tar.gz`).
+1. Go to the [Releases page](https://github.com/X-Mars/zabbix_modules/releases) and download the `zabbix_modules-<version>.tar.gz` file (e.g., `zabbix_modules-13.2.0.tar.gz`).
 2. Upload to the Zabbix server and extract to the modules directory:
 
    ```bash
@@ -201,6 +237,11 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → JumpServer**
 - **Users → IM Sync Assistant** (IM Sync / Sync Settings)
 - **Data collection → Host Batch Import** (batch clone hosts from a source host)
+- **Monitoring → LLDP Topology** (LLDP neighbor topology)
+- **Inventory → IPAM** (IP Management / IP Details / Task Management)
+- **Inventory → Cloud Sync** (Cloud Hosts / Cloud Settings)
+- **Inventory → Rightsizing** (resource sizing recommendations)
+- **Inventory → Switch Backup** (switch configuration backups)
 
 Each module contains its own README with specific installation and usage details.
 
