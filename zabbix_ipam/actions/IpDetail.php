@@ -15,8 +15,6 @@ require_once dirname(__DIR__).'/lib/IpStorage.php';
 require_once dirname(__DIR__).'/lib/LanguageManager.php';
 
 class IpDetail extends CController {
-    private const PAGE_SIZE = 50;
-
     public function init(): void {
         if (method_exists($this, 'disableCsrfValidation')) {
             $this->disableCsrfValidation();
@@ -32,7 +30,8 @@ class IpDetail extends CController {
             'rangeid' => 'string',
             'status' => 'in all,alive,down,unscanned',
             'associated' => 'in all,yes,no',
-            'page' => 'int32'
+            'page' => 'int32',
+            'per_page' => 'in 20,50,100,200'
         ]);
     }
 
@@ -47,8 +46,9 @@ class IpDetail extends CController {
         $status = $this->getInput('status', 'all');
         $associated = $this->getInput('associated', 'all');
         $search = mb_strtolower(trim($this->getInput('search', '')));
+        $per_page = (int) $this->getInput('per_page', 50);
         $page = max(1, (int) $this->getInput('page', 1));
-        $offset = ($page - 1) * self::PAGE_SIZE;
+        $offset = ($page - 1) * $per_page;
 
         $latest = [];
         foreach ($storage->tasks() as $task) {
@@ -100,13 +100,14 @@ class IpDetail extends CController {
                     continue;
                 }
 
-                if ($total >= $offset && count($rows) < self::PAGE_SIZE) {
+                if ($total >= $offset && count($rows) < $per_page) {
                     $rows[] = [
                         'ip' => $ip,
                         'range_id' => $range['id'],
                         'range_name' => $range['name'],
                         'range' => $range['range'],
                         'state' => $state,
+                        'status_updated_at' => $known[$ip]['scanned_at'] ?? '',
                         'hosts' => $hosts,
                         'associated' => $is_associated
                     ];
@@ -115,7 +116,7 @@ class IpDetail extends CController {
             }
         }
 
-        $pages = max(1, (int) ceil($total / self::PAGE_SIZE));
+        $pages = max(1, (int) ceil($total / $per_page));
         $page = min($page, $pages);
 
         $this->setResponse(new CControllerResponseData([
@@ -132,7 +133,7 @@ class IpDetail extends CController {
                 'page' => $page,
                 'pages' => $pages,
                 'total' => $total,
-                'page_size' => self::PAGE_SIZE
+                'per_page' => $per_page
             ]
         ]));
     }

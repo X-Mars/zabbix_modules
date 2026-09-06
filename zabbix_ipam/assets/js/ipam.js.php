@@ -60,7 +60,6 @@
             const form = document.getElementById('range-form');
             form.reset();
             form.elements.id.value = '';
-            form.elements.scan_interval.value = '60';
             form.elements.enabled.checked = true;
             document.getElementById('range-modal-title').textContent = event.target.closest('.js-add').textContent;
             open('range-modal');
@@ -74,7 +73,6 @@
             form.elements.id.value = data.id;
             form.elements.name.value = data.name;
             form.elements.range.value = data.range;
-            form.elements.scan_interval.value = data.scan_interval;
             form.elements.enabled.checked = !!data.enabled;
             document.getElementById('range-modal-title').textContent = edit.textContent;
             open('range-modal');
@@ -144,6 +142,7 @@
 
         const count = event.target.closest('.ipam-count');
         if (count) {
+            event.preventDefault();
             const grid = document.getElementById('ip-grid');
             grid.innerHTML = '<div class="ipam-grid-loading">'+(root.dataset.loading || 'Loading...')+'</div>';
             open('matrix-modal');
@@ -199,6 +198,20 @@
             range_form.querySelector('.js-save-range').click();
         });
     }
+
+    document.querySelectorAll('.js-auto-filter').forEach(form => {
+        form.querySelectorAll('select').forEach(select => {
+            select.addEventListener('change', () => form.submit());
+        });
+        form.querySelectorAll('input[name="search"],input[type="search"]').forEach(input => {
+            input.addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    form.submit();
+                }
+            });
+        });
+    });
 
     const active_rows = [...document.querySelectorAll('[data-task-row]')]
         .filter(row => row.querySelector('.status-running,.status-pending'));

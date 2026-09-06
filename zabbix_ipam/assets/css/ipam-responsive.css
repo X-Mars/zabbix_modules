@@ -1,6 +1,6 @@
 .ipam {
     width: calc(100vw - 215px);
-    max-width: 1440px;
+    max-width: none;
     margin-left: 0;
     margin-right: 0;
 }
@@ -33,27 +33,48 @@
 }
 
 .ipam-range-table th:nth-child(1) {
-    width: 32%;
+    width: 4%;
 }
 
 .ipam-range-table th:nth-child(2) {
-    width: 20%;
+    width: 10%;
 }
 
-.ipam-task-table th:nth-child(1) { width: 28%; }
-.ipam-task-table th:nth-child(2) { width: 13%; }
-.ipam-task-table th:nth-child(3) { width: 20%; }
-.ipam-task-table th:nth-child(4) { width: 8%; }
-.ipam-task-table th:nth-child(5) { width: 9%; }
-.ipam-task-table th:nth-child(6) { width: 14%; }
-.ipam-task-table th:nth-child(7) { width: 8%; }
+.ipam-range-table th:nth-child(3) { width: 13%; }
+.ipam-range-table th:nth-child(4) { width: 10%; }
+.ipam-range-table th:nth-child(5) { width: 8%; }
+.ipam-range-table th:nth-child(6) { width: 8%; }
+.ipam-range-table th:nth-child(7) { width: 17%; }
+.ipam-range-table th:nth-child(8) { width: 30%; }
 
-.ipam-detail-table th:nth-child(1) { width: 14%; }
-.ipam-detail-table th:nth-child(2) { width: 18%; }
-.ipam-detail-table th:nth-child(3) { width: 18%; }
-.ipam-detail-table th:nth-child(4) { width: 13%; }
-.ipam-detail-table th:nth-child(5) { width: 15%; }
-.ipam-detail-table th:nth-child(6) { width: 22%; }
+.ipam-table time {
+    white-space: nowrap;
+}
+
+.ipam-task-table th:nth-child(1) { width: 4%; }
+.ipam-task-table th:nth-child(2) { width: 20%; }
+.ipam-task-table th:nth-child(3) { width: 11%; }
+.ipam-task-table th:nth-child(4) { width: 10%; }
+.ipam-task-table th:nth-child(5) { width: 16%; }
+.ipam-task-table th:nth-child(6) { width: 7%; }
+.ipam-task-table th:nth-child(7) { width: 8%; }
+.ipam-task-table th:nth-child(8) { width: 16%; }
+.ipam-task-table th:nth-child(9) { width: 8%; }
+
+.ipam-detail-table th:nth-child(1) { width: 5%; }
+.ipam-detail-table th:nth-child(2) { width: 12%; }
+.ipam-detail-table th:nth-child(3) { width: 13%; }
+.ipam-detail-table th:nth-child(4) { width: 14%; }
+.ipam-detail-table th:nth-child(5) { width: 10%; }
+.ipam-detail-table th:nth-child(6) { width: 17%; }
+.ipam-detail-table th:nth-child(7) { width: 12%; }
+.ipam-detail-table th:nth-child(8) { width: 17%; }
+
+.ipam-index {
+    text-align: center;
+    color: var(--ipam-muted);
+    font-variant-numeric: tabular-nums;
+}
 
 .ip-address {
     font-size: 14px;
@@ -123,6 +144,117 @@
     gap: 10px;
 }
 
+.ipam-pagination-info,
+.ipam-page-size,
+.ipam-page-size label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ipam-page-size select {
+    min-width: 76px;
+    height: 34px;
+    padding: 5px 26px 5px 8px;
+    border: 1px solid #b8c4cc;
+    border-radius: 5px;
+    background: #fff;
+}
+
+/* Element Plus semantic colors for buttons outside table action cells. */
+.ipam .btn-alt,
+.ipam-modal .btn-alt {
+    border-color: #409EFF;
+    background: #409EFF;
+    color: #fff;
+}
+
+.ipam .btn-alt:hover,
+.ipam-modal .btn-alt:hover {
+    border-color: #337ECC;
+    background: #337ECC;
+    color: #fff;
+}
+
+/* Keep every button inside table action cells on its existing palette. */
+.ipam .ipam-actions .btn-alt {
+    border-color: #AEBBC5;
+    background: #fff;
+    color: #253746;
+}
+
+.ipam .ipam-actions .btn-alt:hover {
+    border-color: #909399;
+    background: #F4F4F5;
+    color: #253746;
+}
+
+.ipam .js-add,
+.ipam-modal .js-save-range {
+    border-color: #67C23A;
+    background: #67C23A;
+}
+
+.ipam .js-add:hover,
+.ipam-modal .js-save-range:hover {
+    border-color: #529B2E;
+    background: #529B2E;
+}
+
+.ipam-modal [data-close] {
+    border-color: #909399;
+    background: #909399;
+    color: #fff;
+}
+
+.ipam-modal [data-close]:hover {
+    border-color: #73767A;
+    background: #73767A;
+    color: #fff;
+}
+
+.ipam .btn-alt.ipam-close {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 2px 8px;
+    border: 1px solid #aebbc5;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 20px;
+}
+
+.ipam .btn-alt.btn-delete {
+    border-color: #F56C6C;
+    background: #F56C6C;
+    color: #fff;
+}
+
+.ipam .btn-alt.btn-scan {
+    border-color: #67C23A;
+    background: #67C23A;
+    color: #fff;
+}
+
+.ipam .btn-alt.btn-task {
+    border-color: #409EFF;
+    background: #409EFF;
+    color: #fff;
+}
+
+.ipam .btn-alt.btn-edit {
+    border-color: #E6A23C;
+    background: #E6A23C;
+    color: #fff;
+}
+
+.ipam .btn-alt.btn-delete:hover,
+.ipam .btn-alt.btn-scan:hover,
+.ipam .btn-alt.btn-task:hover,
+.ipam .btn-alt.btn-edit:hover {
+    color: #fff;
+    filter: brightness(.94);
+}
+
 .ipam-actions {
     display: flex;
     flex-wrap: wrap;
@@ -139,6 +271,84 @@
     color: #fff !important;
 }
 
+/* Size dialogs relative to the viewport and prevent form content from widening them. */
+.ipam-modal *,
+.ipam-modal *::before,
+.ipam-modal *::after {
+    box-sizing: border-box;
+}
+
+.ipam-dialog {
+    width: 40vw;
+    max-width: calc(100vw - 48px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.ipam-dialog.ipam-dialog-wide {
+    width: 80vw;
+}
+
+.ipam-dialog > header,
+.ipam-dialog > form,
+.ipam-dialog > .ipam-legend,
+.ipam-dialog > .ipam-grid {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ipam-dialog form {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.ipam-form-note {
+    display: grid;
+    gap: 5px;
+    padding: 12px 14px;
+    border-left: 4px solid #409EFF;
+    border-radius: 5px;
+    background: #ECF5FF;
+    color: #606266;
+    line-height: 1.5;
+}
+
+.ipam-form-note strong {
+    color: #303133;
+}
+
+.ipam-dialog footer {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ipam-dialog form,
+.ipam-dialog form > label,
+.ipam-dialog form input:not([type="checkbox"]),
+.ipam-dialog form select,
+.ipam-dialog form textarea,
+.ipam-switch-row > span {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ipam-dialog form input:not([type="checkbox"]),
+.ipam-dialog form select,
+.ipam-dialog form textarea {
+    width: 100%;
+}
+
+.ipam-dialog .ipam-switch-row input[type="checkbox"] {
+    flex: 0 0 20px;
+    width: 20px;
+}
+
+.ipam-switch-row small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 760px) {
     .ipam {
         width: calc(100vw - 16px);
@@ -146,6 +356,10 @@
 
     .ipam-table {
         min-width: 680px;
+    }
+
+    .ipam-range-table {
+        min-width: 1050px;
     }
 
     .ipam-detail-table,
@@ -156,5 +370,16 @@
     .ipam-pagination {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .ipam-pagination-info {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ipam-dialog,
+    .ipam-dialog.ipam-dialog-wide {
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
     }
 }
