@@ -193,25 +193,46 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 9. Zabbix IPAM
+
+**简介**：用于集中管理 IPv4 地址段并执行异步 ICMP 存活扫描的 Zabbix 前端模块，可按主机接口 IP 自动关联 Zabbix 主机。
+
+**功能特性**：
+
+- 支持 CIDR 和 IPv4 起止地址格式，单个地址段最多 65,536 个地址
+- 基于 `fping` 的 ICMP 存活扫描，不探测 TCP 端口
+- 大网段自动分片，PHP CLI 后台执行，支持 `pcntl` 多进程
+- 支持手动扫描与 crontab 定时扫描，并实时显示任务进度
+- IP 使用矩阵、地址明细、主机关联、筛选与分页
+- 支持中英文界面国际化
+
+![1](zabbix_ipam/images/1.png)
+![2](zabbix_ipam/images/2.png)
+![3](zabbix_ipam/images/3.png)
+
+**文档链接**：[zabbix_ipam/README.md](./zabbix_ipam/README.md)（[English](./zabbix_ipam/README_en.md)）
+
+**兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
+
 ## 安装说明
 
 ### 方式一：下载 Releases 压缩包（适合生产部署，按需选择）
 
 Releases 页面提供两种压缩包，无需安装 git：
 
-- **整体打包压缩包**：`zabbix_modules-<版本号>.tar.gz`（包含所有模块，版本号格式：`模块数量.大版本.小版本`，如 `8.2.0`）
+- **整体打包压缩包**：`zabbix_modules-<版本号>.tar.gz`（包含所有模块，版本号格式：`模块数量.大版本.小版本`，如 `13.2.0`）
 - **单模块压缩包**：`zabbix_<模块名>-<版本号>.tar.gz`（按需下载单个模块）
 
 #### 选项 A：下载所有模块整体压缩包
 
-1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载 `zabbix_modules-<版本号>.tar.gz` 文件（如 `zabbix_modules-8.2.0.tar.gz`）
+1. 前往 [Releases 页面](https://github.com/X-Mars/zabbix_modules/releases)，下载 `zabbix_modules-<版本号>.tar.gz` 文件（如 `zabbix_modules-13.2.0.tar.gz`）
 2. 上传到 Zabbix 服务器并解压到模块目录：
 
 ```bash
 # Zabbix 6.0 / 7.0
 tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/modules/
 
-# Zabbix 7.2+ / 7.4 / 8.0
+# Zabbix 6.4 / 7.2 / 7.4 / 8.0
 tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
 ```
 
@@ -223,7 +244,7 @@ for mod in /usr/share/zabbix/modules/zabbix_*/; do
 done
 ```
 
-如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+如果使用 Zabbix 6.4、7.0+ 或 8.0+，则无需修改，保持默认值即可。
 
 #### 选项 B：下载单个模块
 
@@ -244,7 +265,7 @@ tar -xzf zabbix_<模块名>-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_<模块名>/manifest.json
 ```
 
-如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+如果使用 Zabbix 6.4、7.0+ 或 8.0+，则无需修改，保持默认值即可。
 
 ### 方式二：git clone 直接部署（适合开发/跟踪更新）
 
@@ -276,7 +297,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_reports/manifest.json
 ```
 
-如果使用 Zabbix 7.0+ 或 8.0+，则无需修改，保持默认值即可。
+如果使用 Zabbix 6.4、7.0+ 或 8.0+，则无需修改，保持默认值即可。
 
 ### 启用模块
 
@@ -302,6 +323,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 - **资产记录 → JumpServer** (JumpServer 同步)
 - **Users → IM同步助手** (IM 同步 / 同步设置)
 - **数据采集 → 主机批量导入** (基于源主机批量克隆主机)
+- **Inventory → IPAM** (IP 管理 / IP 详情 / 任务管理)
 
 ### 单独安装模块
 
