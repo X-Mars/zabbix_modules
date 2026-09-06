@@ -23,6 +23,7 @@ class IpScan extends CController {
     protected function checkInput(): bool {
         return $this->validateInput([
             'taskid' => 'string',
+            'rangeid' => 'string',
             'status' => 'in all,pending,running,completed,failed,stopped',
             'search' => 'string',
             'page' => 'int32',
@@ -37,13 +38,15 @@ class IpScan extends CController {
     protected function doAction(): void {
         $storage = new IpStorage();
         $task_id = $this->getInput('taskid', '');
+        $range_id = $this->getInput('rangeid', '');
         $status = $this->getInput('status', 'all');
         $search = mb_strtolower(trim($this->getInput('search', '')));
         $per_page = (int) $this->getInput('per_page', 20);
         $page = max(1, (int) $this->getInput('page', 1));
 
         $range_names = [];
-        foreach ($storage->ranges() as $range) {
+        $ranges = $storage->ranges();
+        foreach ($ranges as $range) {
             $range_names[$range['id']] = $range['name'];
         }
 
@@ -55,6 +58,9 @@ class IpScan extends CController {
             }
             $task['range_name'] = $range_names[$task['range_id']] ?? $task['range_id'];
             if ($task_id !== '' && $task['id'] !== $task_id) {
+                continue;
+            }
+            if ($range_id !== '' && $task['range_id'] !== $range_id) {
                 continue;
             }
             if ($status !== 'all' && $task['status'] !== $status) {
@@ -74,9 +80,10 @@ class IpScan extends CController {
         $this->setResponse(new CControllerResponseData([
             'title' => LanguageManager::t('Task Management'),
             'tasks' => $tasks,
+            'ranges' => $ranges,
             'selected' => $task_id,
             'summary' => $summary,
-            'filters' => ['status' => $status, 'search' => $search],
+            'filters' => ['rangeid' => $range_id, 'status' => $status, 'search' => $search],
             'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total_rows, 'per_page' => $per_page]
         ]));
     }
