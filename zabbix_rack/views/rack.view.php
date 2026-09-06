@@ -27,6 +27,22 @@ $hostGroups = $data['host_groups'];
 $showOverview = $data['show_overview'] ?? false;
 $allRacksData = $data['all_racks_data'] ?? [];
 
+// 与 IPAM 一致，使用原生 select，避免依赖自定义组件的内部结构。
+$buildSelect = static function (string $name, string $id, array $options, $selected = '') {
+    $select = (new CTag('select', true))
+        ->setAttribute('name', $name)
+        ->setAttribute('id', $id);
+    foreach ($options as $value => $label) {
+        $option = (new CTag('option', true, htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8')))
+            ->setAttribute('value', (string) $value);
+        if ((string) $value === (string) $selected) {
+            $option->setAttribute('selected', 'selected');
+        }
+        $select->addItem($option);
+    }
+    return $select;
+};
+
 /**
  * 构建单面机柜可视化
  *
@@ -228,43 +244,25 @@ $styleTag = new CTag('style', true, '
     font-size: 13px;
     white-space: nowrap;
 }
-.rack-top-filter z-select, 
-.rack-top-filter input[type="text"] {
+/* 与 ip.manager 的工具栏和弹窗控件保持一致。 */
+.rack-page-wrapper .rack-top-filter select,
+.rack-page-wrapper .rack-top-filter input[type="text"],
+.rack-page-wrapper .form-group select,
+.rack-page-wrapper .form-group input:not([type="hidden"]) {
     width: 100%;
     min-width: 0;
-    padding: 10px 14px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    background-color: #fff;
-    transition: all 0.2s ease;
-    height: 42px;
+    height: 36px;
+    padding: 7px 10px;
+    border: 1px solid #b8c4cc;
+    border-radius: 5px;
+    background: #fff;
+    color: #212529;
     box-sizing: border-box;
-}
-.rack-top-filter z-select {
-    width: 100% !important;
-    min-width: 0 !important;
 }
 .rack-top-filter .filter-item .btn {
     width: 100%;
-}
-/* z-select 圆角样式 */
-z-select button.focusable {
-    border-radius: 6px !important;
-}
-z-select .list {
-    border-radius: 6px !important;
-    overflow: hidden;
-}
-.rack-top-filter z-select:focus, 
-.rack-top-filter input[type="text"]:focus {
-    outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-}
-.rack-top-filter z-select:hover, 
-.rack-top-filter input[type="text"]:hover {
-    border-color: #adb5bd;
+    height: 36px;
+    padding: 7px 13px;
 }
 
 /* 统一按钮样式 */
@@ -708,34 +706,6 @@ z-select .list {
     font-weight: 600;
     color: #495057;
     font-size: 13px;
-}
-.form-group z-select, 
-.form-group input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    background: #fff;
-    color: #212529;
-}
-.form-group z-select {
-    width: 100% !important;
-}
-.form-group z-select button.focusable {
-    border-radius: 6px !important;
-}
-.form-group z-select .list {
-    border-radius: 6px !important;
-    overflow: hidden;
-}
-.form-group z-select:focus, 
-.form-group input:focus {
-    outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
 .form-row {
     display: flex;
@@ -1457,14 +1427,6 @@ z-select .list {
         gap: 15px;
     }
     
-    .rack-top-filter z-select, 
-    .rack-top-filter input[type="text"] {
-        min-width: 160px;
-    }
-    .rack-top-filter z-select {
-        min-width: 160px !important;
-    }
-    
     .rack-overview-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
@@ -1491,16 +1453,11 @@ z-select .list {
         width: 100%;
     }
     
-    .rack-top-filter z-select, 
+    .rack-top-filter select,
     .rack-top-filter input[type="text"] {
         width: 100%;
         min-width: auto;
     }
-    .rack-top-filter z-select {
-        width: 100% !important;
-        min-width: auto !important;
-    }
-    
     .rack-top-filter .btn {
         width: 100%;
         margin-top: 5px;
@@ -1590,7 +1547,7 @@ $filterForm->addItem(
 // 搜索框
 $searchItem = (new CDiv())->addClass('filter-item');
 $searchItem->addItem(
-    (new CTag('label', true, '🔍 ' . LanguageManager::t('search')))
+    (new CTag('label', true, '🔍 ' . LanguageManager::t('search')))->setAttribute('for', 'search-input')
 );
 $searchItem->addItem(
     (new CTag('input', false))
@@ -1602,37 +1559,29 @@ $searchItem->addItem(
 );
 $filterForm->addItem($searchItem);
 
-// 机房选择 - 使用 CSelect（z-select）
+// 机房选择 - 使用原生 select
 $roomFilterItem = (new CDiv())->addClass('filter-item');
 $roomFilterItem->addItem(
-    (new CTag('label', true, '🏢 ' . LanguageManager::t('room')))
+    (new CTag('label', true, '🏢 ' . LanguageManager::t('room')))->setAttribute('for', 'room-select')
 );
-$roomFilterSelect = (new CSelect('room_id'))
-    ->setAttribute('id', 'room-select')
-    ->addOption(new CSelectOption('', LanguageManager::t('select_room')));
+$roomOptions = ['' => LanguageManager::t('select_room')];
 foreach ($rooms as $room) {
-    $roomFilterSelect->addOption(new CSelectOption($room['id'], $room['name']));
+    $roomOptions[$room['id']] = $room['name'];
 }
-if ($currentRoomId) {
-    $roomFilterSelect->setValue($currentRoomId);
-}
+$roomFilterSelect = $buildSelect('room_id', 'room-select', $roomOptions, $currentRoomId);
 $roomFilterItem->addItem($roomFilterSelect);
 $filterForm->addItem($roomFilterItem);
 
-// 机柜选择 - 使用 CSelect（z-select）
+// 机柜选择 - 使用原生 select
 $rackFilterItem = (new CDiv())->addClass('filter-item');
 $rackFilterItem->addItem(
-    (new CTag('label', true, '🗄️ ' . LanguageManager::t('rack')))
+    (new CTag('label', true, '🗄️ ' . LanguageManager::t('rack')))->setAttribute('for', 'rack-select')
 );
-$rackFilterSelect = (new CSelect('rack_id'))
-    ->setAttribute('id', 'rack-select')
-    ->addOption(new CSelectOption('', LanguageManager::t('select_rack')));
+$rackOptions = ['' => LanguageManager::t('select_rack')];
 foreach ($racks as $rack) {
-    $rackFilterSelect->addOption(new CSelectOption($rack['id'], $rack['name']));
+    $rackOptions[$rack['id']] = $rack['name'];
 }
-if ($currentRackId) {
-    $rackFilterSelect->setValue($currentRackId);
-}
+$rackFilterSelect = $buildSelect('rack_id', 'rack-select', $rackOptions, $currentRackId);
 $rackFilterItem->addItem($rackFilterSelect);
 $filterForm->addItem($rackFilterItem);
 
@@ -2121,24 +2070,23 @@ $assignModalBody->addItem($editHostInfo);
 // 主机选择区域
 $hostSelectSection = (new CDiv())->setAttribute('id', 'host-select-section');
 
-// 主机组选择 - 使用 CSelect（z-select）
+// 主机组选择 - 使用原生 select
 $groupSelectGroup = (new CDiv())->addClass('form-group');
 $groupSelectGroup->addItem(
-    (new CTag('label', true, '📂 ' . LanguageManager::t('host_group')))
+    (new CTag('label', true, '📂 ' . LanguageManager::t('host_group')))->setAttribute('for', 'modal-group-select')
 );
-$groupSelect = (new CSelect('group'))
-    ->setAttribute('id', 'modal-group-select')
-    ->addOption(new CSelectOption('', LanguageManager::t('all_groups')));
+$groupOptions = ['' => LanguageManager::t('all_groups')];
 foreach ($hostGroups as $group) {
-    $groupSelect->addOption(new CSelectOption($group['groupid'], $group['name']));
+    $groupOptions[$group['groupid']] = $group['name'];
 }
+$groupSelect = $buildSelect('group', 'modal-group-select', $groupOptions);
 $groupSelectGroup->addItem($groupSelect);
 $hostSelectSection->addItem($groupSelectGroup);
 
 // 搜索主机
 $hostSearchGroup = (new CDiv())->addClass('form-group');
 $hostSearchGroup->addItem(
-    (new CTag('label', true, '🔍 ' . LanguageManager::t('search_host')))
+    (new CTag('label', true, '🔍 ' . LanguageManager::t('search_host')))->setAttribute('for', 'modal-host-search')
 );
 $hostSearchGroup->addItem(
     (new CTag('input', false))
@@ -2168,7 +2116,7 @@ $formRow = (new CDiv())->addClass('form-row');
 
 $uStartGroup = (new CDiv())->addClass('form-group');
 $uStartGroup->addItem(
-    (new CTag('label', true, '⬆️ ' . LanguageManager::t('u_start')))
+    (new CTag('label', true, '⬆️ ' . LanguageManager::t('u_start')))->setAttribute('for', 'modal-u-start')
 );
 $uStartGroup->addItem(
     (new CTag('input', false))
@@ -2181,7 +2129,7 @@ $formRow->addItem($uStartGroup);
 
 $uEndGroup = (new CDiv())->addClass('form-group');
 $uEndGroup->addItem(
-    (new CTag('label', true, '⬇️ ' . LanguageManager::t('u_end')))
+    (new CTag('label', true, '⬇️ ' . LanguageManager::t('u_end')))->setAttribute('for', 'modal-u-end')
 );
 $uEndGroup->addItem(
     (new CTag('input', false))
@@ -2195,13 +2143,12 @@ $assignModalBody->addItem($formRow);
 
 $sideGroup = (new CDiv())->addClass('form-group');
 $sideGroup->addItem(
-    (new CTag('label', true, '↔️ ' . LanguageManager::t('rack_side')))->addClass('form-label')
+    (new CTag('label', true, '↔️ ' . LanguageManager::t('rack_side')))->setAttribute('for', 'modal-rack-side')->addClass('form-label')
 );
-$sideSelect = (new CSelect('rack_side'))
-    ->setAttribute('id', 'modal-rack-side');
-$sideSelect->addOption(new CSelectOption('front', LanguageManager::t('rack_side_front')));
-$sideSelect->addOption(new CSelectOption('back', LanguageManager::t('rack_side_back')));
-$sideSelect->setValue('front');
+$sideSelect = $buildSelect('rack_side', 'modal-rack-side', [
+    'front' => LanguageManager::t('rack_side_front'),
+    'back' => LanguageManager::t('rack_side_back')
+], 'front');
 $sideGroup->addItem($sideSelect);
 $assignModalBody->addItem($sideGroup);
 
@@ -2349,7 +2296,7 @@ $content->addItem(new CJsScript('<script>
         return select.value === "back" ? "back" : "front";
     }
 
-    // ============ 筛选栏联动（z-select 事件监听） ============
+    // ============ 筛选栏联动（select 事件监听） ============
     var roomSelect = document.getElementById("room-select");
     if (roomSelect) {
         roomSelect.addEventListener("change", function() {
@@ -2373,7 +2320,7 @@ $content->addItem(new CJsScript('<script>
         });
     }
 
-    // 主机组下拉框（z-select）change 事件 → 替代原来的 onchange="loadHosts()"
+    // 主机组下拉框（select）change 事件 → 替代原来的 onchange="loadHosts()"
     var groupSelect = document.getElementById("modal-group-select");
     if (groupSelect) {
         groupSelect.addEventListener("change", function() {

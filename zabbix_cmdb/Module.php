@@ -41,10 +41,12 @@ class Module extends ModuleBase {
                         ->getSubmenu()
                         ->add(
                             (new CMenuItem($lm->t('CMDB')))->setSubMenu(
-                                new CMenu([
+                                new CMenu(array_filter([
                                     (new CMenuItem($lm->t('Host List')))->setAction('cmdb'),
-                                    (new CMenuItem($lm->t('Host Groups')))->setAction('cmdb.groups')
-                                ])
+                                    (new CMenuItem($lm->t('Host Groups')))->setAction('cmdb.groups'),
+                                    \CWebUser::$data['type'] >= USER_TYPE_SUPER_ADMIN
+                                        ? (new CMenuItem('CMDB 配置'))->setAction('cmdb.config') : null
+                                ]))
                             )
                         );
                 }
