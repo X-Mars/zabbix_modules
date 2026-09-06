@@ -1,0 +1,372 @@
+{
+    "cpu_count": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.num",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.num[online]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.hw.cpu.num",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "cpu.num",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Number of CPUs",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Number of cores",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "CPU cores",
+            "transform": "none"
+        }
+    ],
+    "cpu_usage": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.util",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.util[,avg1]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.util[,idle]",
+            "transform": "subtract_from_100"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.util[]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.load[avg1]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.load[all,avg1]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.cpu.load[percpu,avg1]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "cpu.util",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "cpu.load",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "CPU utilization",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "CPU usage",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Processor load",
+            "transform": "none"
+        }
+    ],
+    "memory_total": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.size[total]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.total",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "vm.memory.size",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Total memory",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Memory total",
+            "transform": "none"
+        }
+    ],
+    "memory_usage": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.utilization",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.util",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.util[]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.size[pused]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.size[pavailable]",
+            "transform": "subtract_from_100"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "vm.memory.pused",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "memory.util",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "memory.pused",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Memory utilization",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Memory usage",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Used memory",
+            "transform": "none"
+        }
+    ],
+    "kernel_version": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.uname",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os[uname]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "system.uname",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "System uname",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Kernel version",
+            "transform": "none"
+        }
+    ],
+    "system_name": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.hostname",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.hostname[host]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os[hostname]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "agent.hostname",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "hostname",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "System name",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Hostname",
+            "transform": "none"
+        }
+    ],
+    "operating_system": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os[full]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os[name]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.os[short]",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": "system.sw.os",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Operating system",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "OS name",
+            "transform": "none"
+        }
+    ],
+    "os_architecture": [
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.sw.arch",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "exact",
+            "pattern": "system.hw.arch",
+            "transform": "none"
+        },
+        {
+            "field": "key_",
+            "match": "fuzzy",
+            "pattern": ".arch",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "Operating system architecture",
+            "transform": "none"
+        },
+        {
+            "field": "name",
+            "match": "fuzzy",
+            "pattern": "System architecture",
+            "transform": "none"
+        }
+    ]
+}
