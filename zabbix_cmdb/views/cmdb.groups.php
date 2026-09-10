@@ -272,6 +272,15 @@ $styleTag = new CTag('style', true, '
     color: #007bff;
     text-decoration: underline;
 }
+
+/* Element Plus inspired visual layer. */
+main{min-width:0!important;width:auto!important}
+.cmdb-container{box-sizing:border-box;--el-primary:#409eff;--el-primary-light:#ecf5ff;--el-border:#dcdfe6;--el-border-light:#ebeef5;--el-text:#303133;--el-text-secondary:#606266;--el-muted:#909399;--el-success:#67c23a;--el-warning:#e6a23c;padding:10px;width:100%;max-width:100%;color:var(--el-text)}
+.search-form{margin-bottom:16px;padding:18px;border-color:var(--el-border);border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.form-field label{margin-bottom:7px;color:var(--el-text-secondary);font-weight:500}.form-field input{height:34px;padding:0 11px;border-color:var(--el-border);color:var(--el-text);outline:0;transition:border-color .2s,box-shadow .2s}.form-field input:hover{border-color:#c0c4cc}.form-field input:focus{border-color:var(--el-primary);box-shadow:0 0 0 1px var(--el-primary)}
+.btn{height:34px;padding:7px 15px;border-radius:4px;transition:all .2s}.btn-primary{border-color:var(--el-primary);background:var(--el-primary)}.btn-primary:hover{border-color:#79bbff;background:#79bbff}
+.groups-table{border-color:var(--el-border);border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.groups-table thead th{padding:12px 14px;border-color:var(--el-border-light);background:#f5f7fa;color:var(--el-text-secondary);font-weight:500;word-break:normal}.groups-table tbody td{padding:14px;border-color:var(--el-border-light);color:var(--el-text-secondary);vertical-align:middle;word-break:normal}.groups-table tbody tr{transition:background-color .2s}.groups-table tbody tr:hover{background:#f5f7fa}.group-link,.sort-link{color:var(--el-primary);font-weight:500}.group-link:hover,.sort-link:hover{color:#79bbff;text-decoration:none}.stat-number{margin:0;color:var(--el-text);font-size:18px}.stat-unit{color:var(--el-muted)}
+.status-empty,.status-active,.status-basic,.status-normal{display:inline-block;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500}.status-empty{background:#f4f4f5;color:#73767a}.status-active,.status-normal{background:var(--el-primary-light);color:#337ecc}.status-basic{background:#fdf6ec;color:#b88230}.no-data{padding:48px 20px;background:#fff;color:var(--el-muted);font-style:normal}
+@media(max-width:768px){.cmdb-container{padding:6px;overflow-x:auto}.search-form{padding:14px}.groups-table{min-width:720px}}
 ');
 
 // 创建主体内容
@@ -342,7 +351,7 @@ if (empty($data['groups'])) {
                 ->addClass('stat-number')
         );
         $hostCountCol->addItem(
-            (new CSpan(LanguageManager::t('hosts')))
+            (new CSpan(LanguageManager::t((int) $group['host_count'] === 1 ? 'host' : 'hosts')))
                 ->addClass('stat-unit')
         );
 
@@ -355,7 +364,7 @@ if (empty($data['groups'])) {
                     ->setAttribute('style', 'color: #4f46e5;')
             );
             $cpuCol->addItem(
-                (new CSpan(LanguageManager::t('cores')))
+                (new CSpan(LanguageManager::t((float) $group['total_cpu'] == 1 ? 'core' : 'cores')))
                     ->addClass('stat-unit')
             );
         } else {

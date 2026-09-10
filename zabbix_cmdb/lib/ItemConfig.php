@@ -1,10 +1,12 @@
 <?php
 namespace Modules\ZabbixCmdb\Lib;
 
+require_once __DIR__.'/LanguageManager.php';
+
 class ItemConfig {
     const LABELS = [
-        'cpu_count' => 'CPU 总量', 'cpu_usage' => 'CPU 使用率',
-        'memory_total' => '内存总量', 'memory_usage' => '内存使用率'
+        'cpu_count' => 'CPU Total', 'cpu_usage' => 'CPU Usage',
+        'memory_total' => 'Memory Total', 'memory_usage' => 'Memory Usage'
     ];
     private static $cache;
 
@@ -17,7 +19,7 @@ class ItemConfig {
             $raw = @file_get_contents(self::path());
             $data = $raw === false ? null : json_decode($raw, true);
             if (!is_array($data)) {
-                throw new \RuntimeException('无法读取 CMDB data/item_rules.json，或 JSON 格式无效。');
+                throw new \RuntimeException(LanguageManager::t('Cannot read CMDB data/item_rules.json, or the JSON is invalid.'));
             }
             self::validate($data, array_keys(self::LABELS));
             self::validate($data, array_keys($data));
@@ -29,7 +31,7 @@ class ItemConfig {
     public static function validate(array $data, array $categories): void {
         foreach ($categories as $category) {
             if (!isset($data[$category]) || !is_array($data[$category]) || count($data[$category]) > 100) {
-                throw new \InvalidArgumentException('每个指标必须提供规则列表，最多 100 条。');
+                throw new \InvalidArgumentException(LanguageManager::t('Each metric must have a rule list with at most 100 rules.'));
             }
             foreach ($data[$category] as $rule) {
                 if (!is_array($rule)
@@ -40,7 +42,7 @@ class ItemConfig {
                         || !in_array($rule['transform'] ?? '', ['none', 'subtract_from_100'], true)
                         || (!in_array($category, ['cpu_usage', 'memory_usage'], true)
                             && $rule['transform'] !== 'none')) {
-                    throw new \InvalidArgumentException('规则无效：请填写 1–255 字节的名称或 Key，并选择有效的匹配方式和转换方式。');
+                    throw new \InvalidArgumentException(LanguageManager::t('Invalid rule: enter an item name or key of 1–255 bytes and select valid matching and conversion options.'));
                 }
             }
         }
@@ -55,12 +57,12 @@ class ItemConfig {
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n";
         $tmp = @tempnam(dirname(self::path()), '.item_rules_');
         if ($tmp === false) {
-            throw new \RuntimeException('保存失败：请授予 Web 服务用户 CMDB data 目录写入权限。');
+            throw new \RuntimeException(LanguageManager::t('Cannot save: grant the web service user write access to the CMDB data directory.'));
         }
         try {
             if (file_put_contents($tmp, $json, LOCK_EX) !== strlen($json)
                     || !chmod($tmp, 0640) || !rename($tmp, self::path())) {
-                throw new \RuntimeException('保存失败：请检查 CMDB data 目录写入权限。');
+                throw new \RuntimeException(LanguageManager::t('Cannot save: check write permissions on the CMDB data directory.'));
             }
             self::$cache = $data;
         } finally {
