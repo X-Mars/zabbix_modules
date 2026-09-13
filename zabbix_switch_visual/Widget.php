@@ -8,6 +8,6 @@ require_once __DIR__ . '/includes/Translation.php';
 
 class Widget extends CWidget {
     public function getDefaultName(): string {
-        return \Modules\SwitchVisual\Includes\Translation::t('Switch Visual Panel');
+        return \Modules\SwitchVisual\Includes\Translation::t('Zabbix Switch Visual');
     }
 }

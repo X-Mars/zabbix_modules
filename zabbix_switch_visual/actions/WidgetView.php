@@ -119,7 +119,7 @@ class WidgetView extends CControllerDashboardWidgetView {
                 $widget_name = trim((string) $this->widget->getName());
             }
             if ($widget_name === '') {
-                $widget_name = \Modules\SwitchVisual\Includes\Translation::t('Switch Visual');
+                $widget_name = \Modules\SwitchVisual\Includes\Translation::t('Zabbix Switch Visual');
             }
 
             $this->setResponse(new CControllerResponseData([
@@ -134,7 +134,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
         } catch (\Throwable $e) {
             $this->setResponse(new CControllerResponseData([
-                'name'        => \Modules\SwitchVisual\Includes\Translation::t('Switch Visual'),
+                'name'        => \Modules\SwitchVisual\Includes\Translation::t('Zabbix Switch Visual'),
                 'no_host'     => false,
                 'error'       => get_class($e) . ': ' . $e->getMessage()
                                  . ' in ' . basename($e->getFile()) . ':' . $e->getLine(),

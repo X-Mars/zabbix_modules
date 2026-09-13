@@ -148,10 +148,10 @@ class WidgetForm extends CWidgetForm {
 			(new CWidgetFieldColor('color_10g', Translation::t('10 Gbps port color')))->setDefault('2090e0')
 		);
 		$this->addField(
-			(new CWidgetFieldColor('color_alert', Translation::t('Alert / warning port color')))->setDefault('e89000')
+			(new CWidgetFieldColor('color_alert', Translation::t('Warning port color')))->setDefault('e89000')
 		);
 		$this->addField(
-			(new CWidgetFieldColor('color_error', Translation::t('Error / down port color')))->setDefault('e83838')
+			(new CWidgetFieldColor('color_error', Translation::t('Error port color')))->setDefault('e83838')
 		);
 		$this->addField(
 			(new CWidgetFieldIntegerBox('port_index_start', Translation::t('Port index start (SNMP offset)'), 1, 999999))->setDefault(1)

@@ -1,20 +1,20 @@
 {
     "manifest_version": 2.0,
-    "id": "switchvisual",
+    "id": "zabbix-switch-visual",
     "type": "widget",
-    "name": "Switch Visual Panel",
+    "name": "Zabbix Switch Visual",
     "namespace": "SwitchVisual",
     "version": "1.6.0",
-    "author": "Mauro Serafini",
-    "description": "Visual SVG panel for switch port monitoring.",
+    "author": "Mauro Serafini/火星小魏/火星小刘",
+    "description": "Visual SVG panel for switch port monitoring. / 交换机端口监控 SVG 可视化面板。",
     "widget": {
         "js_class": "CWidgetSwitchVisual"
     },
     "actions": {
-        "widget.switchvisual.view": {
+        "widget.zabbix-switch-visual.view": {
             "class": "WidgetView"
         },
-        "widget.switchvisual.sparkline": {
+        "widget.zabbix-switch-visual.sparkline": {
             "class": "WidgetSparkline"
         }
     },

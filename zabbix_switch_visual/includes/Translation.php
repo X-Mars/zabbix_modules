@@ -6,9 +6,8 @@ namespace Modules\SwitchVisual\Includes;
  * Module-local EN → zh_CN translator.
  *
  * Zabbix core locale files cannot translate strings shipped inside custom
- * modules, so every user-visible string of this widget is routed through
- * Translation::t(). Translations activate automatically when the current
- * frontend user's language starts with "zh" (e.g. zh_CN / zh_TW).
+ * modules, so widget strings are routed through Translation::t(). Simplified
+ * Chinese is used for zh_CN/zh_SG; other languages retain the English source.
  */
 class Translation {
 
@@ -17,8 +16,7 @@ class Translation {
 	/** English source string → 简体中文 */
 	private static array $dict = [
 		// Widget / general
-		'Switch Visual Panel' => '交换机可视化面板',
-		'Switch Visual'       => '交换机可视化',
+		'Zabbix Switch Visual' => 'Zabbix 交换机可视化',
 
 		// Fieldset titles
 		'Ports'      => '端口',
@@ -47,9 +45,9 @@ class Translation {
 		'SFP optical RX power pattern (optional)'          => 'SFP 收光功率监控项模式（可选）',
 		'SFP optical TX power pattern (optional)'          => 'SFP 发光功率监控项模式（可选）',
 		'Port shape'                                       => '端口形状',
-		'Style 1 (stepped)'                                => '样式1（台阶式）',
-		'Style 2 (metal)'                                  => '样式2（金属外观）',
-		'Style 3 (classic)'                                => '样式3（经典）',
+		'Style 1 (stepped)'                                => '样式 1（台阶式）',
+		'Style 2 (metal)'                                  => '样式 2（金属外观）',
+		'Style 3 (classic)'                                => '样式 3（经典）',
 		'RJ45 ports (per stack member; the rest are SFP)'  => 'RJ45 端口数（每个堆叠成员；其余端口为 SFP）',
 		'SFP ports (manual mode only — with auto-detect the ports beyond RJ45 count are SFP)'
 		                                                   => 'SFP 端口数（仅手动模式生效 — 自动检测时超出 RJ45 数量的端口均为 SFP）',
@@ -63,11 +61,11 @@ class Translation {
 		'Serial number item key (optional)'                => '序列号监控项键值（可选）',
 		'Model item key (optional)'                        => '设备型号监控项键值（可选）',
 		'CPU % item pattern (optional, e.g. system.cpu.util[*])'
-		                                                   => 'CPU 使用率监控项键值（可选，支持通配符，如 system.cpu.util[*]）',
+		                                                   => 'CPU 使用率监控项键值模式（可选，支持通配符，如 system.cpu.util[*]）',
 		'Memory % item pattern (optional, e.g. vm.memory.pused[*])'
-		                                                   => '内存使用率监控项键值（可选，支持通配符，如 vm.memory.pused[*]）',
+		                                                   => '内存使用率监控项键值模式（可选，支持通配符，如 vm.memory.pused[*]）',
 		'Temperature item pattern (optional, e.g. sensor.temp.value[*]; multiple sensors: panel shows max, hover shows all)'
-		                                                   => '温度监控项键值（可选，支持通配符，如 sensor.temp.value[*]；多个温度时面板显示最高，悬浮显示全部）',
+		                                                   => '温度监控项键值模式（可选，支持通配符，如 sensor.temp.value[*]；多个温度时面板显示最高，悬浮显示全部）',
 		'Temperature alarm threshold (°C, 0 = disabled)'   => '温度告警阈值（°C，0=不启用）',
 		'RJ45 position'                                    => 'RJ45 位置',
 		'Front (ports 1..N are RJ45)'                      => '前面（端口 1..N 为 RJ45）',
@@ -84,8 +82,8 @@ class Translation {
 		'1 Gbps port color'                                => '1 Gbps 端口颜色',
 		'100 Mbps port color'                              => '100 Mbps 端口颜色',
 		'10 Gbps port color'                               => '10 Gbps 端口颜色',
-		'Alert / warning port color'                       => '告警端口颜色',
-		'Error / down port color'                          => '错误端口颜色',
+		'Warning port color'                               => '告警端口颜色',
+		'Error port color'                                 => '故障端口颜色',
 		'Port index start (SNMP offset)'                   => '端口索引起始（SNMP 偏移）',
 		'Auto-detect port count (may include VLANs/tunnels)'
 		                                                   => '自动检测端口数量（可能包含 VLAN/隧道接口）',
@@ -99,17 +97,20 @@ class Translation {
 		'Utilization warning threshold (%)'                => '利用率告警阈值（%）',
 
 		// View / empty states
-		'Select a host in widget settings.'                        => '请在组件设置中选择主机。',
 		'Select a host or host group in widget settings.'          => '请在组件设置中选择主机或主机群组。',
 		'No ports found — verify item key patterns match your Zabbix items.'
 		                                                           => '未找到端口 — 请检查监控项键值模式是否与 Zabbix 监控项匹配。',
 		'Error: '                                                  => '错误：',
+		'Invalid host.'                                            => '无效的主机。',
+		'API error.'                                               => 'API 错误。',
 		'Active Problems'                                          => '活动告警',
 
 		// Tooltip
 		'Type'        => '类型',
 		'Status'      => '状态',
 		'Speed'       => '速率',
+		'N/A'         => '未知',
+		'Port'        => '端口',
 		'RX'          => '接收',
 		'TX'          => '发送',
 		'Util'        => '利用率',
@@ -124,7 +125,7 @@ class Translation {
 		'amber'       => '告警',
 		'red'         => '故障',
 		'gray'        => '离线',
-		'Error rate %.2f%%'   => '错误率 %.2f%%',
+		'Error value: %.2f'  => '错误值：%.2f',
 		'Utilization > %.0f%%' => '利用率 > %.0f%%',
 
 		// Duration / time units
@@ -140,7 +141,7 @@ class Translation {
 		'Member'  => '成员',
 		'Err'     => '错误',
 		'ports'   => '个端口',
-		'Up'      => '运行',
+		'Uptime'  => '运行时间',
 		'Memory'  => '内存',
 		'Temperature sensors' => '温度传感器',
 		'Sensor'  => '传感器',
@@ -162,7 +163,21 @@ class Translation {
 			if (class_exists('CWebUser') && \CWebUser::$data !== null && isset(\CWebUser::$data['lang'])) {
 				$lang = (string) \CWebUser::$data['lang'];
 			}
-			self::$zh = (strcasecmp(substr($lang, 0, 2), 'zh') === 0);
+			if ($lang === '' || strcasecmp($lang, 'default') === 0) {
+				try {
+					if (class_exists('CSettingsHelper') && method_exists('CSettingsHelper', 'get')) {
+						$lang = (string) \CSettingsHelper::get('default_lang');
+					}
+				}
+				catch (\Throwable $e) {
+					$lang = '';
+				}
+				if (($lang === '' || strcasecmp($lang, 'default') === 0)
+						&& isset($GLOBALS['ZBX_LOCALES']['selected'])) {
+					$lang = (string) $GLOBALS['ZBX_LOCALES']['selected'];
+				}
+			}
+			self::$zh = in_array(strtolower($lang), ['zh_cn', 'zh_sg'], true);
 		}
 		return self::$zh ? (self::$dict[$en] ?? $en) : $en;
 	}

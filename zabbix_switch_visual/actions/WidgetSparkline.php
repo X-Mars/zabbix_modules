@@ -35,12 +35,13 @@ class WidgetSparkline extends CController {
     }
 
     protected function doAction(): void {
+        require_once __DIR__ . '/../includes/Translation.php';
         $hostid     = (int)    $this->getInput('hostid');
         $bw_in_key  = trim((string) $this->getInput('bw_in_key',  ''));
         $bw_out_key = trim((string) $this->getInput('bw_out_key', ''));
 
         if ($hostid <= 0) {
-            $this->jsonRespond(false, 'Invalid host.');
+            $this->jsonRespond(false, \Modules\SwitchVisual\Includes\Translation::t('Invalid host.'));
             return;
         }
 
@@ -59,12 +60,12 @@ class WidgetSparkline extends CController {
                 'webitems' => true,
             ]);
         } catch (\Throwable $e) {
-            $this->jsonRespond(false, 'API error.');
+            $this->jsonRespond(false, \Modules\SwitchVisual\Includes\Translation::t('API error.'));
             return;
         }
 
         if (!is_array($items)) {
-            $this->jsonRespond(false, 'API error.');
+            $this->jsonRespond(false, \Modules\SwitchVisual\Includes\Translation::t('API error.'));
             return;
         }
 

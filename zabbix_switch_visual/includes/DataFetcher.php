@@ -439,8 +439,8 @@ class DataFetcher {
              . $make_panel($in_vals,  '#27c060', 'rgba(39,192,96,0.25)',  0)
              . $make_panel($out_vals, '#4499ff', 'rgba(68,153,255,0.2)',  $tx_ox)
              // channel labels (left side)
-             . '<text x="3" y="9" font-size="7" font-family="monospace" fill="#27c060" font-weight="bold">RX</text>'
-             . '<text x="' . ($tx_ox + 3) . '" y="9" font-size="7" font-family="monospace" fill="#4499ff" font-weight="bold">TX</text>'
+             . '<text x="3" y="9" font-size="7" font-family="monospace" fill="#27c060" font-weight="bold">' . htmlspecialchars(Translation::t('RX')) . '</text>'
+             . '<text x="' . ($tx_ox + 3) . '" y="9" font-size="7" font-family="monospace" fill="#4499ff" font-weight="bold">' . htmlspecialchars(Translation::t('TX')) . '</text>'
              // peak-value scale (right side)
              . ($lbl_in  !== '' ? '<text x="' . ($panel_w - 2) . '" y="10" font-size="7" font-family="monospace" fill="#38b870" font-weight="bold" text-anchor="end">' . htmlspecialchars($lbl_in)  . '</text>' : '')
              . ($lbl_out !== '' ? '<text x="' . ($tx_ox + $panel_w - 2) . '" y="10" font-size="7" font-family="monospace" fill="#5599ff" font-weight="bold" text-anchor="end">' . htmlspecialchars($lbl_out) . '</text>' : '')
@@ -790,7 +790,7 @@ class DataFetcher {
             $state = 'red';
         } elseif ($err >= $warn && $err > 0) {
             $state = 'amber';
-            $warnings[] = sprintf(Translation::t('Error rate %.2f%%'), $err);
+            $warnings[] = sprintf(Translation::t('Error value: %.2f'), $err);
         } elseif ($util_thr > 0 && ($util_pct >= $util_thr || $util_pct_out >= $util_thr)) {
             $state = 'amber';
             $warnings[] = sprintf(Translation::t('Utilization > %.0f%%'), $util_thr);

@@ -6,7 +6,7 @@ $fields      = $data['fields']           ?? [];
 $widget_uid  = 'swi' . substr(md5(serialize($fields)), 0, 7);
 $no_host     = $data['no_host']          ?? false;
 $error       = $data['error']            ?? null;
-$widget_name = (string) ($data['widget_name'] ?? $data['name'] ?? 'Switch');
+$widget_name = (string) ($data['widget_name'] ?? $data['name'] ?? 'Zabbix Switch Visual');
 $scale           = max(0.4, min(3.0, (float) ($fields['scale'] ?? 100) / 100));
 $port_rows       = max(1, min(2, (int) ($fields['port_rows']      ?? 2)));
 $port_inverted   = (bool)(int)($fields['port_inverted']   ?? 0);
@@ -323,7 +323,7 @@ $tip_css = '.swt-wrap{font-family:monospace;min-width:170px;padding:8px 10px;'
 $make_tip = static function(int $pos, array $port, string $alias) use ($tip_css, $fmt_bw, $fmt_dur, $t, $fields): CDiv {
     $state     = $port['state'] ?? 'gray';
     $speed     = (int) ($port['speed_negotiated'] ?? 0);
-    $iface     = (string) ($port['iface_name'] ?? ('Port ' . $pos));
+    $iface     = (string) ($port['iface_name'] ?? ($t('Port') . ' ' . $pos));
     $label     = $alias !== '' ? $alias . '  (' . $iface . ')' : $iface;
     $sparkline = (string) ($port['sparkline'] ?? '');
 
@@ -340,7 +340,7 @@ $make_tip = static function(int $pos, array $port, string $alias) use ($tip_css,
     $speed_mbps = $speed > 1000000 ? (int) round($speed / 1e6) : $speed;
 
     // Speed label: show negotiated speed with unit
-    $spd_label = 'N/A';
+    $spd_label = $t('N/A');
     if ($speed_mbps > 0) {
         $spd_label = $speed_mbps >= 1000 ? round($speed_mbps / 1000, 0) . ' Gbps' : $speed_mbps . ' Mbps';
     }
@@ -551,7 +551,7 @@ $apply_manual_aliases = static function(array $port_aliases) use ($fields): arra
 if ($error !== null) {
 
     $chassis = (new CDiv())->addClass('sw-chassis');
-    $chassis->addItem((new CDiv('Error: ' . htmlspecialchars($error)))->addClass('sw-empty sw-err'));
+    $chassis->addItem((new CDiv($t('Error: ') . htmlspecialchars($error)))->addClass('sw-empty sw-err'));
     $outer->addItem($chassis);
 
 } elseif ($no_host) {
@@ -579,7 +579,7 @@ if ($error !== null) {
     if (empty($ports)) {
 
         $chassis->addItem((new CDiv(
-            'No ports found — verify item key patterns match your Zabbix items.'
+            $t('No ports found — verify item key patterns match your Zabbix items.')
         ))->addClass('sw-empty sw-warn'));
         $outer->addItem($chassis);
         continue;
@@ -818,7 +818,7 @@ if ($error !== null) {
     }
     $sum_rows = [[$t('Ports'), $up . ' ' . $t('up') . ' / ' . $dn . ' ' . $t('dn')]];
     if ($err_ports > 0) $sum_rows[] = [$t('Err'), $err_ports . ' ' . $t('ports')];
-    if (!empty($summary['uptime']))      $sum_rows[] = [$t('Up'),    $summary['uptime']];
+    if (!empty($summary['uptime']))      $sum_rows[] = [$t('Uptime'), $summary['uptime']];
     if (!empty($summary['serial']))      $sum_rows[] = [$t('S/N'),   $summary['serial']];
     if (!empty($summary['cpu']))         $sum_rows[] = ['CPU',   $summary['cpu'] . '%'];
     if (!empty($summary['memory']))      $sum_rows[] = [$t('Memory'), $summary['memory'] . '%'];
@@ -880,8 +880,8 @@ if ($error !== null) {
         $spk_bar = (new CDiv())->addClass('sw-gspk');
         $spk_bar->setAttribute('style', 'background-image:url("' . $global_sparkline . '")');
         $legend = (new CDiv())->addClass('sw-gspk-legend');
-        $rx_lbl = 'RX' . ($global_peak_rx !== '' ? ' ' . $global_peak_rx : '');
-        $tx_lbl = 'TX' . ($global_peak_tx !== '' ? ' ' . $global_peak_tx : '');
+        $rx_lbl = $t('RX') . ($global_peak_rx !== '' ? ' ' . $global_peak_rx : '');
+        $tx_lbl = $t('TX') . ($global_peak_tx !== '' ? ' ' . $global_peak_tx : '');
         $legend->addItem((new CTag('span', true))->setAttribute('style', 'color:#27c060')->addItem($rx_lbl));
         $legend->addItem((new CTag('span', true))->setAttribute('style', 'color:#4499ff')->addItem($tx_lbl));
         $gspk_section = (new CDiv())->addClass('sw-gspk-wrap');
