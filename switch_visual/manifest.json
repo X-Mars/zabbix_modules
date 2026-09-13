@@ -1,0 +1,24 @@
+{
+    "manifest_version": 2.0,
+    "id": "switchvisual",
+    "type": "widget",
+    "name": "Switch Visual Panel",
+    "namespace": "SwitchVisual",
+    "version": "1.6.0",
+    "author": "Mauro Serafini",
+    "description": "Visual SVG panel for switch port monitoring.",
+    "widget": {
+        "js_class": "CWidgetSwitchVisual"
+    },
+    "actions": {
+        "widget.switchvisual.view": {
+            "class": "WidgetView"
+        },
+        "widget.switchvisual.sparkline": {
+            "class": "WidgetSparkline"
+        }
+    },
+    "assets": {
+        "js": ["class.widget.js"]
+    }
+}
