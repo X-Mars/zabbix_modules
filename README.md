@@ -4,12 +4,9 @@
 
 ## ✨ 版本兼容性
 
-所有模块均兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
+不同模块的适用版本和部署要求不同，请以各模块 README 的兼容性说明为准。
 
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
+Zabbix Switch Visual 是仪表盘组件，当前主要面向 Zabbix 7.x；其 6.0–8.0 全版本兼容尚未完成，不能仅修改 `manifest_version` 后用于旧版。详见[组件兼容性说明](./zabbix_switch_visual/README.md#版本兼容性)。
 
 ## 描述
 
@@ -214,7 +211,27 @@
 
 **兼容性**：Zabbix 6.0.x, 7.0.x, 7.4.x, 8.0.x
 
+### 10. Zabbix Switch Visual
+
+**简介**：交换机端口监控仪表盘组件，将 Zabbix 监控项呈现为交换机机箱、RJ45/SFP 端口、流量趋势和设备状态面板。
+
+**功能特性**：
+
+- 选择单台主机或按主机群组展示多台交换机
+- 展示端口状态、速率、入/出流量、错误和告警，点击端口查看相关历史图表
+- 支持自动检测端口、堆叠成员、端口布局、SNMP 索引偏移、排除规则和手动别名
+- 展示端口及整机流量趋势，按配置显示 CPU、内存、温度、PoE、风扇等信息
+- 自定义端口样式、颜色、缩放和汇总栏，支持中英文界面
+
+![Zabbix Switch Visual 交换机端口面板](zabbix_switch_visual/images/1.png)
+
+**文档链接**：[zabbix_switch_visual/README.md](./zabbix_switch_visual/README.md)（[English](./zabbix_switch_visual/README_en.md)）
+
+**兼容性**：当前主要面向 Zabbix 7.x；其他版本适配及验证状态见组件 README。
+
 ## 安装说明
+
+以下为普通前端模块的通用部署步骤。Zabbix Switch Visual 请按其[独立安装说明](./zabbix_switch_visual/README.md#安装步骤)部署，并通过仪表盘编辑模式添加组件。
 
 ### 方式一：下载 Releases 压缩包（适合生产部署，按需选择）
 
@@ -236,11 +253,12 @@ tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/modules/
 tar -xzf zabbix_modules-<版本号>.tar.gz -C /usr/share/zabbix/ui/modules/
 ```
 
-3. **如果使用 Zabbix 6.0，修改所有模块的 manifest_version**
+3. **如果使用 Zabbix 6.0，修改兼容 Zabbix 6.0 的普通模块的 manifest_version**
 
 ```bash
 for mod in /usr/share/zabbix/modules/zabbix_*/; do
-  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' ${mod}manifest.json
+  grep -Eq '"type"[[:space:]]*:[[:space:]]*"widget"' "${mod}manifest.json" && continue
+  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' "${mod}manifest.json"
 done
 ```
 
@@ -285,10 +303,13 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 
 3. **如果使用Zabbix 6.0，修改manifest_version**
 
-一键修改所有模块：
+批量修改普通模块（跳过仪表盘组件）：
 
 ```bash
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json
+for mod in /usr/share/zabbix/modules/zabbix_*/; do
+  grep -Eq '"type"[[:space:]]*:[[:space:]]*"widget"' "${mod}manifest.json" && continue
+  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' "${mod}manifest.json"
+done
 ```
 
 单独修改某个模块（如 zabbix_reports）：
@@ -324,6 +345,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 - **Users → IM同步助手** (IM 同步 / 同步设置)
 - **数据采集 → 主机批量导入** (基于源主机批量克隆主机)
 - **Inventory → IPAM** (IP 管理 / IP 详情 / 任务管理)
+- **仪表盘 → 编辑 → 添加组件 → Zabbix Switch Visual**（交换机端口可视化）
 
 ### 单独安装模块
 
