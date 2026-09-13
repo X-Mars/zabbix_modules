@@ -4,12 +4,9 @@
 
 ## ✨ Version Compatibility
 
-All modules are compatible with Zabbix 6.0 / 7.0+ / 8.0+ versions.
+Supported versions and deployment requirements vary by module. Refer to each module's README for its compatibility status.
 
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
+Zabbix Switch Visual is a dashboard widget currently targeting Zabbix 7.x. Full 6.0–8.0 compatibility is not yet implemented; changing only `manifest_version` does not enable legacy support. See the [widget compatibility notes](./zabbix_switch_visual/README_en.md#version-compatibility).
 
 ## Description
 
@@ -138,7 +135,19 @@ This repository contains a collection of independent Zabbix frontend modules tha
 - **Features**: file metadata and newest-first ordering; text preview and downloads; traversal and symlink protection; role-based access controls; bilingual UI.
 - **Docs**: [zabbix_switch_backup/README_en.md](./zabbix_switch_backup/README_en.md) ([中文](./zabbix_switch_backup/README.md))
 
+### 14. Zabbix Switch Visual
+
+- **Purpose**: Visualize switch chassis, RJ45/SFP ports, traffic trends, and device status in a Zabbix dashboard widget.
+- **Features**: one host or multiple switches from host groups; port state, speed, inbound/outbound traffic, errors and alerts; links to item history graphs; automatic port detection, stack members, layout settings, SNMP index offsets, exclusions and aliases; per-port and aggregate traffic sparklines; optional CPU, memory, temperature, PoE and fan metrics; customizable colors, styles and zoom; bilingual UI.
+
+![Zabbix Switch Visual switch-port panel](zabbix_switch_visual/images/1.png)
+
+- **Docs**: [zabbix_switch_visual/README_en.md](./zabbix_switch_visual/README_en.md) ([中文](./zabbix_switch_visual/README.md))
+- **Compatibility**: Currently targets Zabbix 7.x. See the widget README for adaptation and validation status on other versions.
+
 ## Installation
+
+The following general steps apply to standard frontend modules. For Zabbix Switch Visual, follow its [installation instructions](./zabbix_switch_visual/README_en.md#installation) and add it through dashboard edit mode.
 
 ### Option 1: Download Release packages (for production, choose what you need)
 
@@ -160,11 +169,12 @@ The Releases page offers two types of packages — no git required:
    tar -xzf zabbix_modules-<version>.tar.gz -C /usr/share/zabbix/ui/modules/
    ```
 
-3. If you run Zabbix 6.0, change `manifest_version` for every module:
+3. If you run Zabbix 6.0, change `manifest_version` for standard modules that support Zabbix 6.0:
 
    ```bash
    for mod in /usr/share/zabbix/modules/zabbix_*/; do
-     sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' ${mod}manifest.json
+     grep -Eq '"type"[[:space:]]*:[[:space:]]*"widget"' "${mod}manifest.json" && continue
+     sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' "${mod}manifest.json"
    done
    ```
 
@@ -205,12 +215,15 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules
 git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
 ```
 
-3. If you run Zabbix 6.0, change `manifest_version` for each module:
+3. If you run Zabbix 6.0, change `manifest_version` for standard modules that support Zabbix 6.0:
 
-One-liner for all modules:
+Batch update for standard modules (skips dashboard widgets):
 
 ```bash
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_*/manifest.json
+for mod in /usr/share/zabbix/modules/zabbix_*/; do
+  grep -Eq '"type"[[:space:]]*:[[:space:]]*"widget"' "${mod}manifest.json" && continue
+  sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' "${mod}manifest.json"
+done
 ```
 
 For a single module (e.g., zabbix_reports):
@@ -242,6 +255,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → Cloud Sync** (Cloud Hosts / Cloud Settings)
 - **Inventory → Rightsizing** (resource sizing recommendations)
 - **Inventory → Switch Backup** (switch configuration backups)
+- **Dashboard → Edit → Add widget → Zabbix Switch Visual** (switch-port visualization)
 
 Each module contains its own README with specific installation and usage details.
 

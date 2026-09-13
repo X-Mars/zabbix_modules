@@ -75,702 +75,14 @@ foreach ($racks as $rack) {
 $racksJson = json_encode($racksMap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 // CSS 样式
-$styleTag = new CTag('style', true, '
-/* ==================== 自适应布局 ==================== */
-.manage-wrapper {
-    width: 100%;
-    min-height: 100%;
-    box-sizing: border-box;
-}
-
-/* ==================== 页面布局 ==================== */
-.manage-container {
-    padding: 20px;
-    width: 100%;
-    margin: 0 auto;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* ==================== 统计卡片 ==================== */
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 25px;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-}
-
-.stat-card.rooms { border-left: 4px solid #007bff; }
-.stat-card.racks { border-left: 4px solid #28a745; }
-.stat-card.capacity { border-left: 4px solid #ffc107; }
-.stat-card.used { border-left: 4px solid #17a2b8; }
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-}
-
-.stat-card.rooms .stat-icon { background: rgba(0,123,255,0.1); }
-.stat-card.racks .stat-icon { background: rgba(40,167,69,0.1); }
-.stat-card.capacity .stat-icon { background: rgba(255,193,7,0.1); }
-.stat-card.used .stat-icon { background: rgba(23,162,184,0.1); }
-
-.stat-content {
-    flex: 1;
-}
-
-.stat-number {
-    font-size: 28px;
-    font-weight: 700;
-    color: #212529;
-    line-height: 1.2;
-}
-
-.stat-label {
-    font-size: 13px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-/* ==================== 管理区域 ==================== */
-.manage-section {
-    background: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-}
-
-.section-header {
-    padding: 18px 24px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-}
-
-.section-header h2 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    color: #212529;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.section-body {
-    padding: 0;
-}
-
-/* ==================== 按钮样式 ==================== */
-.btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-decoration: none;
-}
-
-.btn-primary {
-    color: #fff;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-    box-shadow: 0 4px 15px rgba(0,123,255,0.4);
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    color: #495057;
-    background: #fff;
-    border: 1px solid #ced4da;
-}
-
-.btn-secondary:hover {
-    background: #f8f9fa;
-    border-color: #adb5bd;
-}
-
-.btn-success {
-    color: #fff;
-    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-    box-shadow: 0 2px 8px rgba(40,167,69,0.3);
-}
-
-.btn-success:hover {
-    background: linear-gradient(135deg, #1e7e34 0%, #155724 100%);
-    transform: translateY(-1px);
-}
-
-.btn-danger {
-    color: #fff;
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-    box-shadow: 0 2px 6px rgba(220,53,69,0.3);
-}
-
-.btn-danger:hover {
-    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
-}
-
-.btn-sm {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 6px;
-}
-
-.btn-icon {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 6px;
-}
-
-.action-btns {
-    display: flex;
-    gap: 8px;
-}
-
-/* ==================== 数据表格 ==================== */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th {
-    padding: 14px 20px;
-    text-align: left;
-    background: #f8f9fa;
-    font-weight: 600;
-    font-size: 13px;
-    color: #495057;
-    border-bottom: 2px solid #e9ecef;
-    white-space: nowrap;
-}
-
-.data-table td {
-    padding: 14px 20px;
-    text-align: left;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 14px;
-    color: #212529;
-    vertical-align: middle;
-}
-
-.data-table tbody tr {
-    transition: background 0.2s ease;
-}
-
-.data-table tbody tr:hover {
-    background: #f8f9fa;
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* 表格单元格内容 */
-.cell-main {
-    font-weight: 600;
-    color: #212529;
-}
-
-.cell-sub {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-.cell-secondary {
-    font-size: 13px;
-    color: #495057;
-    max-width: 280px;
-    word-break: break-word;
-}
-
-/* 徽章 */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.badge-blue {
-    background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%);
-    color: #0d6efd;
-}
-
-.badge-green {
-    background: linear-gradient(135deg, #d1e7dd 0%, #badbcc 100%);
-    color: #198754;
-}
-
-.badge-yellow {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
-    color: #997404;
-}
-
-.badge-red {
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
-    color: #dc3545;
-}
-
-.badge-gray {
-    background: #f0f0f0;
-    color: #6c757d;
-}
-
-/* 无数据提示 */
-.no-data {
-    text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
-    font-size: 15px;
-}
-
-.no-data-icon {
-    font-size: 48px;
-    margin-bottom: 15px;
-    opacity: 0.5;
-}
-
-/* ==================== 弹窗样式 ==================== */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 10000;
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.modal-overlay.visible {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-}
-
-.modal-content {
-    background: #fff;
-    border-radius: 16px;
-    width: 480px;
-    max-width: 95vw;
-    max-height: 90vh;
-    overflow: visible;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.3);
-}
-
-.modal-overlay.visible .modal-content {
-    animation: modalFadeIn 0.3s ease;
-}
-
-@keyframes modalFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-}
-
-.modal-header h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #212529;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.modal-close {
-    width: 36px;
-    height: 36px;
-    border: none;
-    background: #f0f0f0;
-    border-radius: 8px;
-    font-size: 20px;
-    cursor: pointer;
-    color: #6c757d;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-    background: #e9ecef;
-    color: #dc3545;
-}
-
-.modal-body {
-    padding: 24px;
-    overflow-y: auto;
-    overflow-x: visible;
-    max-height: calc(90vh - 180px);
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: #f8f9fa;
-}
-
-/* ==================== 表单样式 ==================== */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group:last-child {
-    margin-bottom: 0;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #495057;
-    font-size: 14px;
-}
-
-.form-label .required {
-    color: #dc3545;
-    margin-left: 2px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px 14px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    font-size: 14px;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-    background: #fff;
-    color: #212529;
-}
-
-.form-control:hover {
-    border-color: #ced4da;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 4px rgba(0,123,255,0.1);
-}
-
-.form-control.error {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 4px rgba(220,53,69,0.1);
-}
-
-/* z-select (Zabbix CSelect) 自适应宽度 + 圆角 */
-z-select {
-    width: 100% !important;
-    min-width: 0 !important;
-}
-z-select button.focusable {
-    border-radius: 6px !important;
-}
-z-select .list {
-    border-radius: 6px !important;
-    overflow: hidden;
-}
-
-textarea.form-control {
-    min-height: 100px;
-    resize: vertical;
-}
-
-select.form-control-multi {
-    min-height: 120px;
-    height: auto;
-    padding: 8px 12px;
-}
-
-.form-hint {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 6px;
-}
-
-.form-error {
-    font-size: 12px;
-    color: #dc3545;
-    margin-top: 6px;
-    display: none;
-}
-
-.form-group.has-error .form-error {
-    display: block;
-}
-
-/* 数字输入框带单位 */
-.input-with-unit {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-with-unit .form-control {
-    padding-right: 50px;
-}
-
-.input-unit {
-    position: absolute;
-    right: 14px;
-    color: #6c757d;
-    font-size: 14px;
-    font-weight: 500;
-    pointer-events: none;
-}
-
-/* ==================== 删除确认弹窗 ==================== */
-.confirm-modal .modal-content {
-    width: 400px;
-}
-
-.confirm-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 28px;
-}
-
-.confirm-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #212529;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.confirm-message {
-    font-size: 14px;
-    color: #6c757d;
-    text-align: center;
-    line-height: 1.6;
-}
-
-.confirm-item {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-top: 15px;
-    text-align: center;
-    font-weight: 500;
-    color: #495057;
-}
-
-/* ==================== 加载状态 ==================== */
-.btn.loading {
-    position: relative;
-    color: transparent;
-    pointer-events: none;
-}
-
-.btn.loading::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border: 2px solid #fff;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* ==================== 响应式布局 ==================== */
-/* 大屏幕 - 宽度占满 */
-@media (min-width: 1400px) {
-    .manage-container {
-        max-width: none;
-    }
-}
-
-/* 中等屏幕 */
-@media (max-width: 1200px) {
-    .stats-row {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .stat-number {
-        font-size: 24px;
-    }
-}
-
-/* 小屏幕 */
-@media (max-width: 992px) {
-    .manage-container {
-        padding: 15px;
-    }
-    
-    .stats-row {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 15px;
-    }
-    
-    .stat-card {
-        padding: 15px;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 12px 15px;
-    }
-}
-
-/* 平板及以下 */
-@media (max-width: 768px) {
-    .manage-container {
-        padding: 12px;
-    }
-    
-    .stats-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    
-    .section-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
-        padding: 15px;
-    }
-    
-    .section-header .btn {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .data-table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-    
-    .action-btns {
-        flex-wrap: nowrap;
-    }
-    
-    .modal-content {
-        width: 95vw;
-        margin: 10px;
-        max-height: 95vh;
-    }
-    
-    .modal-body {
-        max-height: calc(95vh - 160px);
-    }
-}
-
-/* 手机屏幕 */
-@media (max-width: 480px) {
-    .manage-container {
-        padding: 10px;
-    }
-    
-    .stat-card {
-        padding: 12px;
-        gap: 10px;
-    }
-    
-    .stat-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
-    
-    .stat-number {
-        font-size: 22px;
-    }
-    
-    .section-header h2 {
-        font-size: 15px;
-    }
-    
-    .btn {
-        padding: 8px 14px;
-        font-size: 13px;
-    }
-    
-    .btn-sm {
-        padding: 5px 10px;
-        font-size: 11px;
-    }
-}
-');
+$styleTag = new CTag('style', true,
+    file_get_contents(dirname(__DIR__) . '/assets/css/rack.manage.css')
+    . file_get_contents(dirname(__DIR__) . '/assets/css/element.css')
+);
 
 // ==================== 构建页面内容（CTag 模式，与 CMDB 保持一致） ====================
 
-$content = (new CDiv())->addClass('manage-wrapper');
+$content = (new CDiv())->addClass('manage-wrapper rack-ui');
 $container = (new CDiv())->addClass('manage-container');
 
 // ── 统计卡片 ──
@@ -1188,7 +500,7 @@ $rackNameGroup->addItem(
 );
 $rackForm->addItem($rackNameGroup);
 
-// 【关键】机房选择 - 使用 Zabbix CSelect（z-select），确保下拉框在 Zabbix 框架中正确渲染
+// 与机柜视图使用相同的原生 select。
 $roomSelectGroup = (new CDiv())
     ->addClass('form-group')
     ->setAttribute('id', 'rack-room-group');
@@ -1199,12 +511,12 @@ $roomSelectGroup->addItem(
         ->addItem((new CSpan('*'))->addClass('required'))
 );
 
-$roomSelect = (new CSelect('room_id'))
-    ->setAttribute('id', 'rack-room-id')
-    ->addOption(new CSelectOption('', '-- ' . LanguageManager::t('select_room') . ' --'));
-
+$roomSelect = (new CTag('select', true))
+    ->setAttribute('name', 'room_id')->setAttribute('id', 'rack-room-id')->addClass('form-control')
+    ->addItem((new CTag('option', true, LanguageManager::t('select_room')))->setAttribute('value', ''));
 foreach ($rooms as $room) {
-    $roomSelect->addOption(new CSelectOption($room['id'], $room['name']));
+    $roomSelect->addItem((new CTag('option', true, htmlspecialchars($room['name'], ENT_QUOTES, 'UTF-8')))
+        ->setAttribute('value', $room['id']));
 }
 
 $roomSelectGroup->addItem($roomSelect);
@@ -1421,7 +733,7 @@ $content->addItem(new CJsScript('<script>
             var room = roomsData[roomId];
             if (!room) {
                 console.error("Room not found:", roomId);
-                alert(i18n.operation_failed);
+                RackUI.message(i18n.operation_failed);
                 return;
             }
             
@@ -1468,12 +780,12 @@ $content->addItem(new CJsScript('<script>
                     self.closeRoomModal();
                     location.reload();
                 } else {
-                    alert(data.error || data.message || i18n.operation_failed);
+                    RackUI.message(data.error || data.message || i18n.operation_failed);
                 }
             })
             .catch(function() {
                 saveBtn.classList.remove("loading");
-                alert(i18n.operation_failed);
+                RackUI.message(i18n.operation_failed);
             });
         },
         
@@ -1502,7 +814,7 @@ $content->addItem(new CJsScript('<script>
             document.getElementById("rack-height").value = "42";
             document.getElementById("rack-description").value = "";
             
-            // 重置机房下拉框为默认选项（z-select 通过 value 设置）
+            // 重置机房下拉框为默认选项（原生 select 通过 value 设置）
             var targetSelect = document.getElementById("rack-room-id");
             targetSelect.value = "";
             
@@ -1521,7 +833,7 @@ $content->addItem(new CJsScript('<script>
             var rack = racksData[rackId];
             if (!rack) {
                 console.error("Rack not found:", rackId);
-                alert(i18n.operation_failed);
+                RackUI.message(i18n.operation_failed);
                 return;
             }
             
@@ -1531,7 +843,7 @@ $content->addItem(new CJsScript('<script>
             document.getElementById("rack-height").value = rack.height || 42;
             document.getElementById("rack-description").value = rack.description || "";
             
-            // 【关键】直接通过 value 设置选中的机房（z-select 支持 .value 属性）
+            // 【关键】直接通过 value 设置选中的机房（原生 select 支持 .value 属性）
             var targetSelect = document.getElementById("rack-room-id");
             targetSelect.value = rack.room_id || "";
             
@@ -1583,12 +895,12 @@ $content->addItem(new CJsScript('<script>
                     self.closeRackModal();
                     location.reload();
                 } else {
-                    alert(data.error || data.message || i18n.operation_failed);
+                    RackUI.message(data.error || data.message || i18n.operation_failed);
                 }
             })
             .catch(function() {
                 saveBtn.classList.remove("loading");
-                alert(i18n.operation_failed);
+                RackUI.message(i18n.operation_failed);
             });
         },
         
@@ -1624,12 +936,12 @@ $content->addItem(new CJsScript('<script>
                     self.closeConfirmModal();
                     location.reload();
                 } else {
-                    alert(data.error || data.message || i18n.operation_failed);
+                    RackUI.message(data.error || data.message || i18n.operation_failed);
                 }
             })
             .catch(function() {
                 confirmBtn.classList.remove("loading");
-                alert(i18n.operation_failed);
+                RackUI.message(i18n.operation_failed);
             });
         },
         
@@ -1658,7 +970,7 @@ $content->addItem(new CJsScript('<script>
             groups.forEach(function(group) {
                 group.classList.remove("has-error");
             });
-            var controls = form.querySelectorAll(".form-control, z-select");
+            var controls = form.querySelectorAll(".form-control");
             controls.forEach(function(control) {
                 control.classList.remove("error");
             });
@@ -1668,7 +980,7 @@ $content->addItem(new CJsScript('<script>
             var group = document.getElementById(groupId);
             if (group) {
                 group.classList.add("has-error");
-                var control = group.querySelector(".form-control, z-select");
+                var control = group.querySelector(".form-control");
                 if (control) control.classList.add("error");
             }
         }
@@ -1727,4 +1039,5 @@ $content->addItem(new CJsScript('<script>
 </script>'));
 
 // 使用兼容渲染器显示页面
+$content->addItem((new CTag('script', true))->setAttribute('src', 'modules/zabbix_rack/assets/js/element.js?v=20260910'));
 ViewRenderer::render($pageTitle, $styleTag, $content);

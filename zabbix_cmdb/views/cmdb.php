@@ -90,12 +90,12 @@ function getHostStatusDisplay($host) {
     
     // 如果主机被禁用，显示Disabled
     if ($host['status'] == 1) {
-        $statusText = '🚫 Disabled';
+        $statusText = '🚫 ' . LanguageManager::t('Disabled');
         $statusClass = 'status-disabled';
     } 
     // 如果主机在维护中，显示Maintenance
     elseif (isset($host['maintenance_status']) && $host['maintenance_status'] == 1) {
-        $statusText = '🔧 Maintenance';
+        $statusText = '🔧 ' . LanguageManager::t('Maintenance');
         $statusClass = 'status-maintenance';
     }
     // 否则显示接口可用性状态
@@ -113,7 +113,7 @@ function getHostStatusDisplay($host) {
                 $icon = '🟡';
                 break;
         }
-        $statusText = $icon . ' ' . $statusInfo['text'];
+        $statusText = $icon . ' ' . LanguageManager::t($statusInfo['text']);
         $statusClass = $statusInfo['class'];
     }
     
@@ -542,6 +542,19 @@ $styleTag = new CTag('style', true, '
     background-color: #fff;
     cursor: pointer;
 }
+
+/* Element Plus inspired visual layer. */
+main{min-width:0!important;width:auto!important}
+.cmdb-container{box-sizing:border-box;--el-primary:#409eff;--el-primary-light:#ecf5ff;--el-border:#dcdfe6;--el-border-light:#ebeef5;--el-text:#303133;--el-text-secondary:#606266;--el-muted:#909399;--el-success:#67c23a;--el-warning:#e6a23c;--el-danger:#f56c6c;padding:10px;width:100%;max-width:100%;color:var(--el-text)}
+.cmdb-search-form{margin-bottom:16px;padding:18px;border:1px solid var(--el-border);border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.search-form{gap:16px}.form-field label{margin-bottom:7px;color:var(--el-text-secondary);font-weight:500}.form-field input,.form-field select{height:34px;padding:0 11px;border-color:var(--el-border);color:var(--el-text);outline:0;transition:border-color .2s,box-shadow .2s}.form-field input:hover,.form-field select:hover{border-color:#c0c4cc}.form-field input:focus,.form-field select:focus{border-color:var(--el-primary);box-shadow:0 0 0 1px var(--el-primary)}
+.btn{height:34px;padding:7px 15px;border-radius:4px;transition:all .2s}.btn-primary{border-color:var(--el-primary);background:var(--el-primary)}.btn-primary:hover{border-color:#79bbff;background:#79bbff}.btn-secondary{border-color:var(--el-border);background:#fff;color:var(--el-text-secondary)}.btn-secondary:hover{border-color:#c6e2ff;background:var(--el-primary-light);color:var(--el-primary)}
+.stats-container{grid-template-columns:repeat(5,minmax(135px,1fr));gap:12px;margin-bottom:16px}.stat-card{box-sizing:border-box;min-width:0;padding:16px;border-color:var(--el-border);border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s}.stat-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.09)}.stat-icon{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin-right:12px;border-radius:8px;background:var(--el-primary-light);font-size:21px}.stat-number{margin-bottom:3px;color:var(--el-text);font-size:22px;line-height:1.15}.stat-label{color:var(--el-muted);font-size:12px;font-weight:400;letter-spacing:0;text-transform:none}
+.hosts-table{border-color:var(--el-border);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}.hosts-table thead th{padding:11px 9px;border-color:var(--el-border-light);background:#f5f7fa;color:var(--el-text-secondary);font-weight:500}.hosts-table thead th a{color:var(--el-text-secondary);text-decoration:none}.hosts-table thead th a:hover{color:var(--el-primary)}.hosts-table tbody td{padding:11px 9px;border-color:var(--el-border-light);color:var(--el-text-secondary)}.hosts-table tbody tr{transition:background-color .2s}.hosts-table tbody tr:hover{background:#f5f7fa}.hosts-table tbody td:hover{background:inherit;box-shadow:none}.host-link{color:var(--el-primary)}.host-link:hover{color:#79bbff}
+.interface-type,.group-tag,.kernel-display{box-sizing:border-box;border-radius:4px;font-weight:500}.interface-type{padding:3px 7px}.interface-agent{background:#f0f9eb;color:#529b2e}.interface-snmp{background:var(--el-primary-light);color:#337ecc}.interface-ipmi{background:#fdf6ec;color:#b88230}.interface-jmx{background:#f4f4f5;color:#73767a}.group-tag{padding:3px 8px;border-color:#a0cfff;background:var(--el-primary-light);color:#337ecc}.kernel-display{border-color:#f3d19e;background:#fdf6ec;color:#b88230}
+.status-enabled,.status-available{color:var(--el-success)}.status-disabled,.status-unavailable{color:var(--el-danger)}.status-maintenance{color:var(--el-warning)}.status-unknown{color:var(--el-muted)}.no-data{padding:48px 20px;background:#fff;color:var(--el-muted);font-style:normal}
+.pagination-container{margin:12px 0;padding:11px 14px;border-color:var(--el-border);border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.04)}.pagination-info,.pagination-size{color:var(--el-text-secondary)}.page-link{border:0;background:#f4f4f5;color:var(--el-text-secondary);transition:all .2s}.page-link:hover{border:0;background:var(--el-primary-light);color:var(--el-primary)}.page-link.page-current{border:0;background:var(--el-primary);color:#fff}.page-link.page-disabled,.page-link.page-disabled:hover{border:0;background:#f4f4f5;color:#c0c4cc}.pagination-size select{height:30px;border-color:var(--el-border);outline:0}.pagination-size select:focus{border-color:var(--el-primary)}
+@media(max-width:1100px){.stats-container{grid-template-columns:repeat(3,minmax(150px,1fr))}}@media(max-width:768px){.cmdb-container{padding:6px}.stats-container{grid-template-columns:repeat(2,minmax(135px,1fr))}.cmdb-search-form{padding:14px}.hosts-table{min-width:1100px}.cmdb-container{overflow-x:auto}}
 ');
 
 // 创建主体内容
@@ -831,7 +844,7 @@ if (empty($data['hosts'])) {
             $cpuCol->addItem([
                 (new CSpan(htmlspecialchars($host['cpu_total'])))->setAttribute('style', 'font-weight: 600; color: #4f46e5;'),
                 ' ',
-                (new CSpan('cores'))->setAttribute('style', 'color: #6c757d; font-size: 12px;')
+                (new CSpan(LanguageManager::t((float) $host['cpu_total'] == 1 ? 'core' : 'cores')))->setAttribute('style', 'color: #6c757d; font-size: 12px;')
             ]);
         } else {
             $cpuCol->addItem((new CSpan('-'))->setAttribute('style', 'color: #6c757d;'));
@@ -1107,4 +1120,3 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // 使用兼容渲染器显示页面（模块视图需要直接输出，不能返回）
 ViewRenderer::render($pageTitle, $styleTag, $content);
-
