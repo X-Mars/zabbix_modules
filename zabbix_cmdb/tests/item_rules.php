@@ -3,7 +3,7 @@
 $fixture = sys_get_temp_dir().'/cmdb-rules-'.bin2hex(random_bytes(6));
 mkdir($fixture.'/lib', 0700, true);
 mkdir($fixture.'/data', 0700);
-foreach (['ItemConfig.php', 'ItemFinder.php'] as $file) {
+foreach (['ItemConfig.php', 'ItemFinder.php', 'LanguageManager.php'] as $file) {
     copy(dirname(__DIR__).'/lib/'.$file, $fixture.'/lib/'.$file);
 }
 copy(dirname(__DIR__).'/data/item_rules.json', $fixture.'/data/item_rules.json');
@@ -85,6 +85,6 @@ try {
     check(ItemFinder::selectItem([['key_' => 'vm.memory.sizeXtotalX']], [rule('key_', 'vm.memory.size[total]')]) === null, 'Key brackets are literal, not regex');
     echo "All CMDB rule tests passed.\n";
 } finally {
-    foreach (['lib/ItemConfig.php', 'lib/ItemFinder.php', 'data/item_rules.json'] as $file) { unlink($fixture.'/'.$file); }
+    foreach (['lib/ItemConfig.php', 'lib/ItemFinder.php', 'lib/LanguageManager.php', 'data/item_rules.json'] as $file) { unlink($fixture.'/'.$file); }
     rmdir($fixture.'/lib'); rmdir($fixture.'/data'); rmdir($fixture);
 }

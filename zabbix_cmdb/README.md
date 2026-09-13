@@ -98,7 +98,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 
 ## CMDB 指标配置
 
-超级管理员可在「资产记录 → CMDB → CMDB 配置」管理 CPU 总量、CPU 使用率、内存总量和内存使用率的监控项规则。
+超级管理员可在「资产记录 → CMDB → 监控项配置」管理 CPU 总量、CPU 使用率、内存总量和内存使用率的监控项规则。
 
 - 配置保存在 `data/item_rules.json`，按每个指标数组的顺序匹配，首条命中后停止。
 - 每条规则选择监控项名称或 Key，以及精确匹配或模糊匹配。模糊匹配不区分大小写，支持包含匹配与 `*` 通配符；`[]` 等字符按字面匹配。

@@ -22,7 +22,6 @@ class LanguageManager {
             'IP Address' => 'IP地址',
             'Interface Type' => '接口方式',
             'All Interfaces' => '所有接口',
-            'Interface Type' => '接口方式',
             'CPU Total' => 'CPU总量',
             'CPU Usage' => 'CPU使用率',
             'Memory Total' => '内存总量',
@@ -47,7 +46,7 @@ class LanguageManager {
             'Enter group name' => '输入分组名称',
             'Group Name' => '分组名称',
             'Host Count' => '主机数量',
-            'Active Hosts' => '启用主机',
+            'Active Hosts' => '活跃主机',
             'Search by group name' => '按分组名称搜索',
             'Search groups...' => '搜索分组...',
             'Status' => '状态',
@@ -65,6 +64,47 @@ class LanguageManager {
             'Last' => '末页',
             'Per page' => '每页显示',
             'Current Page' => '当前页',
+            'Item Configuration' => '监控项配置',
+            'Rules are evaluated from top to bottom; the first match wins. Item name and key rules can be mixed in any order.' => '规则从上到下匹配，首条命中后停止。可混合设置监控项名称和 Key 的优先顺序。',
+            'Fuzzy matching is case-insensitive and supports substrings and the * wildcard. Exact matching is case-sensitive. If multiple enabled items match one rule, the item with the lowest itemid is selected.' => '模糊匹配不区分大小写，支持包含匹配和 * 通配符；精确匹配区分大小写。同一规则命中多个监控项时，取 itemid 最小的启用项。',
+            'CPU total is measured in cores, memory total in bytes, and usage in %. For idle or available percentages, select “100 − value”. An empty rule list disables the metric.' => 'CPU 总量单位为核，内存总量单位为字节，使用率单位为 %。空闲率或可用率请选择“100 − 原值”。留空规则列表将停用该指标。',
+            'Match Field' => '匹配字段',
+            'Match Type' => '匹配方式',
+            'Item Name / Key' => '监控项名称 / Key',
+            'Value Conversion' => '数值转换',
+            'Order / Actions' => '顺序 / 操作',
+            'Add Rule' => '添加规则',
+            'Save Configuration' => '保存配置',
+            'Back to Host List' => '返回主机列表',
+            'Item Name' => '监控项名称',
+            'Exact Match' => '精确匹配',
+            'Fuzzy Match' => '模糊匹配',
+            'Item name or key' => '监控项名称或 Key',
+            'Original Value' => '原值',
+            '100 − value' => '100 − 原值',
+            'Move Up' => '上移',
+            'Move Down' => '下移',
+            'Delete' => '删除',
+            'Rules' => '条规则',
+            'No rules configured' => '暂未配置规则',
+            'Add the first rule to enable this metric.' => '添加第一条规则以启用此指标。',
+            'Invalid security token. Refresh the page and try again.' => '安全令牌无效，请刷新页面后重试。',
+            'The configuration is too large.' => '配置内容过大。',
+            'The configuration must be a JSON object.' => '配置必须是 JSON 对象。',
+            'Configuration saved. The host list and group statistics now use the new rules.' => '配置已保存，主机列表和分组统计立即使用新规则。',
+            'Cannot read CMDB data/item_rules.json, or the JSON is invalid.' => '无法读取 CMDB data/item_rules.json，或 JSON 格式无效。',
+            'Each metric must have a rule list with at most 100 rules.' => '每个指标必须提供规则列表，最多 100 条。',
+            'Invalid rule: enter an item name or key of 1–255 bytes and select valid matching and conversion options.' => '规则无效：请填写 1–255 字节的名称或 Key，并选择有效的匹配方式和转换方式。',
+            'Cannot save: grant the web service user write access to the CMDB data directory.' => '保存失败：请授予 Web 服务用户 CMDB data 目录写入权限。',
+            'Cannot save: check write permissions on the CMDB data directory.' => '保存失败：请检查 CMDB data 目录写入权限。',
+            'Invalid JSON configuration.' => 'JSON 配置格式无效。',
+            'Available' => '可用',
+            'Unavailable' => '不可用',
+            'Unknown' => '未知',
+            'Disabled' => '已禁用',
+            'Maintenance' => '维护中',
+            'host' => '台主机',
+            'core' => '核',
         ],
         'en_US' => [
             'CMDB' => 'CMDB',
@@ -77,7 +117,6 @@ class LanguageManager {
             'IP Address' => 'IP Address',
             'Interface Type' => 'Interface Type',
             'All Interfaces' => 'All Interfaces',
-            'Interface Type' => 'Interface Type',
             'CPU Total' => 'CPU Total',
             'CPU Usage' => 'CPU Usage',
             'Memory Total' => 'Memory Total',
@@ -120,6 +159,47 @@ class LanguageManager {
             'Last' => 'Last',
             'Per page' => 'Per page',
             'Current Page' => 'Current Page',
+            'Item Configuration' => 'Item Configuration',
+            'Rules are evaluated from top to bottom; the first match wins. Item name and key rules can be mixed in any order.' => 'Rules are evaluated from top to bottom; the first match wins. Item name and key rules can be mixed in any order.',
+            'Fuzzy matching is case-insensitive and supports substrings and the * wildcard. Exact matching is case-sensitive. If multiple enabled items match one rule, the item with the lowest itemid is selected.' => 'Fuzzy matching is case-insensitive and supports substrings and the * wildcard. Exact matching is case-sensitive. If multiple enabled items match one rule, the item with the lowest itemid is selected.',
+            'CPU total is measured in cores, memory total in bytes, and usage in %. For idle or available percentages, select “100 − value”. An empty rule list disables the metric.' => 'CPU total is measured in cores, memory total in bytes, and usage in %. For idle or available percentages, select “100 − value”. An empty rule list disables the metric.',
+            'Match Field' => 'Match Field',
+            'Match Type' => 'Match Type',
+            'Item Name / Key' => 'Item Name / Key',
+            'Value Conversion' => 'Value Conversion',
+            'Order / Actions' => 'Order / Actions',
+            'Add Rule' => 'Add Rule',
+            'Save Configuration' => 'Save Configuration',
+            'Back to Host List' => 'Back to Host List',
+            'Item Name' => 'Item Name',
+            'Exact Match' => 'Exact Match',
+            'Fuzzy Match' => 'Fuzzy Match',
+            'Item name or key' => 'Item name or key',
+            'Original Value' => 'Original Value',
+            '100 − value' => '100 − value',
+            'Move Up' => 'Move Up',
+            'Move Down' => 'Move Down',
+            'Delete' => 'Delete',
+            'Rules' => 'rules',
+            'No rules configured' => 'No rules configured',
+            'Add the first rule to enable this metric.' => 'Add the first rule to enable this metric.',
+            'Invalid security token. Refresh the page and try again.' => 'Invalid security token. Refresh the page and try again.',
+            'The configuration is too large.' => 'The configuration is too large.',
+            'The configuration must be a JSON object.' => 'The configuration must be a JSON object.',
+            'Configuration saved. The host list and group statistics now use the new rules.' => 'Configuration saved. The host list and group statistics now use the new rules.',
+            'Cannot read CMDB data/item_rules.json, or the JSON is invalid.' => 'Cannot read CMDB data/item_rules.json, or the JSON is invalid.',
+            'Each metric must have a rule list with at most 100 rules.' => 'Each metric must have a rule list with at most 100 rules.',
+            'Invalid rule: enter an item name or key of 1–255 bytes and select valid matching and conversion options.' => 'Invalid rule: enter an item name or key of 1–255 bytes and select valid matching and conversion options.',
+            'Cannot save: grant the web service user write access to the CMDB data directory.' => 'Cannot save: grant the web service user write access to the CMDB data directory.',
+            'Cannot save: check write permissions on the CMDB data directory.' => 'Cannot save: check write permissions on the CMDB data directory.',
+            'Invalid JSON configuration.' => 'Invalid JSON configuration.',
+            'Available' => 'Available',
+            'Unavailable' => 'Unavailable',
+            'Unknown' => 'Unknown',
+            'Disabled' => 'Disabled',
+            'Maintenance' => 'Maintenance',
+            'host' => 'host',
+            'core' => 'core',
         ]
     ];
 
@@ -190,7 +270,7 @@ class LanguageManager {
             if (isset($GLOBALS['USER_DETAILS']) && isset($GLOBALS['USER_DETAILS']['lang'])) {
                 return $GLOBALS['USER_DETAILS']['lang'];
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // 继续其他方法
         }
         
@@ -199,7 +279,7 @@ class LanguageManager {
             if (isset($GLOBALS['ZBX_LOCALES']) && isset($GLOBALS['ZBX_LOCALES']['selected'])) {
                 return $GLOBALS['ZBX_LOCALES']['selected'];
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // 继续其他方法
         }
         
@@ -257,7 +337,7 @@ class LanguageManager {
                     return $users[0]['lang'];
                 }
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // API不可用或出错
         }
 
@@ -299,7 +379,7 @@ class LanguageManager {
                     return $result['lang'];
                 }
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // 数据库连接失败或其他错误
         }
 
@@ -348,7 +428,7 @@ class LanguageManager {
                     }
                 }
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // 忽略并回退
         }
 

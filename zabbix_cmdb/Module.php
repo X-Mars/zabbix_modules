@@ -4,6 +4,7 @@ namespace Modules\ZabbixCmdb;
 
 // 动态导入版本兼容工具
 require_once __DIR__ . '/lib/ZabbixVersion.php';
+require_once __DIR__ . '/lib/LanguageManager.php';
 use Modules\ZabbixCmdb\Lib\ZabbixVersion;
 use Modules\ZabbixCmdb\Lib\LanguageManager;
 use CMenu;
@@ -45,7 +46,7 @@ class Module extends ModuleBase {
                                     (new CMenuItem($lm->t('Host List')))->setAction('cmdb'),
                                     (new CMenuItem($lm->t('Host Groups')))->setAction('cmdb.groups'),
                                     \CWebUser::$data['type'] >= USER_TYPE_SUPER_ADMIN
-                                        ? (new CMenuItem('CMDB 配置'))->setAction('cmdb.config') : null
+                                        ? (new CMenuItem(LanguageManager::t('Item Configuration')))->setAction('cmdb.config') : null
                                 ]))
                             )
                         );
