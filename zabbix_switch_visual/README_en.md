@@ -65,3 +65,7 @@ Automatic detection may include VLAN, tunnel, or management interfaces; use the 
 - `includes/Translation.php`: English and Chinese UI text.
 
 See the [official Zabbix widget development documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules/widgets) for the widget APIs.
+
+## Acknowledgements
+
+Thanks to Mauro Serafini for the open-source [Zabbix Switch Visual Widget](https://github.com/Mauro-Serafini/Zabbix-Switch-Visual-Widget) project, which served as a reference for the development of this module.

@@ -65,3 +65,7 @@ Zabbix Switch Visual 是一个交换机端口监控仪表盘组件。它根据 Z
 - `includes/Translation.php`：中英文文案。
 
 组件开发接口可参考 [Zabbix 官方文档](https://www.zabbix.com/documentation/7.0/en/devel/modules/widgets)。
+
+## 致谢
+
+感谢 Mauro Serafini 开源的 [Zabbix Switch Visual Widget](https://github.com/Mauro-Serafini/Zabbix-Switch-Visual-Widget) 项目，为本模块的开发提供了参考。
