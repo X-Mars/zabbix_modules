@@ -30,7 +30,19 @@ class ProblemFinder {
      * @param int $limit 最大返回数量
      * @return array 包含 problemEvents, problemCount, resolvedCount 的结果
      */
-    public static function getProblemsInPeriod(int $from, int $till, int $limit = 500, array $hostids = []): array {
+    public static function getProblemsInPeriod(int $from, int $till, int $limit = 500, ?array $hostids = null): array {
+        // An explicitly empty host selection must not fall back to an unfiltered,
+        // system-wide event query.
+        if ($hostids !== null && empty($hostids)) {
+            return [
+                'problemEvents' => [],
+                'problemCount' => 0,
+                'resolvedCount' => 0,
+                'recoveryMap' => [],
+                'triggerHostMap' => [],
+                'triggerStatusMap' => []
+            ];
+        }
         // ====================================================
         // 第1步：获取在报表周期内产生的问题事件（场景A和B）
         // ====================================================
@@ -46,7 +58,7 @@ class ProblemFinder {
             'limit' => $limit,
             'selectHosts' => ['hostid', 'name'],
         ];
-        if (!empty($hostids)) {
+        if ($hostids !== null) {
             $eventOptions['hostids'] = $hostids;
         }
         $eventsInPeriod = API::Event()->get($eventOptions);
@@ -69,7 +81,7 @@ class ProblemFinder {
             'limit' => 2000,  // 加大限制以捕获所有跨周期事件
             'selectHosts' => ['hostid', 'name'],
         ];
-        if (!empty($hostids)) {
+        if ($hostids !== null) {
             $eventBeforeOptions['hostids'] = $hostids;
         }
         $eventsBeforePeriod = API::Event()->get($eventBeforeOptions);
@@ -196,7 +208,7 @@ class ProblemFinder {
             'time_from' => $from,
             'time_till' => $till
         ];
-        if (!empty($hostids)) {
+        if ($hostids !== null) {
             $resolvedOptions['hostids'] = $hostids;
         }
         $resolvedCount = API::Event()->get($resolvedOptions);

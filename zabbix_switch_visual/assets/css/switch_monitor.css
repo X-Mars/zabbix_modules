@@ -1,0 +1,382 @@
+/* Switch Monitor — shared widget styles */
+
+/* ── Visual panel ─────────────────────────────────────────────────────── */
+.sw-widget-visual {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.sw-panel {
+    max-width: 100%;
+    cursor: default;
+}
+
+.sw-port {
+    cursor: pointer;
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────── */
+.sw-tooltip {
+    position: fixed;
+    z-index: 99999;
+    background: #1e1e2e;
+    border: 1px solid #555;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #aaa;
+    min-width: 220px;
+    max-width: 300px;
+    pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    overflow: hidden;
+}
+
+.sw-tooltip-header {
+    background: #2a2a3a;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    color: #ddd;
+}
+
+.sw-tooltip-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sw-tooltip-body {
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 3px 10px;
+}
+
+.sw-tooltip-label { color: #666; }
+.sw-tooltip-value { color: #ccc; }
+
+.sw-tooltip-warnings {
+    border-top: 1px solid #2a2a3a;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sw-tooltip-warn-item {
+    color: #f39c12;
+    font-size: 11px;
+}
+
+.sw-tooltip-footer {
+    border-top: 1px solid #2a2a3a;
+    padding: 5px 10px;
+    color: #555;
+    font-size: 10px;
+}
+
+/* ── Table widget ─────────────────────────────────────────────────────── */
+.sw-widget-table {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.sw-table-filter {
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px;
+    background: #1a1a2e;
+    border-bottom: 1px solid #2a2a3a;
+    flex-shrink: 0;
+}
+
+.sw-table-filter button {
+    background: #2a2a3a;
+    border: 1px solid #444;
+    color: #aaa;
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+.sw-table-filter button.active {
+    background: #3a3a5a;
+    border-color: #7a7aaa;
+    color: #eee;
+}
+
+.sw-table-scroll {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.sw-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sw-table th {
+    background: #1a1a2e;
+    color: #666;
+    padding: 4px 8px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sw-table th:hover { color: #aaa; }
+.sw-table th.sort-asc::after  { content: ' ▲'; }
+.sw-table th.sort-desc::after { content: ' ▼'; }
+
+.sw-table tr { cursor: pointer; }
+.sw-table tr:hover td { background: #1e1e2e; }
+
+.sw-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #1a1a1a;
+    color: #ccc;
+    white-space: nowrap;
+}
+
+.sw-table tr.sw-sfp-row td { background: #0d1a2a; }
+
+/* State dot indicator */
+.sw-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.sw-dot-gray  { background: #555; }
+.sw-dot-green { background: #2ecc71; }
+.sw-dot-amber { background: #f39c12; }
+.sw-dot-red   { background: #e74c3c; }
+.sw-dot-blue  { background: #3498db; }
+
+/* Inline mini bandwidth bar */
+.sw-inline-bar {
+    display: inline-block;
+    background: #222;
+    border-radius: 2px;
+    height: 6px;
+    width: 60px;
+    vertical-align: middle;
+    position: relative;
+    overflow: hidden;
+}
+
+.sw-inline-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 2px;
+}
+
+.sw-badge-sfp {
+    background: #0d1a2a;
+    border: 1px solid #3498db;
+    color: #3498db;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 9px;
+    vertical-align: middle;
+}
+
+/* ── Row detail slide-in panel ────────────────────────────────────────── */
+.sw-detail-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 220px;
+    height: 100%;
+    background: #1e1e2e;
+    border-left: 1px solid #333;
+    padding: 12px;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 12px;
+    color: #aaa;
+    overflow-y: auto;
+    transition: transform 0.2s ease;
+    z-index: 10;
+}
+
+.sw-detail-panel.hidden { transform: translateX(100%); }
+.sw-detail-title  { color: #ddd; font-weight: bold; margin-bottom: 10px; }
+.sw-detail-row    { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.sw-detail-key    { color: #666; }
+.sw-detail-val    { color: #ccc; }
+.sw-detail-warn   { color: #f39c12; font-size: 11px; margin-top: 4px; }
+.sw-detail-close  { cursor: pointer; color: #555; float: right; }
+.sw-detail-close:hover { color: #aaa; }
+
+/* ── Empty / error states ─────────────────────────────────────────────── */
+.sw-empty-state {
+    padding: 20px;
+    color: #666;
+    font-family: monospace;
+    font-size: 12px;
+    text-align: center;
+}
+
+.sw-empty-warn  { color: #f39c12; }
+.sw-empty-error { color: #e74c3c; }
+
+/* ── Sparkline (tooltip + detail panel) ───────────────────────────────── */
+.sw-sparkline {
+    padding: 6px 10px 4px;
+    border-top: 1px solid #2a2a3a;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sw-sparkline-loading {
+    color: #444;
+    font-size: 10px;
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.sw-sparkline-legend {
+    display: flex;
+    gap: 10px;
+    padding: 2px 10px 5px;
+    font-size: 9px;
+    color: #555;
+    font-family: monospace;
+}
+
+.sw-sparkline-legend span::before { content: '─ '; }
+.sw-sparkline-legend .sw-sl-in::before  { color: #3498db; }
+.sw-sparkline-legend .sw-sl-out::before { color: #2ecc71; }
+
+/* ── Summary bar ──────────────────────────────────────────────────────────── */
+.sw-summary-bar {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    padding: 4px 8px;
+    background: #111;
+    border-top: 1px solid #2a2a2a;
+    font-family: monospace;
+    font-size: 11px;
+    color: #aaa;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.sw-sum-name {
+    color: #fff;
+    font-weight: bold;
+    margin-right: 4px;
+}
+.sw-sum-label {
+    color: #666;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+}
+.sw-sum-val {
+    color: #ccc;
+    margin-left: 3px;
+}
+.sw-sum-truncate {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: bottom;
+}
+.sw-sum-sep {
+    color: #333;
+    margin: 0 2px;
+}
+
+/* ── Checkbox column & alias column ───────────────────────────────────── */
+.sw-col-check {
+    width: 28px;
+    padding: 4px 6px !important;
+    text-align: center;
+    cursor: default;
+}
+
+.sw-col-check input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #3a3a5a;
+}
+
+.sw-col-alias {
+    color: #7a7aaa;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Bulk action bar ──────────────────────────────────────────────────── */
+.sw-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #1a1a3a;
+    border-bottom: 1px solid #3a3a6a;
+    font-family: monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.sw-bulk-bar.hidden { display: none; }
+
+.sw-bulk-count {
+    color: #aaa;
+    flex: 1;
+}
+
+.sw-bulk-bar button {
+    background: #2a2a4a;
+    border: 1px solid #555;
+    color: #ccc;
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+.sw-bulk-bar button:hover {
+    background: #3a3a5a;
+    color: #fff;
+}
+
+.sw-table tr.sw-row-selected td { background: #1a1a3a; }

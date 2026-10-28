@@ -697,6 +697,7 @@ $styleTag = new CTag('style', true, '
     }
 }
 ');
+$styleTag->addItem("\n" . file_get_contents(dirname(__DIR__) . '/assets/css/snmp-element.css'));
 
 $content = (new CDiv())->addClass('snmp-walk-page');
 
@@ -711,9 +712,14 @@ $filterForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAtt
 $filterForm->addClass('snmp-form-row');
 
 $groupField = (new CDiv())->addClass('snmp-field');
-$groupField->addItem((new CSpan(LanguageManager::t('Host Group')))->addClass('snmp-field-label'));
+$groupField->addItem(
+    (new CTag('label', true, LanguageManager::t('Host Group')))
+        ->addClass('snmp-field-label')
+        ->setAttribute('for', 'snmp-walk-group')
+);
 $groupSelect = (new CTag('select', true))
     ->addClass('snmp-select')
+    ->setAttribute('id', 'snmp-walk-group')
     ->setAttribute('name', 'groupid')
     ->setAttribute('onchange', 'this.form.submit()');
 foreach ($hostGroups as $group) {
@@ -728,9 +734,14 @@ $groupField->addItem($groupSelect);
 $filterForm->addItem($groupField);
 
 $hostField = (new CDiv())->addClass('snmp-field');
-$hostField->addItem((new CSpan(LanguageManager::t('Host')))->addClass('snmp-field-label'));
+$hostField->addItem(
+    (new CTag('label', true, LanguageManager::t('Host')))
+        ->addClass('snmp-field-label')
+        ->setAttribute('for', 'snmp-walk-host')
+);
 $hostSelect = (new CTag('select', true))
     ->addClass('snmp-select')
+    ->setAttribute('id', 'snmp-walk-host')
     ->setAttribute('name', 'hostid')
     ->setAttribute('onchange', 'this.form.submit()');
 
@@ -757,6 +768,7 @@ $top->addItem($filterForm);
 
 if (!empty($hostConnection)) {
     $profile = (new CDiv())->addClass('snmp-profile');
+    $profile->addItem((new CTag('h3', true, LanguageManager::t('Current Host SNMP Profile')))->addClass('snmp-profile-title'));
     $profile->addItem((new CDiv(LanguageManager::t('Host') . ': ' . ($hostConnection['host_name'] ?? '-')))->addClass('snmp-profile-item'));
     $profile->addItem((new CDiv(LanguageManager::t('Address') . ': ' . (($hostConnection['address'] ?? '-') . ':' . ($hostConnection['port'] ?? '161'))))->addClass('snmp-profile-item'));
     $profile->addItem((new CDiv(LanguageManager::t('Version') . ': ' . ($hostConnection['version'] ?? '-')))->addClass('snmp-profile-item'));
@@ -782,14 +794,21 @@ $runForm->addItem((new CTag('input'))->setAttribute('type', 'hidden')->setAttrib
 $oidInput = (new CTag('input'))
     ->addClass('snmp-input')
     ->setAttribute('type', 'text')
+    ->setAttribute('id', 'snmp-walk-oid')
     ->setAttribute('name', 'walk_oid')
     ->setAttribute('value', (string) $walkOid)
     ->setAttribute('placeholder', LanguageManager::t('Enter OID to walk, e.g. 1.3.6.1.2.1'));
 $runForm->addItem($oidInput);
 $runForm->addItem((new CTag('button', true, LanguageManager::t('Run')))->addClass('snmp-btn')->setAttribute('type', 'submit'));
 
-$top->addItem((new CSpan(LanguageManager::t('Walk OID')))->addClass('snmp-field-label'));
-$top->addItem($runForm);
+$runField = (new CDiv())->addClass('snmp-field-stack');
+$runField->addItem(
+    (new CTag('label', true, LanguageManager::t('Walk OID')))
+        ->addClass('snmp-field-label')
+        ->setAttribute('for', 'snmp-walk-oid')
+);
+$runField->addItem($runForm);
+$top->addItem($runField);
 
 $content->addItem($top);
 
@@ -806,7 +825,14 @@ if ($walkResult !== null) {
     $resultBlock = (new CDiv())->addClass('snmp-walk-result');
 
     $head = (new CDiv())->addClass('snmp-result-head');
-    $head->addItem((new CTag('h2', true, LanguageManager::t('SNMP Walk Results')))->addClass('snmp-result-title'));
+    $resultTitleBlock = (new CDiv())->addClass('snmp-panel-title-block');
+    $resultTitleBlock->addItem((new CTag('h2', true, LanguageManager::t('SNMP Walk Results')))->addClass('snmp-result-title'));
+    if ($isOk) {
+        $resultTitleBlock->addItem(
+            (new CDiv(LanguageManager::t('Total lines') . ': ' . count($entries)))->addClass('snmp-panel-hint')
+        );
+    }
+    $head->addItem($resultTitleBlock);
 
     $headRight = (new CDiv())->addClass('snmp-result-head-right');
     $headRight->addItem(
@@ -823,6 +849,13 @@ if ($walkResult !== null) {
     }
     $head->addItem($headRight);
     $resultBlock->addItem($head);
+
+    if (!$isOk) {
+        $resultBlock->addItem(
+            (new CDiv((string) ($walkResult['message'] ?? LanguageManager::t('SNMP walk failed'))))
+                ->addClass('snmp-notice snmp-result-message')
+        );
+    }
 
     if ($isOk) {
         $walkTableRows = [];
@@ -877,6 +910,7 @@ if ($walkResult !== null) {
                 ->addClass('snmp-walk-checkbox')
                 ->setAttribute('type', 'checkbox')
                 ->setAttribute('id', 'snmp-walk-select-all')
+                ->setAttribute('aria-label', LanguageManager::t('Select all'))
                 ->setAttribute('title', LanguageManager::t('Select all'))
         );
         $headerRow->addItem($selectTh);
@@ -958,10 +992,15 @@ if ($walkResult !== null) {
     $content->addItem($resultBlock);
 }
 
-$rawModal = (new CDiv())->addClass('snmp-modal')->setAttribute('id', 'snmp-walk-raw-modal');
+$rawModal = (new CDiv())
+    ->addClass('snmp-modal')
+    ->setAttribute('id', 'snmp-walk-raw-modal')
+    ->setAttribute('role', 'dialog')
+    ->setAttribute('aria-modal', 'true')
+    ->setAttribute('aria-labelledby', 'snmp-walk-raw-title');
 $rawModalCard = (new CDiv())->addClass('snmp-modal-card');
 $rawModalHead = (new CDiv())->addClass('snmp-modal-head');
-$rawModalHead->addItem((new CTag('h3', true, LanguageManager::t('Raw Data')))->addClass('snmp-modal-title'));
+$rawModalHead->addItem((new CTag('h3', true, LanguageManager::t('Raw Data')))->addClass('snmp-modal-title')->setAttribute('id', 'snmp-walk-raw-title'));
 $rawModalHead->addItem((new CTag('button', true, LanguageManager::t('Close')))->addClass('snmp-modal-close')->setAttribute('type', 'button')->setAttribute('id', 'snmp-walk-raw-close'));
 $rawModalCard->addItem($rawModalHead);
 $rawModalCard->addItem((new CTag('pre', true, ''))->addClass('snmp-modal-pre')->setAttribute('id', 'snmp-walk-raw-content'));
@@ -982,11 +1021,16 @@ $popoverActions->addItem((new CTag('button', true, LanguageManager::t('Confirm')
 $createPopover->addItem($popoverActions);
 $content->addItem($createPopover);
 
-$tplModal = (new CDiv())->addClass('snmp-modal')->setAttribute('id', 'snmp-template-modal');
+$tplModal = (new CDiv())
+    ->addClass('snmp-modal')
+    ->setAttribute('id', 'snmp-template-modal')
+    ->setAttribute('role', 'dialog')
+    ->setAttribute('aria-modal', 'true')
+    ->setAttribute('aria-labelledby', 'snmp-template-title');
 $tplCard = (new CDiv())->addClass('snmp-modal-card snmp-template-card');
 
 $tplHead = (new CDiv())->addClass('snmp-modal-head');
-$tplHead->addItem((new CTag('h3', true, LanguageManager::t('Create Template')))->addClass('snmp-modal-title'));
+$tplHead->addItem((new CTag('h3', true, LanguageManager::t('Create Template')))->addClass('snmp-modal-title')->setAttribute('id', 'snmp-template-title'));
 $tplHead->addItem((new CTag('button', true, LanguageManager::t('Close')))->addClass('snmp-modal-close')->setAttribute('type', 'button')->setAttribute('id', 'snmp-template-close'));
 $tplCard->addItem($tplHead);
 
@@ -1146,6 +1190,27 @@ $content->addItem(new CJsScript('<script>
             .replace(/"/g, "&quot;");
     }
 
+    function showToast(message, type) {
+        var stack = document.getElementById("snmp-toast-stack");
+        if (!stack) {
+            stack = document.createElement("div");
+            stack.id = "snmp-toast-stack";
+            stack.className = "snmp-toast-stack";
+            stack.setAttribute("aria-live", "polite");
+            document.body.appendChild(stack);
+        }
+
+        var toast = document.createElement("div");
+        toast.className = "snmp-toast is-" + (type || "info");
+        toast.textContent = message || "";
+        stack.appendChild(toast);
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+
     function formatShowing(from, to, total) {
         return walkLabels.showing
             .replace("%d", String(from))
@@ -1280,6 +1345,10 @@ $content->addItem(new CJsScript('<script>
         }
         rawContent.textContent = text || "";
         rawModal.classList.add("open");
+        document.body.style.overflow = "hidden";
+        if (rawClose) {
+            rawClose.focus();
+        }
     }
 
     function closeRawModal() {
@@ -1287,6 +1356,7 @@ $content->addItem(new CJsScript('<script>
             return;
         }
         rawModal.classList.remove("open");
+        document.body.style.overflow = "";
     }
 
     function copyText(text, btn) {
@@ -1363,7 +1433,7 @@ $content->addItem(new CJsScript('<script>
 
     function openCreatePopover(btn) {
         if (!currentHostid) {
-            alert(selectHostLabel);
+            showToast(selectHostLabel, "error");
             return;
         }
 
@@ -1429,7 +1499,7 @@ $content->addItem(new CJsScript('<script>
 
     function createItem(btn, itemName) {
         if (!currentHostid) {
-            alert(selectHostLabel);
+            showToast(selectHostLabel, "error");
             return;
         }
 
@@ -1472,13 +1542,13 @@ $content->addItem(new CJsScript('<script>
                         btn.disabled = false;
                     }, 1500);
                 } else {
-                    alert((data && data.message) ? data.message : "Error");
+                    showToast((data && data.message) ? data.message : "Error", "error");
                     btn.textContent = originalLabel;
                     btn.disabled = false;
                 }
             })
             .catch(function(err) {
-                alert(String(err));
+                showToast(String(err), "error");
                 btn.textContent = originalLabel;
                 btn.disabled = false;
             });
@@ -1619,7 +1689,7 @@ $content->addItem(new CJsScript('<script>
 
     function openTemplateModal() {
         if (selectedCount === 0) {
-            alert(walkLabels.noSelection);
+            showToast(walkLabels.noSelection, "error");
             return;
         }
         if (!tplModal) {
@@ -1642,6 +1712,7 @@ $content->addItem(new CJsScript('<script>
         }
         setTemplateNameError("");
         tplModal.classList.add("open");
+        document.body.style.overflow = "hidden";
         if (tplNameInput) {
             tplNameInput.focus();
         }
@@ -1651,6 +1722,7 @@ $content->addItem(new CJsScript('<script>
         if (tplModal) {
             tplModal.classList.remove("open");
         }
+        document.body.style.overflow = "";
         setTemplateNameError("");
     }
 
@@ -1665,13 +1737,13 @@ $content->addItem(new CJsScript('<script>
             return;
         }
         if (group === "") {
-            alert(walkLabels.enterGroup);
+            showToast(walkLabels.enterGroup, "error");
             return;
         }
 
         var items = getSelectedItems();
         if (items.length === 0) {
-            alert(walkLabels.noSelection);
+            showToast(walkLabels.noSelection, "error");
             return;
         }
 
@@ -1699,17 +1771,17 @@ $content->addItem(new CJsScript('<script>
                 tplConfirmBtn.disabled = false;
                 tplConfirmBtn.textContent = originalLabel;
                 if (data && data.ok) {
-                    alert((data && data.message) ? data.message : "OK");
+                    showToast((data && data.message) ? data.message : "OK", "success");
                     closeTemplateModal();
                     clearSelection();
                 } else {
-                    alert((data && data.message) ? data.message : "Error");
+                    showToast((data && data.message) ? data.message : "Error", "error");
                 }
             })
             .catch(function(err) {
                 tplConfirmBtn.disabled = false;
                 tplConfirmBtn.textContent = originalLabel;
-                alert(String(err));
+                showToast(String(err), "error");
             });
     }
 
@@ -1739,6 +1811,18 @@ $content->addItem(new CJsScript('<script>
             }
         });
     }
+    document.addEventListener("keydown", function(e) {
+        if (e.key !== "Escape") {
+            return;
+        }
+        if (tplModal && tplModal.classList.contains("open")) {
+            closeTemplateModal();
+        } else if (rawModal && rawModal.classList.contains("open")) {
+            closeRawModal();
+        } else if (createPopover && createPopover.classList.contains("open")) {
+            closeCreatePopover();
+        }
+    });
 
     initWalkTable();
     updateSelectionUi();

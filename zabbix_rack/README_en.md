@@ -151,3 +151,7 @@ This project follows the Zabbix license. For details, see [Zabbix License](https
 2. Removing a host from a rack only deletes the rack-related tags on the host; it does not delete the host itself
 3. U position conflicts are automatically detected when assigning hosts
 4. It is recommended to regularly back up the `data/config.json` file
+
+## UI theme
+
+Rack view and configuration use an Element Plus-inspired theme with local CSS and JavaScript, without Vue or an external CDN. Native selects, form validation, and all six alarm levels are retained. Deploy both views and assets when upgrading. The shared theme is in assets/css/element.css; messages and confirmation dialogs are in assets/js/element.js.

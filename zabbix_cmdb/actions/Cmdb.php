@@ -135,10 +135,7 @@ class Cmdb extends CController {
                 // CPU 使用率
                 if ($items['cpu_usage'] !== null && $items['cpu_usage']['value'] !== '') {
                     $val = floatval($items['cpu_usage']['value']);
-                    // 处理 idle 类 key：使用率 = 100 - idle%
-                    if ($items['cpu_usage']['key'] === 'system.cpu.util[,idle]') {
-                        $val = 100 - $val;
-                    }
+
                     $hostInfo['cpu_usage'] = round($val, 2) . '%';
                 }
 
@@ -150,10 +147,7 @@ class Cmdb extends CController {
                 // 内存使用率
                 if ($items['memory_usage'] !== null && $items['memory_usage']['value'] !== '') {
                     $val = floatval($items['memory_usage']['value']);
-                    // 处理 pavailable key：使用率 = 100 - available%
-                    if ($items['memory_usage']['key'] === 'vm.memory.size[pavailable]') {
-                        $val = 100 - $val;
-                    }
+
                     $hostInfo['memory_usage'] = round($val, 2) . '%';
                 }
 
@@ -444,8 +438,7 @@ class Cmdb extends CController {
     /**
      * 计算全局统计数据（跨所有过滤后主机）
      *
-     * 仅增加 2 次 API 调用：
-     * - 1 次 item.get 获取所有主机的 CPU 数量 + 内存总量
+     * 使用配置规则批量获取 CPU 数量和内存总量：
      * - 1 次 host.get 获取 status/maintenance/interfaces 判断活跃主机
      *
      * @param array $allHostIds 所有过滤后的主机 ID
@@ -462,35 +455,13 @@ class Cmdb extends CController {
             return $stats;
         }
 
-        // ── CPU 和内存汇总：单次 item.get ──
+        // CPU 和内存汇总：与主机列表共用匹配规则
         try {
-            $items = API::Item()->get([
-                'output'  => ['hostid', 'key_', 'lastvalue'],
-                'hostids' => $allHostIds,
-                'filter'  => [
-                    'key_'   => ['system.cpu.num', 'vm.memory.size[total]'],
-                    'status' => ITEM_STATUS_ACTIVE,
-                ],
-            ]);
-
-            // 每台主机只取一个 cpu 和一个 memory 值（去重）
-            $cpuByHost = [];
-            $memByHost = [];
-            foreach ($items as $item) {
-                $hid = $item['hostid'];
-                $val = $item['lastvalue'] ?? '';
-                if ($val === '') {
-                    continue;
-                }
-                if ($item['key_'] === 'system.cpu.num' && !isset($cpuByHost[$hid])) {
-                    $cpuByHost[$hid] = intval($val);
-                } elseif ($item['key_'] === 'vm.memory.size[total]' && !isset($memByHost[$hid])) {
-                    $memByHost[$hid] = intval($val);
-                }
+            $items = ItemFinder::batchGetHostItems($allHostIds, ['cpu_count', 'memory_total']);
+            foreach ($items as $hostItems) {
+                $stats['total_cpu'] += (float) ($hostItems['cpu_count']['value'] ?? 0);
+                $stats['total_memory'] += (float) ($hostItems['memory_total']['value'] ?? 0);
             }
-
-            $stats['total_cpu']    = array_sum($cpuByHost);
-            $stats['total_memory'] = array_sum($memByHost);
         } catch (\Exception $e) {
             error_log('CMDB: Global CPU/Memory stats failed: ' . $e->getMessage());
         }

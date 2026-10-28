@@ -75,19 +75,11 @@ class CmdbGroups extends CController {
             $totalCpu = 0;
             $totalMemory = 0;
 
-            // 计算每个主机的CPU和内存总量
-            foreach ($hosts as $host) {
-                // 获取CPU数量
-                $cpuResult = ItemFinder::findCpuCount($host['hostid']);
-                if ($cpuResult && $cpuResult['value'] !== null) {
-                    $totalCpu += intval($cpuResult['value']);
-                }
-
-                // 获取内存总量
-                $memoryResult = ItemFinder::findMemoryTotal($host['hostid']);
-                if ($memoryResult && $memoryResult['value'] !== null) {
-                    $totalMemory += intval($memoryResult['value']);
-                }
+            // Use the same ordered rules as the host list and its totals.
+            $items = ItemFinder::batchGetHostItems(array_column($hosts, 'hostid'), ['cpu_count', 'memory_total']);
+            foreach ($items as $hostItems) {
+                $totalCpu += (float) ($hostItems['cpu_count']['value'] ?? 0);
+                $totalMemory += (float) ($hostItems['memory_total']['value'] ?? 0);
             }
 
             $groupData[] = [

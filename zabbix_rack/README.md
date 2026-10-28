@@ -151,3 +151,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 2. 从机柜移除主机只会删除主机上的机柜相关标签，不会删除主机本身
 3. 分配主机时会自动检测 U 位冲突
 4. 建议定期备份 `data/config.json` 文件
+
+## 界面主题
+
+机柜视图和配置页面采用 Element Plus 风格，使用本地 CSS 和 JavaScript，无需 Vue 或外部 CDN。保留原生 select、现有表单校验及六级告警区分。升级时请同时复制 views 和 assets 目录；共享主题位于 assets/css/element.css，消息和确认框位于 assets/js/element.js。

@@ -159,7 +159,7 @@ No command output and a new entry on the Task Management page usually indicate a
 
 - **IP Management**: Add and maintain IP ranges, start scans, view scan tasks, and open the IP usage matrix
 - **IP Details**: Filter all addresses by keyword, IP range, IP status, and host association status
-- **Task Management**: View pending, running, completed, failed, or stopped background scan tasks
+- **Task Management**: Filter background scan tasks by IP range name, task status, or keyword, and view pending, running, completed, failed, or stopped tasks
 
 Click **Alive IPs / Total** to open the IP usage matrix. Green indicates that an address was reachable during the latest ICMP scan; gray indicates that it was unreachable or has not yet been scanned. If a green address is associated with a Zabbix host, click it to open that host's latest data page.
 

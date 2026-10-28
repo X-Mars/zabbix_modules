@@ -15,6 +15,12 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
 
 $counts = $data['summary'];
 
+$range_options = '<option value="">'.$t('All IP ranges').'</option>';
+foreach ($data['ranges'] as $range) {
+    $selected = $data['filters']['rangeid'] === $range['id'] ? ' selected' : '';
+    $range_options .= '<option value="'.$e($range['id']).'"'.$selected.'>'.$e($range['name']).'</option>';
+}
+
 $status_options = '';
 foreach (['all' => 'All statuses', 'pending' => 'Pending', 'running' => 'Running', 'completed' => 'Completed', 'failed' => 'Failed', 'stopped' => 'Stopped'] as $value => $label) {
     $selected = $data['filters']['status'] === $value ? ' selected' : '';
@@ -63,6 +69,7 @@ $html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=
     .'<div><strong>'.$counts['running'].'</strong><span>'.$t('Running').'</span></div><div><strong>'.$counts['completed'].'</strong><span>'.$t('Completed').'</span></div><div><strong>'.$counts['failed'].'</strong><span>'.$t('Failed').'</span></div></div>'
     .'<form class="ipam-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.scan"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
     .'<label><span>'.$t('Search').'</span><input name="search" value="'.$e($data['filters']['search']).'" placeholder="'.$t('Search task ID or range name').'"></label>'
+    .'<label><span>'.$t('IP range name').'</span><select name="rangeid">'.$range_options.'</select></label>'
     .'<label><span>'.$t('Status').'</span><select name="status">'.$status_options.'</select></label></form>'
     .'<div class="ipam-table-wrap"><table class="ipam-table ipam-task-table"><thead><tr><th>'.$t('No.').'</th><th>'.$t('Task ID').'</th><th>'.$t('IP range name').'</th><th>'.$t('Status').'</th><th>'.$t('Progress').'</th><th>'.$t('Alive').'</th><th>'.$t('Shards').'</th><th>'.$t('Created').'</th><th>'.$t('Actions').'</th></tr></thead>'
     .'<tbody>'.($rows ?: '<tr><td colspan="9" class="ipam-empty">'.$t('No scan tasks found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div>'
