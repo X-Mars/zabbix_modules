@@ -1,0 +1,1338 @@
+/*
+ * 自动拓扑图（Zabbix 前端模块 topomap）
+ *
+ * 7.0 的主题是编译后的死色（没有 CSS 变量），所以这里自带两套调色板：
+ * JS 读 <html theme="...">，给 #topomap-root 挂 .tm-dark / .tm-light。
+ * 颜色取自 7.0 官方主题：浅色文字 #1f2c33 / 次要 #768d99，深色文字 #f2f2f2 /
+ * 弹层 #2b2b2b，主色按钮沿用 Zabbix 的 #d64000。
+ */
+
+/*
+ * hidden 属性必须在这里显式兜底，否则完全失效：
+ * 浏览器内置的 [hidden]{display:none} 属于「用户代理样式」，而本文件里
+ * .tm-overlay / .tm-editbar 等写了 display:flex —— 作者样式的优先级高于
+ * 用户代理样式，于是 el.hidden = true 只是加了个属性，视觉上毫无变化。
+ * 表现就是：一进页面弹层就糊在脸上、点「关闭」没反应。
+ */
+#topomap-root [hidden] {
+	display: none !important;
+}
+
+#topomap-root {
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+#topomap-root.tm-light {
+	--tm-fg: #1f2c33;
+	--tm-fg-dim: #768d99;
+	--tm-bg: #ffffff;
+	--tm-panel: #f7f9fa;
+	--tm-border: #ccd5d9;
+	--tm-border-soft: #e4e9ec;
+	--tm-hover: #eef4f8;
+	--tm-canvas: #f4f7f8;
+	--tm-grid: #e6ebee;
+	--tm-input-bg: #ffffff;
+	--tm-link: #0275b8;
+	--tm-link-hover: #02679f;
+	--tm-shadow: 0 4px 20px 0 rgba(118, 141, 153, 0.5);
+	--tm-selected: #0275b8;
+	--tm-element-text: #1f2c33;
+	--tm-element-halo: rgba(255, 255, 255, 0.85);
+}
+
+#topomap-root.tm-dark {
+	--tm-fg: #f2f2f2;
+	--tm-fg-dim: #8d9497;
+	--tm-bg: #2b2b2b;
+	--tm-panel: #232323;
+	--tm-border: #383838;
+	--tm-border-soft: #333333;
+	--tm-hover: #37393b;
+	--tm-canvas: #1b1d1f;
+	--tm-grid: #26292b;
+	--tm-input-bg: #1f2022;
+	--tm-link: #4a9fd8;
+	--tm-link-hover: #6cb6e6;
+	--tm-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.5);
+	--tm-selected: #4a9fd8;
+	--tm-element-text: #e8e8e8;
+	--tm-element-halo: rgba(0, 0, 0, 0.55);
+}
+
+#topomap-root,
+#topomap-root * {
+	box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- 通用控件 */
+
+.tm-btn {
+	height: 26px;
+	padding: 0 12px;
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	background: var(--tm-panel);
+	color: var(--tm-fg);
+	font-size: 13px;
+	font-family: inherit;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.tm-btn:hover {
+	background: var(--tm-hover);
+}
+
+.tm-btn:active {
+	background: var(--tm-border-soft);
+}
+
+.tm-btn:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+/* 工具条上处于「移除 / 链接」模式的按钮 */
+.tm-btn-active {
+	border-color: #d64000;
+	color: #d64000;
+	background: rgba(214, 64, 0, 0.1);
+	font-weight: bold;
+}
+
+.tm-btn-primary {
+	background: #d64000;
+	border-color: #d64000;
+	color: #ffffff;
+}
+
+.tm-btn-primary:hover {
+	background: #b83800;
+	border-color: #b83800;
+}
+
+.tm-btn-sm {
+	height: 24px;
+	padding: 0 9px;
+	font-size: 12px;
+}
+
+.tm-btn-icon {
+	width: 26px;
+	padding: 0;
+	font-size: 15px;
+	line-height: 1;
+}
+
+.tm-btn-zoom {
+	min-width: 52px;
+	padding: 0 6px;
+	font-size: 12px;
+	text-align: center;
+}
+
+.tm-input,
+#topomap-root select,
+#topomap-root textarea {
+	height: 26px;
+	padding: 0 6px;
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	background: var(--tm-input-bg);
+	color: var(--tm-fg);
+	font-size: 13px;
+	font-family: inherit;
+	outline: none;
+}
+
+#topomap-root textarea {
+	height: auto;
+	padding: 4px 6px;
+	resize: vertical;
+	line-height: 1.4;
+}
+
+.tm-input:focus,
+#topomap-root select:focus,
+#topomap-root textarea:focus {
+	border-color: var(--tm-selected);
+}
+
+.tm-input-block {
+	width: 100%;
+}
+
+.tm-msg {
+	font-size: 12px;
+	color: var(--tm-fg-dim);
+}
+
+.tm-msg-error {
+	color: #e45959;
+	font-weight: bold;
+}
+
+.tm-msg-ok {
+	color: #59a559;
+}
+
+/* ---------------------------------------------------------------- 列表页 */
+
+.tm-create {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 2px 0 14px;
+	flex-wrap: wrap;
+}
+
+.tm-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.tm-table th {
+	padding: 7px 10px;
+	border-bottom: 1px solid var(--tm-border);
+	color: var(--tm-fg);
+	font-size: 12px;
+	font-weight: bold;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.tm-table td {
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--tm-border-soft);
+	color: var(--tm-fg);
+	vertical-align: middle;
+}
+
+.tm-table tbody tr:hover td {
+	background: var(--tm-hover);
+}
+
+.tm-col-num {
+	width: 90px;
+}
+
+.tm-col-actions {
+	width: 150px;
+}
+
+.tm-col-num,
+.tm-table td.tm-num {
+	text-align: center;
+	color: var(--tm-fg-dim);
+}
+
+.tm-name-link {
+	color: var(--tm-link);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.tm-name-link:hover {
+	color: var(--tm-link-hover);
+	text-decoration: underline;
+}
+
+.tm-action {
+	margin-right: 12px;
+	color: var(--tm-link);
+	cursor: pointer;
+	font-size: 12px;
+}
+
+.tm-action:hover {
+	color: var(--tm-link-hover);
+	text-decoration: underline;
+}
+
+.tm-empty {
+	padding: 26px 10px;
+	text-align: center;
+	color: var(--tm-fg-dim);
+}
+
+/* ---------------------------------------------------------------- 画布页 */
+
+.tm-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 2px 0 8px;
+}
+
+.tm-canvas-title {
+	font-size: 15px;
+	font-weight: bold;
+	color: var(--tm-fg);
+	margin-left: 4px;
+}
+
+.tm-spacer {
+	flex: 1 1 auto;
+}
+
+.tm-hint {
+	font-size: 12px;
+	color: var(--tm-fg-dim);
+}
+
+.tm-editbar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	padding: 6px 10px;
+	background: var(--tm-panel);
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	flex-wrap: wrap;
+}
+
+.tm-editbar-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tm-editbar-label {
+	font-weight: bold;
+	color: var(--tm-fg);
+}
+
+.tm-editbar-sep {
+	width: 1px;
+	height: 18px;
+	background: var(--tm-border);
+}
+
+/* 高度由 JS 按「视口 − 页头 − 工具条 − 页脚」实测后写成内联值，
+   这里只是脚本没跑到时的兜底，保证不会塌成一条线。
+   预览模式是干净的纯色画布（原生预览也不画网格）；只有编辑模式才铺网格。 */
+.tm-canvas-wrap {
+	position: relative;
+	height: calc(100vh - 200px);
+	min-height: 320px;
+	overflow: hidden;
+	border: 1px solid var(--tm-border);
+	background-color: var(--tm-canvas);
+	cursor: grab;
+}
+
+#topomap-root.tm-editing .tm-canvas-wrap {
+	background-image:
+		linear-gradient(var(--tm-grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--tm-grid) 1px, transparent 1px);
+	background-size: 50px 50px;
+}
+
+.tm-canvas-wrap.tm-panning {
+	cursor: grabbing;
+}
+
+.tm-stage {
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform-origin: 0 0;
+}
+
+.tm-svg {
+	position: absolute;
+	left: 0;
+	top: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.tm-svg .tm-link-hit {
+	stroke: transparent;
+	stroke-width: 14;
+	fill: none;
+	pointer-events: stroke;
+	cursor: pointer;
+}
+
+.tm-svg .tm-link-line {
+	fill: none;
+	stroke-linecap: round;
+	pointer-events: none;
+}
+
+/* 折点手柄：只在「在画布上点选折点」模式显示，可拖动 / 双击删除 */
+.tm-svg .tm-waypoint {
+	fill: #ffffff;
+	stroke: #d64000;
+	stroke-width: 2;
+	pointer-events: all;
+	cursor: move;
+}
+
+.tm-svg .tm-waypoint:hover {
+	fill: #ffe9e0;
+}
+
+/* 连线上的文字：标签 / 指标统一黑色，画在浅色圆角框里（对齐 aiops） */
+.tm-svg .tm-link-label {
+	font-size: 11px;
+	text-anchor: middle;
+	pointer-events: none;
+}
+
+.tm-svg .tm-link-metric {
+	font-size: 10px;
+}
+
+/* 指标框（圆角矩形）：配色由 JS 按主题写入，这里只关掉命中事件 */
+.tm-svg .tm-link-badge {
+	pointer-events: none;
+}
+
+.tm-svg .tm-shape {
+	pointer-events: all;
+	cursor: move;
+}
+
+/* 形的选中控制点：7×7 圆形，白底、1px 深蓝描边（对齐原生 .ui-resize-dot） */
+.tm-svg .tm-shape-handle {
+	fill: #ffffff;
+	stroke: #02659f;
+	stroke-width: 1;
+	pointer-events: all;
+}
+
+#topomap-root.tm-dark .tm-svg .tm-shape-handle {
+	fill: #2b2b2b;
+	stroke: #768d99;
+}
+
+/* 形属性窗口里的「矩形 / 椭圆 / 线」三段按钮（原生 radio 样式） */
+.tm-seg {
+	display: inline-flex;
+}
+
+.tm-seg-item {
+	height: 26px;
+	padding: 0 14px;
+	border: 1px solid var(--tm-border);
+	border-right: none;
+	background: var(--tm-panel);
+	color: var(--tm-fg);
+	font-size: 13px;
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.tm-seg-item:first-child {
+	border-radius: 2px 0 0 2px;
+}
+
+.tm-seg-item:last-child {
+	border-right: 1px solid var(--tm-border);
+	border-radius: 0 2px 2px 0;
+}
+
+.tm-seg-item:hover {
+	background: var(--tm-hover);
+}
+
+.tm-seg-item.tm-seg-active {
+	background: #768d99;
+	border-color: #768d99;
+	color: #ffffff;
+	font-weight: bold;
+}
+
+/* 字号/字体/颜色都由 JS 按属性写成 SVG 呈现属性，这里不要再写 font-size，
+   否则作者样式会盖掉形自己的字号（原生是每个形各自设置字体大小）。 */
+.tm-svg .tm-shape-text {
+	pointer-events: none;
+	user-select: none;
+}
+
+.tm-svg .tm-shape-hit {
+	fill: transparent;
+	stroke: transparent;
+	stroke-width: 8;
+}
+
+/* 元素 */
+.tm-el {
+	position: absolute;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+#topomap-root.tm-editing .tm-el {
+	cursor: move;
+}
+
+.tm-el-icon {
+	display: block;
+	max-width: 200px;
+	max-height: 200px;
+	pointer-events: none;
+	-webkit-user-drag: none;
+	/* 高亮图形压在图标下面（原生 SVG 也是先画 highlight 再画图） */
+	position: relative;
+	z-index: 1;
+}
+
+/* 图标取不到时（imgstore 报错 / 权限）退化成一个虚线方块，不留破图 */
+.tm-el-noicon::before {
+	content: '';
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 2px dashed var(--tm-border);
+	border-radius: 3px;
+	background: var(--tm-panel);
+}
+
+/* 原生拓扑图不在图标右上角显示问题数，问题数写在标签行里 —— 这里不再保留角标样式 */
+
+/* 标签容器：一行名字 + 若干行状态（正常 / 问题 / 已停用 / 在维护中）。
+   每行各自带半透明底，叠在一起也不会糊成一块。 */
+.tm-el-label {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	font-size: 12px;
+	line-height: 16px;
+	color: var(--tm-element-text);
+	pointer-events: none;
+}
+
+.tm-el-label .tm-el-line {
+	white-space: nowrap;
+	padding: 0 4px;
+	border-radius: 2px;
+	background: var(--tm-element-halo);
+}
+
+.tm-el-label .tm-el-status {
+	font-weight: 600;
+}
+
+.tm-el-label.tm-loc--1,
+.tm-el-label.tm-loc-0 {
+	left: 50%;
+	top: 100%;
+	transform: translateX(-50%);
+	margin-top: 3px;
+}
+
+.tm-el-label.tm-loc-1 {
+	right: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-right: 4px;
+	align-items: flex-end;
+}
+
+.tm-el-label.tm-loc-2 {
+	left: 100%;
+	top: 50%;
+	transform: translateY(-50%);
+	margin-left: 4px;
+	align-items: flex-start;
+}
+
+.tm-el-label.tm-loc-3 {
+	left: 50%;
+	bottom: 100%;
+	transform: translateX(-50%);
+	margin-bottom: 3px;
+}
+
+.tm-el.tm-selected {
+	outline: 2px dashed var(--tm-selected);
+	outline-offset: 3px;
+}
+
+/* 状态只由原生样式的 SVG 高亮（正圆 / 维护方框）表达，图标上加红光是上一版留下的第二套状态显示，去掉 */
+
+.tm-el.tm-disabled .tm-el-icon {
+	filter: grayscale(100%);
+	opacity: 0.7;
+}
+
+.tm-el.tm-linkable {
+	outline: 2px solid #59a559;
+	outline-offset: 3px;
+	cursor: crosshair;
+}
+
+.tm-el.tm-removable,
+.tm-svg .tm-shape.tm-removable,
+.tm-svg .tm-link-hit.tm-removable {
+	cursor: not-allowed;
+	outline: 2px solid #e45959;
+	outline-offset: 2px;
+}
+
+.tm-blank-hint {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	color: var(--tm-fg-dim);
+	font-size: 13px;
+	text-align: center;
+	pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- 弹层 */
+
+.tm-overlay {
+	position: fixed;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 2000;
+	background: rgba(0, 0, 0, 0.35);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 60px;
+}
+
+.tm-dialog {
+	width: 660px;
+	max-width: calc(100vw - 40px);
+	max-height: calc(100vh - 100px);
+	display: flex;
+	flex-direction: column;
+	background: var(--tm-bg);
+	border: 1px solid var(--tm-border);
+	box-shadow: var(--tm-shadow);
+}
+
+.tm-dialog-narrow {
+	width: 460px;
+}
+
+.tm-dialog-wide {
+	width: 920px;
+	max-width: calc(100vw - 40px);
+}
+
+.tm-dialog-head {
+	display: flex;
+	align-items: center;
+	padding: 9px 12px;
+	border-bottom: 1px solid var(--tm-border-soft);
+}
+
+.tm-dialog-title {
+	font-size: 15px;
+	font-weight: bold;
+	color: var(--tm-fg);
+}
+
+.tm-dialog-close {
+	margin-left: auto;
+	width: 22px;
+	height: 22px;
+	border: none;
+	background: transparent;
+	color: var(--tm-fg-dim);
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.tm-dialog-close:hover {
+	color: var(--tm-fg);
+}
+
+.tm-dialog-body {
+	padding: 12px;
+	overflow: auto;
+}
+
+.tm-dialog-foot {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 10px 12px;
+	border-top: 1px solid var(--tm-border-soft);
+}
+
+/* 表单：左侧标题列固定，右侧自适应 */
+.tm-form {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.tm-form > tbody > tr > th {
+	width: 96px;
+	padding: 4px 8px 4px 0;
+	color: var(--tm-fg);
+	font-size: 13px;
+	font-weight: normal;
+	text-align: right;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.tm-form > tbody > tr > td {
+	padding: 4px 0;
+	vertical-align: middle;
+}
+
+.tm-form .tm-req::before {
+	content: '* ';
+	color: #e45959;
+}
+
+.tm-form select,
+.tm-form input[type="text"],
+.tm-form textarea {
+	width: 100%;
+}
+
+.tm-form .tm-w-auto {
+	width: auto;
+}
+
+.tm-form .tm-icons-table {
+	border-collapse: collapse;
+}
+
+.tm-form .tm-icons-table td {
+	padding: 3px 0;
+	vertical-align: middle;
+}
+
+.tm-form .tm-icons-table td:first-child {
+	padding-right: 10px;
+	color: var(--tm-fg-dim);
+	white-space: nowrap;
+}
+
+.tm-form .tm-icons-table select {
+	width: 260px;
+}
+
+.tm-form .tm-icons-box {
+	padding: 6px 8px;
+	border: 1px solid var(--tm-border-soft);
+	background: var(--tm-panel);
+}
+
+.tm-inline {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tm-inline > .tm-grow {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* 「画布尺寸：自动」——只读提示，不用输入框 */
+.tm-size-auto {
+	color: var(--tm-fg);
+	font-weight: bold;
+	margin-bottom: 2px;
+}
+
+.tm-tags {
+	border: 1px solid var(--tm-border-soft);
+	background: var(--tm-panel);
+	padding: 8px;
+}
+
+.tm-tags-eval {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 8px;
+	font-size: 12px;
+}
+
+.tm-tags-eval label {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.tm-tag-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.tm-tag-row .tm-tag-name,
+.tm-tag-row .tm-tag-value {
+	height: 24px;
+	font-size: 12px;
+}
+
+.tm-tag-row .tm-tag-name {
+	width: 150px;
+}
+
+.tm-tag-row .tm-tag-value {
+	flex: 1 1 auto;
+	min-width: 80px;
+}
+
+.tm-tag-row select {
+	height: 24px;
+	font-size: 12px;
+}
+
+.tm-linkbtn {
+	border: none;
+	background: transparent;
+	padding: 0;
+	color: var(--tm-link);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tm-linkbtn:hover {
+	color: var(--tm-link-hover);
+	text-decoration: underline;
+}
+
+.tm-tags-add {
+	margin-top: 2px;
+}
+
+.tm-checkline {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.tm-checkline input {
+	margin: 0;
+}
+
+/* 主机选择器 */
+.tm-host-list {
+	margin-top: 8px;
+	max-height: 320px;
+	overflow: auto;
+	border: 1px solid var(--tm-border-soft);
+}
+
+.tm-host-item {
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--tm-border-soft);
+	cursor: pointer;
+	color: var(--tm-fg);
+	font-size: 13px;
+}
+
+.tm-host-item:last-child {
+	border-bottom: none;
+}
+
+.tm-host-item:hover {
+	background: var(--tm-hover);
+}
+
+.tm-host-item .tm-host-ip {
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	margin-left: 8px;
+	font-family: monospace;
+}
+
+.tm-host-item .tm-host-dim {
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	margin-left: 6px;
+}
+
+.tm-host-empty {
+	padding: 16px;
+	text-align: center;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+}
+
+/* 监控项 / 主机 / 主机群组 选择器（对齐 Zabbix 原生弹层） */
+.tm-pick-field {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.tm-pick-label {
+	flex: 0 0 auto;
+	width: 84px;
+	padding-top: 5px;
+	text-align: right;
+	color: var(--tm-fg-dim);
+	font-size: 13px;
+}
+
+.tm-pick-box {
+	flex: 1 1 auto;
+	min-height: 30px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 6px;
+	border: 1px solid var(--tm-border);
+	background: var(--tm-input-bg);
+	cursor: pointer;
+}
+
+.tm-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	max-width: 100%;
+	padding: 1px 2px 1px 8px;
+	border: 1px solid var(--tm-border);
+	background: var(--tm-hover);
+	font-size: 12px;
+	color: var(--tm-fg);
+}
+
+.tm-chip-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tm-chip-x {
+	border: none;
+	background: transparent;
+	color: var(--tm-fg-dim);
+	font-size: 14px;
+	line-height: 1;
+	padding: 0 4px;
+	cursor: pointer;
+}
+
+.tm-chip-x:hover {
+	color: var(--tm-fg);
+}
+
+.tm-pick-empty-inline {
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+}
+
+/* 弹层里的表格：勾选列 + 名称 / 键值 / 类型 / 信息类型 / 状态 */
+.tm-pick-scroll {
+	max-height: 400px;
+	overflow: auto;
+	border: 1px solid var(--tm-border-soft);
+}
+
+.tm-pick-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.tm-pick-table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	padding: 6px 8px;
+	text-align: left;
+	font-weight: normal;
+	color: var(--tm-fg-dim);
+	border-bottom: 1px solid var(--tm-border);
+	background: var(--tm-bg);
+	white-space: nowrap;
+}
+
+.tm-pick-table td {
+	padding: 5px 8px;
+	border-bottom: 1px solid var(--tm-border-soft);
+	color: var(--tm-fg);
+	vertical-align: middle;
+}
+
+.tm-pick-table tbody tr {
+	cursor: pointer;
+}
+
+.tm-pick-table tbody tr:hover {
+	background: var(--tm-hover);
+}
+
+.tm-pick-table tbody tr.tm-row-checked {
+	background: var(--tm-select, rgba(71, 129, 190, 0.14));
+}
+
+.tm-pick-check {
+	width: 34px;
+}
+
+.tm-pick-check input {
+	margin: 0;
+}
+
+.tm-pick-name {
+	word-break: break-all;
+}
+
+.tm-pick-key {
+	font-family: monospace;
+	color: var(--tm-fg-dim);
+	word-break: break-all;
+}
+
+.tm-pick-dim {
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	margin-left: 8px;
+}
+
+.tm-pick-status.tm-on {
+	color: #2f8f4e;
+}
+
+.tm-pick-status.tm-off {
+	color: #d14747;
+}
+
+.tm-pick-emptyrow:hover {
+	background: transparent;
+}
+
+.tm-pick-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 40px 16px;
+	color: var(--tm-fg-dim);
+	text-align: center;
+}
+
+.tm-pick-empty-icon {
+	color: var(--tm-border);
+}
+
+.tm-pick-empty-title {
+	font-size: 14px;
+}
+
+.tm-pick-empty-sub {
+	font-size: 12px;
+}
+
+/* 链接属性里的指标行：摘要 + 选择 / 清空 */
+.tm-metric-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 26px;
+}
+
+/* 链接属性里的触发器行：chip 框 + 选择… / 清空（交互对齐上面的指标行） */
+.tm-trig-box {
+	flex: 1 1 240px;
+	min-height: 26px;
+	cursor: default;
+}
+
+/* 触发器选择器里严重级别的色块 */
+.tm-sev-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 5px;
+	border-radius: 2px;
+	vertical-align: -1px;
+}
+
+.tm-metric-summary {
+	flex: 1 1 auto;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* 颜色输入 */
+.tm-colorline {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tm-colorline input[type="color"] {
+	width: 34px;
+	height: 24px;
+	padding: 0;
+	border: 1px solid var(--tm-border);
+	background: transparent;
+	cursor: pointer;
+}
+
+.tm-colorline input[type="text"] {
+	width: 90px;
+}
+
+/* 自动发现弹窗 */
+.tm-discover-tip {
+	margin: 0 0 8px;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+}
+
+.tm-discover-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.tm-discover-search .tm-input {
+	flex: 1 1 auto;
+	min-width: 120px;
+}
+
+.tm-discover-count {
+	flex: 0 0 auto;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.tm-discover-hosts {
+	margin-top: 8px;
+	max-height: 240px;
+	overflow: auto;
+	border: 1px solid var(--tm-border-soft);
+}
+
+.tm-discover-host {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 10px;
+	border-bottom: 1px solid var(--tm-border-soft);
+	color: var(--tm-fg);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.tm-discover-host:last-child {
+	border-bottom: none;
+}
+
+.tm-discover-host:hover {
+	background: var(--tm-hover);
+}
+
+.tm-discover-host input {
+	flex: 0 0 auto;
+	margin: 0;
+}
+
+/* 没有 SNMP 接口的主机：勾不上，视觉上也要能看出来 */
+.tm-discover-host-off {
+	color: var(--tm-fg-dim);
+	cursor: not-allowed;
+}
+
+.tm-discover-host-off:hover {
+	background: transparent;
+}
+
+.tm-discover-host-name {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tm-discover-host-ip {
+	flex: 0 0 auto;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+	font-family: monospace;
+}
+
+.tm-discover-host-tag {
+	flex: 0 0 auto;
+	padding: 0 5px;
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	color: var(--tm-fg-dim);
+	font-size: 11px;
+	line-height: 15px;
+}
+
+.tm-discover-host-tag.tm-dim {
+	opacity: 0.6;
+}
+
+.tm-discover-empty {
+	padding: 16px;
+	text-align: center;
+	color: var(--tm-fg-dim);
+	font-size: 12px;
+}
+
+.tm-discover-opts {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin-top: 10px;
+	padding: 8px 0;
+	border-top: 1px solid var(--tm-border-soft);
+	border-bottom: 1px solid var(--tm-border-soft);
+}
+
+.tm-discover-field,
+.tm-discover-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--tm-fg);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tm-discover-field-name {
+	color: var(--tm-fg-dim);
+	white-space: nowrap;
+}
+
+.tm-discover-field select,
+.tm-discover-field input[type="number"] {
+	height: 24px;
+	font-size: 12px;
+}
+
+.tm-discover-field input[type="number"] {
+	width: 64px;
+}
+
+.tm-discover-check input {
+	margin: 0;
+}
+
+/* 自动关联触发器关键词：标签在上、大号多行文本框在下（一行一个关键词） */
+.tm-discover-kw {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+	margin: 10px 0;
+	cursor: default;
+}
+
+.tm-discover-keywords {
+	width: 100%;
+	min-height: 88px;
+	padding: 6px 8px;
+	box-sizing: border-box;
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.6;
+	resize: vertical;
+}
+
+.tm-discover-log {
+	margin-top: 8px;
+	max-height: 150px;
+	overflow: auto;
+	padding: 6px 8px;
+	background: var(--tm-panel);
+	border: 1px solid var(--tm-border-soft);
+	color: var(--tm-fg);
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+/* 还没开始扫时不要留一块空灰底 */
+.tm-discover-log:empty {
+	display: none;
+}
+
+.tm-discover-line {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.tm-discover-line.tm-discover-error {
+	color: #e45959;
+}
+
+.tm-discover-line.tm-discover-warn {
+	color: #e8a33d;
+}
+
+.tm-discover-line.tm-discover-ok {
+	color: #4caf50;
+}
+
+.tm-discover-namerow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.tm-discover-namerow .tm-input {
+	flex: 1 1 auto;
+}
+
+@media (max-width: 900px) {
+	.tm-dialog {
+		width: calc(100vw - 24px);
+	}
+}
+
+/* ---------------------------------------------------------------- 列表页
+ * 主体刻意复用 Zabbix 原生类名（filter-space / list-table / action-buttons /
+ * checkbox-radio），外观、深浅主题、表格样式自动跟着主题走。
+ * 这里只补原生没覆盖到的细节。
+ */
+
+#topomap-root .tm-msg-line .tm-msg:empty {
+	display: none;
+}
+
+#topomap-root .tm-msg-line .tm-msg {
+	margin-bottom: 6px;
+}
+
+#topomap-root .tm-empty,
+#topomap-root .tm-loading {
+	padding: 10px 8px;
+	color: var(--tm-fg-dim);
+}
+
+#topomap-root .tm-input-num {
+	width: 88px;
+}
+
+#topomap-root .tm-canvas-size {
+	font-size: 12px;
+	color: var(--tm-fg-dim);
+	white-space: nowrap;
+}
