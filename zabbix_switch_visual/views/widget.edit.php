@@ -64,10 +64,13 @@ $form->addFieldset(
 // ── APPEARANCE (collapsed) ───────────────────────────────────────────────────
 $form->addFieldset(
     (new CWidgetFormFieldsetCollapsibleView(Translation::t('Appearance')))
+        ->addField(new CWidgetFieldSelectView($data['fields']['brand_logo']))
         ->addField(new CWidgetFieldColorView($data['fields']['chassis_color']))
         ->addField(new CWidgetFieldColorView($data['fields']['color_1g']))
         ->addField(new CWidgetFieldColorView($data['fields']['color_100m']))
         ->addField(new CWidgetFieldColorView($data['fields']['color_10g']))
+        ->addField(new CWidgetFieldColorView($data['fields']['color_40g']))
+        ->addField(new CWidgetFieldColorView($data['fields']['color_100g']))
         ->addField(new CWidgetFieldColorView($data['fields']['color_alert']))
         ->addField(new CWidgetFieldColorView($data['fields']['color_error']))
 );

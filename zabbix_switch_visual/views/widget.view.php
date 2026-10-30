@@ -17,6 +17,17 @@ $show_summary    = (bool)(int)($fields['show_summary']      ?? 1);
 $show_port_nums  = (bool)(int)($fields['show_port_numbers'] ?? 1);
 $show_port_lbls  = (bool)(int)($fields['show_port_labels']  ?? 1);
 
+// Brand logo — the field stores an index into the module's brand registry
+require_once __DIR__ . '/../includes/BrandLogos.php';
+$brand_idx  = (int) ($fields['brand_logo'] ?? 0);
+$brand_file = \Modules\SwitchVisual\Includes\BrandLogos::fileForIndex($brand_idx);
+$brand_url  = '';
+$brand_alt  = '';
+if ($brand_file !== null && \Modules\SwitchVisual\Includes\BrandLogos::exists($brand_file)) {
+    $brand_url = \Modules\SwitchVisual\Includes\BrandLogos::url($brand_file);
+    $brand_alt = \Modules\SwitchVisual\Includes\BrandLogos::label($brand_file);
+}
+
 // Module-local translator (EN → zh_CN when the user language is Chinese)
 $t = static fn(string $s): string => \Modules\SwitchVisual\Includes\Translation::t($s);
 
@@ -47,10 +58,17 @@ $fmt_dur = static function(int $secs) use ($t): string {
 // .sw-outer contains the dynamic zoom — defined separately below
 $css = <<<'CSS'
 .sw-chassis{
+    position:relative;
     border:1px solid #1a2028;border-radius:8px;padding:10px 14px 8px 14px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 6px 20px rgba(0,0,0,.4);
     display:inline-flex;flex-direction:column;gap:8px;
 }
+/* Brand logo — original 108×108 artwork, no background or border; right edge,
+   shifted slightly above the vertical centre. The extra right padding keeps it
+   clear of the port area. */
+.sw-chassis.sw-has-brand{padding-right:138px;}
+.sw-brand{position:absolute;right:14px;top:50%;transform:translateY(-60%);
+    width:108px;height:108px;object-fit:contain;pointer-events:none;}
 .sw-hdr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
     padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.18);}
 .sw-hdr-name{font-family:monospace;font-size:13px;font-weight:700;
@@ -129,6 +147,14 @@ $css = <<<'CSS'
 .sw-spd-10g .sw-led-g{background:#00f0b0;box-shadow:0 0 9px rgba(0,230,170,1),0 0 3px rgba(0,255,200,.7);}
 .sw-spd-10g.sw-sfp-g{border-color:#00c890;background:linear-gradient(180deg,#001f18 0%,#000e0c 100%);}
 .sw-spd-10g .sw-sfp-dot-g{background:#00f0b0;box-shadow:0 0 9px rgba(0,230,170,1);}
+.sw-spd-40g.sw-p-g{border-color:#6b3a9e;background:linear-gradient(180deg,#1b0a2b 0%,#0b0413 20%,#050209 100%);}
+.sw-spd-40g .sw-led-g{background:#a855f7;box-shadow:0 0 9px rgba(168,85,247,1),0 0 3px rgba(210,160,255,.7);}
+.sw-spd-40g.sw-sfp-g{border-color:#6b3a9e;background:linear-gradient(180deg,#15081f 0%,#0b0413 100%);}
+.sw-spd-40g .sw-sfp-dot-g{background:#a855f7;box-shadow:0 0 9px rgba(168,85,247,1);}
+.sw-spd-100g.sw-p-g{border-color:#9e2a63;background:linear-gradient(180deg,#2b0a1c 0%,#13040b 20%,#090205 100%);}
+.sw-spd-100g .sw-led-g{background:#e2469c;box-shadow:0 0 11px rgba(226,70,156,1),0 0 3px rgba(255,150,210,.7);}
+.sw-spd-100g.sw-sfp-g{border-color:#9e2a63;background:linear-gradient(180deg,#1f0815 0%,#13040b 100%);}
+.sw-spd-100g .sw-sfp-dot-g{background:#e2469c;box-shadow:0 0 11px rgba(226,70,156,1);}
 .sw-warn-icon{font-size:11px;color:#ffcc00;font-weight:700;cursor:pointer;
     padding:1px 6px;border-radius:3px;background:rgba(255,200,0,.18);flex-shrink:0;}
 /* Global aggregate sparkline */
@@ -155,6 +181,8 @@ $css = <<<'CSS'
 .sw-c-z{background:#1f2730;}
 .sw-spd-100m.sw-c-g{background:#c8a020;}
 .sw-spd-10g.sw-c-g{background:#2090e0;}
+.sw-spd-40g.sw-c-g{background:#a855f7;}
+.sw-spd-100g.sw-c-g{background:#e2469c;}
 /* style 2: metal body + state-colored socket (+ 8 gold pins on RJ45) */
 .sw-s2 .sw-s2-in{position:absolute;inset:0;
     background:linear-gradient(180deg,#e3e8ec 0%,#aab4bd 22%,#7e8a94 48%,#b9c2ca 75%,#6d7883 100%);}
@@ -172,6 +200,8 @@ $css = <<<'CSS'
 .sw-s2 .sw-s2-socket.sw-c-z{background:#1f2730;}
 .sw-s2 .sw-s2-socket.sw-spd-100m.sw-c-g{background:#c8a020;}
 .sw-s2 .sw-s2-socket.sw-spd-10g.sw-c-g{background:#2090e0;}
+.sw-s2 .sw-s2-socket.sw-spd-40g.sw-c-g{background:#a855f7;}
+.sw-s2 .sw-s2-socket.sw-spd-100g.sw-c-g{background:#e2469c;}
 .sw-s2-pin{position:absolute;top:78%;width:1px;height:14%;
     background:linear-gradient(180deg,#e2c069,#8a6a24);}
 /* LED triangles: left up-tri = own status (always rendered); right down-tri = paired bottom port (top row of 2-row layout only) */
@@ -221,6 +251,18 @@ $port_color_css = static function(string $hex, string $tier, string $uid): strin
             $css .= "{$u}.sw-spd-10g .sw-led-g{background:#{$hex};box-shadow:0 0 9px rgba({$r},{$g},{$b},1),0 0 3px rgba({$r},{$g},{$b},.7);}";
             $css .= "{$u}.sw-spd-10g.sw-sfp-g{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 100%);}";
             $css .= "{$u}.sw-spd-10g .sw-sfp-dot-g{background:#{$hex};box-shadow:0 0 9px rgba({$r},{$g},{$b},1);}";
+            break;
+        case '40g':
+            $css .= "{$u}.sw-spd-40g.sw-p-g{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 20%,#{$bl} 100%);}";
+            $css .= "{$u}.sw-spd-40g .sw-led-g{background:#{$hex};box-shadow:0 0 9px rgba({$r},{$g},{$b},1),0 0 3px rgba({$r},{$g},{$b},.7);}";
+            $css .= "{$u}.sw-spd-40g.sw-sfp-g{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 100%);}";
+            $css .= "{$u}.sw-spd-40g .sw-sfp-dot-g{background:#{$hex};box-shadow:0 0 9px rgba({$r},{$g},{$b},1);}";
+            break;
+        case '100g':
+            $css .= "{$u}.sw-spd-100g.sw-p-g{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 20%,#{$bl} 100%);}";
+            $css .= "{$u}.sw-spd-100g .sw-led-g{background:#{$hex};box-shadow:0 0 11px rgba({$r},{$g},{$b},1),0 0 3px rgba({$r},{$g},{$b},.7);}";
+            $css .= "{$u}.sw-spd-100g.sw-sfp-g{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 100%);}";
+            $css .= "{$u}.sw-spd-100g .sw-sfp-dot-g{background:#{$hex};box-shadow:0 0 11px rgba({$r},{$g},{$b},1);}";
             break;
         case 'alert':
             $css .= "{$u}.sw-p-a{border-color:#{$brd};background:linear-gradient(180deg,#{$bh} 0%,#{$bm} 20%,#{$bl} 100%);}";
@@ -278,6 +320,8 @@ foreach ([
     'color_1g'    => '',
     'color_100m'  => '100m',
     'color_10g'   => '10g',
+    'color_40g'   => '40g',
+    'color_100g'  => '100g',
     'color_alert' => 'alert',
     'color_error' => 'error',
 ] as $field => $tier) {
@@ -290,6 +334,8 @@ foreach ([
         if ($tier === '')          $css .= "{$su} .sw-c-g{background:#{$hex};}";
         elseif ($tier === '100m')  $css .= "{$su} .sw-spd-100m.sw-c-g{background:#{$hex};}";
         elseif ($tier === '10g')   $css .= "{$su} .sw-spd-10g.sw-c-g{background:#{$hex};}";
+        elseif ($tier === '40g')   $css .= "{$su} .sw-spd-40g.sw-c-g{background:#{$hex};}";
+        elseif ($tier === '100g')  $css .= "{$su} .sw-spd-100g.sw-c-g{background:#{$hex};}";
         elseif ($tier === 'alert') $css .= "{$su} .sw-c-a{background:#{$hex};}";
         elseif ($tier === 'error') $css .= "{$su} .sw-c-r{background:#{$hex};}";
     }
@@ -345,8 +391,13 @@ $make_tip = static function(int $pos, array $port, string $alias) use ($tip_css,
         $spd_label = $speed_mbps >= 1000 ? round($speed_mbps / 1000, 0) . ' Gbps' : $speed_mbps . ' Mbps';
     }
 
-    // Port type includes SFP/RJ45 marker
-    $type_label = (!empty($port['is_sfp']) ? 'SFP' : 'RJ45') . ($speed_mbps >= 10000 ? ' 10G' : ($speed_mbps >= 1000 ? ' 1G' : ($speed_mbps >= 100 ? ' 100M' : '')));
+    // Port type includes SFP/RJ45 marker and the negotiated speed tier
+    $spd_tag = $speed_mbps >= 100000 ? ' 100G'
+        : ($speed_mbps >= 40000 ? ' 40G'
+        : ($speed_mbps >= 10000 ? ' 10G'
+        : ($speed_mbps >= 1000 ? ' 1G'
+        : ($speed_mbps >= 100 ? ' 100M' : ''))));
+    $type_label = (!empty($port['is_sfp']) ? 'SFP' : 'RJ45') . $spd_tag;
 
     // Stats grid
     $grid_rows = [
@@ -409,12 +460,15 @@ $make_tip = static function(int $pos, array $port, string $alias) use ($tip_css,
 };
 
 // Speed-tier class for solid fills / LED triangles — '' = 1 Gbps base,
-// ' sw-spd-100m' (amber tint), ' sw-spd-10g' (blue tint)
+// ' sw-spd-100m' (amber tint), ' sw-spd-10g' (blue), ' sw-spd-40g' (violet),
+// ' sw-spd-100g' (magenta)
 $spd_cls_of = static function(?array $p): string {
     if ($p === null) return '';
     $v = (int) ($p['speed_negotiated'] ?? 0);
     $m = $v > 1000000 ? (int) round($v / 1e6) : $v;
-    if ($m >= 10000) return ' sw-spd-10g';
+    if ($m >= 100000) return ' sw-spd-100g';
+    if ($m >= 40000)  return ' sw-spd-40g';
+    if ($m >= 10000)  return ' sw-spd-10g';
     if ($m > 0 && $m <= 100) return ' sw-spd-100m';
     return '';
 };
@@ -443,10 +497,8 @@ $make_shape_pw = static function(int $pos, ?array $port, string $alias, bool $is
     $body = (new CDiv())->addClass('sw-body ' . ($is_sfp ? 'sw-body-sfp' : 'sw-body-rj') . ($down ? ' sw-down' : ''));
     if ($port_shape === 1) {
         $body->addClass('sw-c-' . $s);
-        $spd_val  = (int) ($port['speed_negotiated'] ?? 0);
-        $spd_mbps = $spd_val > 1000000 ? (int) round($spd_val / 1e6) : $spd_val;
-        if ($spd_mbps >= 10000)                    $body->addClass('sw-spd-10g');
-        elseif ($spd_mbps > 0 && $spd_mbps <= 100) $body->addClass('sw-spd-100m');
+        $spd_cls = $spd_cls_of($port);
+        if ($spd_cls !== '') $body->addClass(trim($spd_cls));
     } else {
         // Style 2: metal inner — highlight, state-colored socket, 8 gold pins (RJ45 only).
         // The socket is filled with the state color like style 1 bodies;
@@ -585,6 +637,13 @@ if ($error !== null) {
         continue;
     }
 
+    // Brand logo — right-edge watermark above the vertical centre. The chassis
+    // gets extra right padding so the logo never overlaps the ports.
+    if ($brand_url !== '') {
+        $chassis->addClass('sw-has-brand');
+        $chassis->addItem((new CImg($brand_url))->addClass('sw-brand')->setAttribute('alt', $brand_alt));
+    }
+
     // ── Collect active-trigger ports for chassis warning indicator ────────────
     $warn_list = [];
     foreach ($ports as $wpos => $wport) {
@@ -637,15 +696,11 @@ if ($error !== null) {
     };
 
     // Unified classic (style 3) port-cell builder — RJ45 and SFP variants
-    $make_classic_pw = static function(array $port, int $disp_num, bool $is_sfp, string $alias) use ($sfx, $make_tip, $show_port_nums, $show_port_lbls, $hostid): CDiv {
+    $make_classic_pw = static function(array $port, int $disp_num, bool $is_sfp, string $alias) use ($sfx, $make_tip, $spd_cls_of, $show_port_nums, $show_port_lbls, $hostid): CDiv {
         $state = (string) ($port['state'] ?? 'gray');
         $s     = $sfx($state);
 
-        $speed_val  = (int) ($port['speed_negotiated'] ?? 0);
-        $speed_mbps = $speed_val > 1000000 ? (int) round($speed_val / 1e6) : $speed_val;
-        $spd_cls    = '';
-        if ($speed_mbps >= 10000)       $spd_cls = ' sw-spd-10g';
-        elseif ($speed_mbps <= 100 && $speed_mbps > 0) $spd_cls = ' sw-spd-100m';
+        $spd_cls = $spd_cls_of($port);
 
         $poe_on  = !empty($port['poe_delivering']);
         $poe_cls = $poe_on ? ' sw-poe' : '';

@@ -15,6 +15,7 @@ class WidgetForm extends CWidgetForm {
 
 	public function addFields(): self {
 		require_once __DIR__ . '/Translation.php';
+		require_once __DIR__ . '/BrandLogos.php';
 
 		// Shown directly below the standard "Refresh interval" section.
 		$this->addField(
@@ -136,6 +137,9 @@ class WidgetForm extends CWidgetForm {
 		);
 
 		$this->addField(
+			(new CWidgetFieldSelect('brand_logo', Translation::t('Brand logo'), BrandLogos::options()))->setDefault(0)
+		);
+		$this->addField(
 			(new CWidgetFieldColor('chassis_color', Translation::t('Chassis color')))->setDefault('404c58')
 		);
 		$this->addField(
@@ -146,6 +150,12 @@ class WidgetForm extends CWidgetForm {
 		);
 		$this->addField(
 			(new CWidgetFieldColor('color_10g', Translation::t('10 Gbps port color')))->setDefault('2090e0')
+		);
+		$this->addField(
+			(new CWidgetFieldColor('color_40g', Translation::t('40 Gbps port color')))->setDefault('a855f7')
+		);
+		$this->addField(
+			(new CWidgetFieldColor('color_100g', Translation::t('100 Gbps port color')))->setDefault('e2469c')
 		);
 		$this->addField(
 			(new CWidgetFieldColor('color_alert', Translation::t('Warning port color')))->setDefault('e89000')
