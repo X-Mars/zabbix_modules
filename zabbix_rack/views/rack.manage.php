@@ -1016,8 +1016,8 @@ $content->addItem(new CJsScript('<script>
         }
     });
     
-    // 点击弹窗外部关闭
-    document.querySelectorAll(".modal-overlay").forEach(function(modal) {
+    // 机柜表单不允许点击外部关闭，避免误触导致已填写内容丢失。
+    document.querySelectorAll(".modal-overlay:not(#rack-modal)").forEach(function(modal) {
         modal.addEventListener("click", function(e) {
             if (e.target === this) {
                 this.classList.remove("visible");
