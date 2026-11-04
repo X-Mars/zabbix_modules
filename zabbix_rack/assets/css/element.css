@@ -35,6 +35,12 @@ main:has(.rack-ui) { min-width: 0; }
 .rack-ui.rack-ui.rack-ui textarea { height: auto; min-height: 80px; padding: 8px 11px; resize: vertical; }
 .rack-ui.rack-ui.rack-ui select[multiple] { height: 128px; padding: 6px; }
 .rack-ui select[multiple] option { padding: 6px 10px; border-radius: var(--rack-radius-small); }
+/* Keep native focused selection from painting over the modal multiselect colors. */
+.rack-ui.rack-ui .modal-content select[multiple] option:checked {
+    background: #ecf5ff linear-gradient(#ecf5ff, #ecf5ff);
+    color: #409eff;
+    -webkit-text-fill-color: #409eff;
+}
 .rack-ui select[multiple] option:checked { background: #ecf5ff; color: #409eff; }
 .rack-ui input::placeholder, .rack-ui textarea::placeholder { color: #a8abb2; }
 .rack-ui.rack-ui.rack-ui input:hover, .rack-ui.rack-ui.rack-ui select:hover, .rack-ui.rack-ui.rack-ui textarea:hover { border-color: #c0c4cc; }
