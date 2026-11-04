@@ -145,6 +145,13 @@ This repository contains a collection of independent Zabbix frontend modules tha
 - **Docs**: [zabbix_switch_visual/README_en.md](./zabbix_switch_visual/README_en.md) ([中文](./zabbix_switch_visual/README.md))
 - **Compatibility**: Currently targets Zabbix 7.x. See the widget README for adaptation and validation status on other versions.
 
+### 15. Zabbix Auto Topology Map
+
+- **Purpose**: Automatically discover network device connections through SNMP LLDP, CDP, and EDP neighbor data, and generate editable network topology maps that share data with native Zabbix maps.
+- **Features**: discovery depth of 1–10 layers, unmanaged devices, and multiple port links; map creation, search, sorting, renaming, bulk deletion, and JSON export; rediscovery with options to preserve coordinates, link metrics, and routing settings; visual editing of hosts, images, shapes, and links; automatic curves, orthogonal obstacle avoidance, and manual waypoints; manually associated bandwidth and inbound/outbound traffic items with multi-item sums and unit conversion; host status, problems, port status trigger matching, and alarm link colors; status and metric refresh every 60 seconds in preview; zoom, pan, fit-to-window, and native host menus; bilingual UI and dark/light themes.
+- **Docs**: [zabbix_auto_topology_map/README_en.md](./zabbix_auto_topology_map/README_en.md) ([中文](./zabbix_auto_topology_map/README.md))
+- **Compatibility**: Developed for Zabbix 7.0 and verified on 7.0.28. Zabbix 6.x has not been tested; other 7.x and 8.x versions require validation in the target environment.
+
 ## Installation
 
 The following general steps apply to standard frontend modules. For Zabbix Switch Visual, follow its [installation instructions](./zabbix_switch_visual/README_en.md#installation) and add it through dashboard edit mode.
@@ -256,6 +263,7 @@ After enabling and refreshing the UI, the modules appear under the following men
 - **Inventory → Rightsizing** (resource sizing recommendations)
 - **Inventory → Switch Backup** (switch configuration backups)
 - **Dashboard → Edit → Add widget → Zabbix Switch Visual** (switch-port visualization)
+- **Monitoring → Auto Topology Map** (automatic network discovery and topology map editing)
 
 Each module contains its own README with specific installation and usage details.
 

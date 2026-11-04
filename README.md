@@ -229,6 +229,25 @@ Zabbix Switch Visual 是仪表盘组件，当前主要面向 Zabbix 7.x；其 6.
 
 **兼容性**：当前主要面向 Zabbix 7.x；其他版本适配及验证状态见组件 README。
 
+### 11. Zabbix Auto Topology Map
+
+**简介**：用于自动发现网络设备连接关系的 Zabbix 前端模块，通过 SNMP 读取 LLDP、CDP、EDP 邻居信息，生成可查看和编辑的网络拓扑图，与 Zabbix 原生拓扑图共用数据。
+
+**功能特性**：
+
+- 自动发现设备与端口链路，支持 1～10 层发现深度、未纳管设备和多端口连线
+- 支持拓扑图创建、搜索、排序、重命名、批量删除和 JSON 导出
+- 支持重新发现，可保留现有坐标、链路指标和走线配置
+- 可视化编辑主机、图片、形状和链接，支持自动曲线、直角避障和手动折点
+- 手动关联带宽及上行、下行流量监控项，支持多监控项求和与单位换算
+- 显示主机状态和问题，支持端口状态触发器匹配及报警连线变色
+- 预览画布每 60 秒刷新状态和指标，支持缩放、平移、适应窗口及原生主机菜单
+- 支持中英文界面国际化及深色、浅色主题
+
+**文档链接**：[zabbix_auto_topology_map/README.md](./zabbix_auto_topology_map/README.md)（[English](./zabbix_auto_topology_map/README_en.md)）
+
+**兼容性**：基于 Zabbix 7.0 开发，已在 7.0.28 验证；6.x 尚未实测，其他 7.x 及 8.x 版本需在目标环境验证。
+
 ## 安装说明
 
 以下为普通前端模块的通用部署步骤。Zabbix Switch Visual 请按其[独立安装说明](./zabbix_switch_visual/README.md#安装步骤)部署，并通过仪表盘编辑模式添加组件。
@@ -346,6 +365,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 - **数据采集 → 主机批量导入** (基于源主机批量克隆主机)
 - **Inventory → IPAM** (IP 管理 / IP 详情 / 任务管理)
 - **仪表盘 → 编辑 → 添加组件 → Zabbix Switch Visual**（交换机端口可视化）
+- **监测 → 自动拓扑图**（网络设备自动发现与拓扑图编辑）
 
 ### 单独安装模块
 

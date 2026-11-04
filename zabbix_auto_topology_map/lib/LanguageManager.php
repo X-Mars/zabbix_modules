@@ -397,14 +397,16 @@ class LanguageManager {
 
 		$lang = self::userLanguage();
 
-		if ($lang === '' || strtolower($lang) === 'default') {
+		if (trim($lang) === '' || strtolower(trim($lang)) === 'default') {
 			$lang = self::systemLanguage();
 		}
 
 		$lang = strtolower(trim($lang));
 
 		// 繁体中文也按简体中文处理，其它未支持的语言一律回退英文。
-		self::$currentLanguage = (strpos($lang, 'zh') === 0) ? 'zh_CN' : self::ZBX_DEFAULT_LANG;
+		self::$currentLanguage = (strpos($lang, 'zh') === 0
+			|| strpos($lang, 'cn') !== false || strpos($lang, 'chinese') !== false
+			|| $lang === 'china') ? 'zh_CN' : self::ZBX_DEFAULT_LANG;
 
 		return self::$currentLanguage;
 	}
@@ -421,13 +423,43 @@ class LanguageManager {
 					return $lang;
 				}
 			}
+		}
+		catch (\Throwable $e) {
+			// 取不到就交给下一级
+		}
 
-			if (isset(\CWebUser::$data['lang']) && is_string(\CWebUser::$data['lang'])) {
+		try {
+			if (isset(\CWebUser::$data['lang']) && is_string(\CWebUser::$data['lang'])
+					&& trim(\CWebUser::$data['lang']) !== '') {
 				return \CWebUser::$data['lang'];
 			}
 		}
 		catch (\Throwable $e) {
-			// 取不到就交给下一级
+			// get() 不可用时仍尝试旧版静态数据，再继续其他来源。
+		}
+
+		// 与 CMDB 保持相同的回退顺序，兼容旧版前端初始化方式。
+		foreach ([$GLOBALS['USER_DETAILS']['lang'] ?? null,
+			$GLOBALS['ZBX_LOCALES']['selected'] ?? null,
+			$_SESSION['zbx_lang'] ?? null, $_SESSION['lang'] ?? null] as $lang) {
+			if (is_string($lang) && trim($lang) !== '') {
+				return $lang;
+			}
+		}
+
+		// 使用 Zabbix 现有数据库连接，兼容 MySQL / PostgreSQL。
+		$userid = $_SESSION['userid'] ?? ($_SESSION['user']['userid'] ?? null);
+		if (is_scalar($userid) && ctype_digit((string) $userid)
+				&& function_exists('DBselect') && function_exists('DBfetch')) {
+			try {
+				$row = \DBfetch(\DBselect('SELECT lang FROM users WHERE userid='.(string) $userid));
+				if (is_array($row) && isset($row['lang']) && is_string($row['lang'])) {
+					return $row['lang'];
+				}
+			}
+			catch (\Throwable $e) {
+				// 数据库不可用时继续继承系统语言。
+			}
 		}
 
 		return '';
@@ -448,6 +480,20 @@ class LanguageManager {
 		}
 		catch (\Throwable $e) {
 			// 忽略
+		}
+
+		// 旧版前端可通过 select_config() 提供系统默认语言。
+		if (function_exists('select_config')) {
+			try {
+				$config = \select_config();
+				if (is_array($config) && isset($config['default_lang'])
+						&& is_string($config['default_lang'])) {
+					return $config['default_lang'];
+				}
+			}
+			catch (\Throwable $e) {
+				// 未找到设置时回退英文。
+			}
 		}
 
 		return '';
