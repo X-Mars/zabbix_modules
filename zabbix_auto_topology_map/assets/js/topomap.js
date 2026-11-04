@@ -39,6 +39,10 @@
 		});
 	}
 
+	function locale() {
+		return window.TOPOMAP_LANG === 'zh_CN' ? 'zh-CN' : 'en-US';
+	}
+
 	function start() {
 		var root = document.getElementById('topomap-root');
 
@@ -848,11 +852,11 @@
 				}
 				else {
 					// 必须用 localeCompare：直接比字符串是码点序，「机房B」会排到「核心网络」前面
-					cmp = String(va).localeCompare(String(vb), 'zh-CN', {numeric: true, sensitivity: 'base'});
+					cmp = String(va).localeCompare(String(vb), locale(), {numeric: true, sensitivity: 'base'});
 				}
 
 				if (cmp === 0) {
-					cmp = String(a.name).localeCompare(String(b.name), 'zh-CN');
+					cmp = String(a.name).localeCompare(String(b.name), locale());
 				}
 
 				return cmp * dir;
@@ -7773,7 +7777,7 @@
 			api('save', {sysmapid: state.map.sysmapid, payload: JSON.stringify(payload)}).then(function () {
 				return openMap(state.map.sysmapid, true, true, 'none');
 			}).then(function () {
-				setHint(T('已保存 ') + new Date().toLocaleTimeString());
+				setHint(T('已保存 ') + new Date().toLocaleTimeString(locale()));
 			}).catch(function (e) {
 				setHint(T('保存失败：') + e.message);
 				openNoticeDialog(T('保存失败'), e.message);
