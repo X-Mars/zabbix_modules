@@ -317,7 +317,7 @@
 .rack-ui .modal-content {
     background: #fff;
     border-radius: 16px;
-    width: 480px;
+    width: 624px;
     max-width: 95vw;
     max-height: 90vh;
     overflow: visible;
@@ -492,7 +492,7 @@
 
 
 .rack-ui .confirm-modal .modal-content {
-    width: 400px;
+    width: 520px;
 }
 
 .rack-ui .confirm-icon {

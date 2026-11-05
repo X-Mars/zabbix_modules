@@ -158,7 +158,7 @@ main:has(.rack-ui) { min-width: 0; }
 .rack-ui .rack-message { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 10050; max-width: calc(100vw - 32px); padding: 12px 20px; background: #fef0f0; border: 1px solid #fde2e2; border-radius: var(--rack-radius); color: #b34141; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
 .rack-ui .rack-message button { margin-left: 18px; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .rack-ui .rack-confirm { z-index: 10040; }
-.rack-ui .rack-confirm .modal-content { width: 420px; }
+.rack-ui .rack-confirm .modal-content { width: 546px; }
 @media (max-width: 992px) {
     .rack-ui.rack-ui .rack-top-filter .filter-item { flex: 1 1 auto; }
     .rack-ui.rack-ui .rack-main { min-width: 0; }

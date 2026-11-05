@@ -430,7 +430,7 @@
 .rack-ui .modal-content {
     background: #fff;
     border-radius: 12px;
-    width: 520px;
+    width: 676px;
     max-height: 85vh;
     overflow: visible;
     display: flex;
@@ -756,7 +756,7 @@
 .rack-ui .problem-modal-content {
     background: #fff;
     border-radius: 12px;
-    width: 600px;
+    width: 780px;
     max-height: 80vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -1097,8 +1097,8 @@
 .rack-ui .rack-detail-content {
     background: #fff;
     border-radius: 12px;
-    width: 90%;
-    max-width: 1100px;
+    width: min(117%, 1430px);
+    max-width: 100%;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
