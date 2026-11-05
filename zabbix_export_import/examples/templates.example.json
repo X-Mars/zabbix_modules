@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "record_type": "templates",
+  "source_zabbix_version": "7.0.32",
+  "exported_at": "2026-11-05T00:00:00+00:00",
+  "records": [
+    {
+      "template": "Example template A",
+      "name": "Example template A",
+      "configuration": {
+        "zabbix_export": {
+          "version": "7.0",
+          "template_groups": [
+            {
+              "uuid": "00000000000000000000000000000001",
+              "name": "Templates/Examples"
+            }
+          ],
+          "templates": [
+            {
+              "uuid": "00000000000000000000000000000002",
+              "template": "Example template A",
+              "name": "Example template A",
+              "groups": [
+                {
+                  "name": "Templates/Examples"
+                }
+              ],
+              "items": [
+                {
+                  "uuid": "00000000000000000000000000000004",
+                  "name": "Example trapper",
+                  "type": "TRAP",
+                  "key": "example.trap",
+                  "value_type": "TEXT",
+                  "delay": "0"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "template": "Example template B",
+      "name": "Example template B",
+      "configuration": {
+        "zabbix_export": {
+          "version": "7.0",
+          "template_groups": [
+            {
+              "uuid": "00000000000000000000000000000001",
+              "name": "Templates/Examples"
+            }
+          ],
+          "templates": [
+            {
+              "uuid": "00000000000000000000000000000003",
+              "template": "Example template B",
+              "name": "Example template B",
+              "groups": [
+                {
+                  "name": "Templates/Examples"
+                }
+              ],
+              "items": [
+                {
+                  "uuid": "00000000000000000000000000000005",
+                  "name": "Example trapper",
+                  "type": "TRAP",
+                  "key": "example.trap",
+                  "value_type": "TEXT",
+                  "delay": "0"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

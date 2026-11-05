@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/zabbix-import-export/1.0",
+  "title": "Zabbix Import/Export portable envelope",
+  "type": "object",
+  "required": ["schema_version", "record_type", "source_zabbix_version", "exported_at", "records"],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "record_type": {
+      "enum": ["hosts", "items", "templates"]
+    },
+    "source_zabbix_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exported_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "records": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "record_type": {
+            "const": "hosts"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/$defs/hosts"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_type": {
+            "const": "items"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/$defs/items"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_type": {
+            "const": "templates"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/$defs/templates"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hosts": {
+      "type": "object",
+      "required": ["host", "host_groups"],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "host_groups": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "description": {},
+        "status": {},
+        "interfaces": {
+          "type": "array"
+        },
+        "monitored_by": {},
+        "proxy_name": {},
+        "proxy_group_name": {},
+        "tags": {
+          "type": "array"
+        },
+        "inventory": {},
+        "inventory_mode": {},
+        "templates": {
+          "type": "array"
+        },
+        "item_references": {
+          "type": "array"
+        },
+        "source_hostid": {},
+        "_debug": {},
+        "_redacted": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "object",
+      "required": ["host", "name", "key_", "type", "value_type"],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key_": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {},
+        "value_type": {},
+        "status": {},
+        "delay": {},
+        "history": {},
+        "trends": {},
+        "units": {},
+        "description": {},
+        "params": {},
+        "parameters": {
+          "type": "array"
+        },
+        "snmp_oid": {},
+        "url": {},
+        "query_fields": {
+          "type": "array"
+        },
+        "posts": {},
+        "status_codes": {},
+        "follow_redirects": {},
+        "post_type": {},
+        "http_proxy": {},
+        "headers": {
+          "type": "array"
+        },
+        "retrieve_mode": {},
+        "request_method": {},
+        "output_format": {},
+        "allow_traps": {},
+        "jmx_endpoint": {},
+        "timeout": {},
+        "ipmi_sensor": {},
+        "logtimefmt": {},
+        "inventory_link": {},
+        "authtype": {},
+        "username": {},
+        "password": {},
+        "publickey": {},
+        "privatekey": {},
+        "ssl_cert_file": {},
+        "ssl_key_file": {},
+        "ssl_key_password": {},
+        "verify_peer": {},
+        "verify_host": {},
+        "trapper_hosts": {},
+        "origin": {
+          "enum": ["local", "template", "discovery"]
+        },
+        "tags": {
+          "type": "array"
+        },
+        "preprocessing": {
+          "type": "array"
+        },
+        "interface": {},
+        "master_item": {},
+        "valuemap": {},
+        "template": {},
+        "discovery": {},
+        "_redacted": {
+          "type": "array"
+        },
+        "source_itemid": {},
+        "_debug": {}
+      },
+      "additionalProperties": false
+    },
+    "templates": {
+      "type": "object",
+      "required": ["template", "configuration"],
+      "properties": {
+        "template": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "configuration": {
+          "type": "object",
+          "required": ["zabbix_export"],
+          "properties": {
+            "zabbix_export": {
+              "type": "object",
+              "required": ["version", "templates"],
+              "properties": {
+                "version": {
+                  "type": "string"
+                },
+                "templates": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "_redacted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "_debug": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

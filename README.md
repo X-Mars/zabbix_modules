@@ -248,6 +248,23 @@ Zabbix Switch Visual 是仪表盘组件，当前主要面向 Zabbix 7.x；其 6.
 
 **兼容性**：基于 Zabbix 7.0 开发，已在 7.0.28 验证；6.x 尚未实测，其他 7.x 及 8.x 版本需在目标环境验证。
 
+### 12. Zabbix Import/Export
+
+**简介**：用于在 Zabbix 环境之间迁移主机、监控模板和主机本地监控项的前端模块，入口为「资产记录 → Zabbix 导入导出」。
+
+**功能特性**：
+
+- 支持主机、模板和监控项的 CSV / JSON 导入导出，模板页还支持 Zabbix 原生 JSON 导入
+- 支持分组筛选、跨页全选与按筛选结果导出，文件名时间跟随 Zabbix 用户时区
+- 导入前预览差异，支持重复处理策略，默认拦截脚本等执行类配置
+- 界面自动跟随 Zabbix 用户语言，内置简体中文和英文
+
+![Zabbix Import/Export 主机导入导出](zabbix_export_import/images/hosts.jpg)
+
+**文档链接**：[zabbix_export_import/README.md](./zabbix_export_import/README.md)（[English](./zabbix_export_import/README_en.md)）
+
+**兼容性**：已在 Zabbix 7.0.32 验证；提供 6.0 / 7.4 适配，需在目标环境验证。
+
 ## 安装说明
 
 以下为普通前端模块的通用部署步骤。Zabbix Switch Visual 请按其[独立安装说明](./zabbix_switch_visual/README.md#安装步骤)部署，并通过仪表盘编辑模式添加组件。
