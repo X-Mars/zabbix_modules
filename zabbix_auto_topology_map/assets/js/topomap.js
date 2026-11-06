@@ -132,7 +132,7 @@
 		var MIN_CANVAS_W = 1000;
 		var MIN_CANVAS_H = 700;
 		var CANVAS_PAD = 60;   // 内容四周留白
-		var CANVAS_MAX = 10000; // sysmaps.width/height 的上限
+		var CANVAS_MAX = 60000; // sysmaps.width/height 的上限（8.0 API 实测 60000 可用，与后端一致）
 		var DRAG_EDGE = 56;    // 拖拽时指针距离画布边缘多少像素开始自动平移
 		var PAN_STEP = 16;     // 每次自动平移的像素（屏幕坐标）
 
@@ -730,6 +730,9 @@
 				se._hostid = hostid;
 				se._hostName = host ? host.name : '';
 				se._ip = host ? String(host.ip || '') : '';
+				// {HOST.CONN} 用的连接地址：后端按主接口/SNMP 接口的 IP 或 DNS 计算，
+				// 旧数据没有 conn 字段时退回 ip，保证兼容。
+				se._conn = host ? String(host.conn || host.ip || '') : '';
 				se._status = host ? num(host.status, 0) : 0;
 				se._maintenance = host ? num(host.maintenance, 0) : 0;
 				se._problems = host ? num(host.problems, 0) : 0;
@@ -2461,14 +2464,22 @@
 			return shape.type === 2 ? 'line' : (shape.type === 1 ? 'ellipse' : 'rect');
 		}
 
+		// 形状文本里的 {MAP.NAME} 宏：库中保存的是宏原文，渲染时按当前拓扑图名称展开。
+		// 每次打开/重命名都重新渲染，所以不需要回写数据库。
+		function shapeDisplayText(shape) {
+			return String(shape.text || '').replace(/\{MAP\.NAME\}/gi, state.map ? String(state.map.name || '') : '');
+		}
+
 		// 文字：对齐方式、字体、内边距都按原生（内边距 5px），并裁剪在形内部
 		function drawShapeText(shape, clipId) {
+			var display_text = shapeDisplayText(shape);
+
 			// 原生对线不画文字
-			if (shape.type === 2 || !shape.text) {
+			if (shape.type === 2 || !display_text) {
 				return;
 			}
 
-			var lines = String(shape.text).split(/\r?\n/);
+			var lines = display_text.split(/\r?\n/);
 			var fontSize = Math.max(1, num(shape.font_size, 11));
 			var lineH = fontSize * 1.2;
 			var total = lines.length * lineH;
@@ -2583,7 +2594,7 @@
 
 				elSvg.appendChild(node);
 
-				var hasText = shape.type !== 2 && !!shape.text;
+				var hasText = shape.type !== 2 && !!shapeDisplayText(shape);
 				var clipId = '';
 
 				if (hasText) {
@@ -4434,6 +4445,21 @@
 			return se.label || '';
 		}
 
+		// 主机元素标签里的原生宏 {HOST.NAME} / {HOST.CONN}。
+		// 标签在库里存的是宏原文，只有渲染时才展开，所以主机改名或重新发现后
+		// 每次打开画布都会用 host.get 的最新值替换。
+		function expandHostMacros(text, se) {
+			text = String(text || '');
+
+			if (text.indexOf('{') === -1) {
+				return text;
+			}
+
+			return text
+				.replace(/\{HOST\.NAME\}/gi, se._hostName || '')
+				.replace(/\{HOST\.CONN\}/gi, se._conn || se._ip || '');
+		}
+
 		// 标签第一段：具体显示什么由 label_type 决定，语义对齐 7.0.28 maps.inc.php
 		function elementLabel(se) {
 			var type = num(se._labelType, LT_LABEL);
@@ -4450,7 +4476,11 @@
 				return se._ip || '';
 			}
 
-			// LT_LABEL / LT_CUSTOM：用元素自己的标签文本
+			// LT_LABEL / LT_CUSTOM：用元素自己的标签文本，主机元素展开原生宏
+			if (se.elementtype === ET_HOST) {
+				return expandHostMacros(se.label, se);
+			}
+
 			return se.label || '';
 		}
 
@@ -5242,6 +5272,7 @@
 				urls: [],
 				_hostid: '',
 				_hostName: '',
+				_conn: '',
 				_status: 0,
 				_problems: 0,
 				_severity: -1
@@ -5586,9 +5617,10 @@
 							draft.elements = [{hostid: host.hostid}];
 							hostInput.value = host.name + (host.ip ? T('（') + host.ip + T('）') : '');
 
-							// 标签是空 / 还是「新的组件」占位时，自动填「主机名 + IP」两行
+							// 标签仍是空 / 「新的组件」占位时，默认填两行宏文本：
+							// 第一行主机名、第二行连接地址（渲染时按主机最新值展开）
 							if (!labelTouched) {
-								labelInput.value = host.ip ? host.name + '\n' + host.ip : host.name;
+								labelInput.value = '{HOST.NAME}\n{HOST.CONN}';
 							}
 						});
 					});

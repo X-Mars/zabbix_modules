@@ -67,6 +67,12 @@ class TopomapData extends CController {
 	private const DISCOVERY_TRIGGER_COLOR = 'DD0000';
 
 	/**
+	 * 主机元素的默认标签：第一行主机名、第二行连接地址。
+	 * 存宏原文，渲染时展开，主机改名 / 接口变化后自动跟上最新值。
+	 */
+	private const DEFAULT_HOST_LABEL = "{HOST.NAME}\n{HOST.CONN}";
+
+	/**
 	 * 判定「端口状态类」触发器的关键词（与 aiops 项目 lldpDiscoveryService 保持一致）：
 	 * 描述里命中其中之一，且描述里出现该端口名，才认为这条触发器属于这条链路。
 	 */
@@ -501,7 +507,7 @@ class TopomapData extends CController {
 		$hosts = API::Host()->get([
 			'hostids' => $hostids,
 			'output' => ['hostid', 'name', 'status', 'maintenance_status'],
-			'selectInterfaces' => ['ip', 'main'],
+			'selectInterfaces' => ['ip', 'dns', 'main', 'type', 'useip'],
 			'preservekeys' => true
 		]);
 
@@ -511,6 +517,8 @@ class TopomapData extends CController {
 			$result[$hostid] = [
 				'name' => $host['name'],
 				'ip' => $ip,
+				// {HOST.CONN} 的连接地址：优先主接口，其次 SNMP 接口，再按 useip 取 IP/DNS
+				'conn' => $this->hostConn($host),
 				'status' => (int) $host['status'],
 				'maintenance' => isset($host['maintenance_status']) ? (int) $host['maintenance_status'] : 0,
 				'problems' => 0,
@@ -614,6 +622,10 @@ class TopomapData extends CController {
 			throw new \Exception(LanguageManager::tf('已存在名为「%1$s」的拓扑图，请换一个名称', $name));
 		}
 
+		// 前端 API wrapper 在 map.create 校验失败时只返回 false，错误消息另行登记；
+		// 记下调用前的消息条数，失败时把 Zabbix 的真实错误一起抛出去。
+		$message_offset = $this->apiMessageCount();
+
 		$result = API::Map()->create([[
 			'name' => $name,
 			'width' => $width,
@@ -631,14 +643,22 @@ class TopomapData extends CController {
 
 		$sysmapid = '';
 
-		if (!empty($result['sysmapids'][0])) {
-			$sysmapid = (string) $result['sysmapids'][0];
-		}
-		elseif (!empty($result['sysmapid'])) {
-			$sysmapid = (string) $result['sysmapid'];
+		if (is_array($result)) {
+			if (!empty($result['sysmapids'][0])) {
+				$sysmapid = (string) $result['sysmapids'][0];
+			}
+			elseif (!empty($result['sysmapid'])) {
+				$sysmapid = (string) $result['sysmapid'];
+			}
 		}
 
 		if ($sysmapid === '') {
+			$detail = $this->apiErrorDetail($message_offset);
+
+			if ($detail !== '') {
+				throw new \Exception(LanguageManager::tf('创建「%1$s」失败：%2$s', $name, $detail));
+			}
+
 			throw new \Exception(LanguageManager::tf('创建「%1$s」失败：Zabbix 没有返回拓扑图 ID', $name));
 		}
 
@@ -712,6 +732,10 @@ class TopomapData extends CController {
 		// 图删了，模块自建表里挂在它下面的指标配置也要跟着清掉，否则会成为孤儿行
 		$this->dropLinkMetricsForMaps($ids);
 		$this->dropLinkPathsForMaps($ids);
+
+		foreach ($ids as $id) {
+			$this->dropMapLayout((string) $id);
+		}
 
 		return ['success' => true, 'deleted' => count($ids)];
 	}
@@ -857,27 +881,40 @@ class TopomapData extends CController {
 		);
 
 		$update['links'] = $this->sanitizeLinks(
-			isset($payload['links']) && is_array($payload['links']) ? $payload['links'] : []
+			isset($payload['links']) && is_array($payload['links']) ? $payload['links'] : [],
+			$this->existingLinkIndicatorTypes($sysmapid)
 		);
 
 		// 7.0.x 的 CMapElement::checkLinkInput() 里把方法名写成了「updateLink」，
 		// 而实际调用传入的是 __FUNCTION__ = 「updateLinks」，于是「更新链接」这条路径
 		// 永远走成「新增链接」的校验分支，要求每条 link 必须带 sysmapid。
-		// 结果就是：带 linkid 却不带 sysmapid 的链接，会被判定为
-		// “Wrong fields for map link.” 整张图保存直接失败。
-		// 这里统一补上当前图的 sysmapid（覆盖前端传来的值，防止越权写到别的图）。
-		foreach ($update['links'] as &$link) {
-			if (isset($link['linkid'])) {
-				$link['sysmapid'] = $sysmapid;
+		// 7.4/8.0 改走 CMap::validateLinkFields() 的字段白名单，白名单里没有 sysmapid，
+		// 带上去会报「无效的参数 "/1/links/1": "sysmapid" 参数异常」，所以只给旧版本补。
+		if (self::linkSysmapidRequired()) {
+			foreach ($update['links'] as &$link) {
+				if (isset($link['linkid'])) {
+					$link['sysmapid'] = $sysmapid;
+				}
 			}
+			unset($link);
 		}
-		unset($link);
 
 		$update['shapes'] = $this->sanitizeShapes(
 			isset($payload['shapes']) && is_array($payload['shapes']) ? $payload['shapes'] : []
 		);
 
-		API::Map()->update([$update]);
+		$message_offset = $this->apiMessageCount();
+		$update_result = API::Map()->update([$update]);
+
+		if ($update_result === false) {
+			$detail = $this->apiErrorDetail($message_offset);
+
+			if ($detail !== '') {
+				throw new \Exception(LanguageManager::tf('保存失败：%1$s', $detail));
+			}
+
+			throw new \Exception(LanguageManager::t('保存失败：Zabbix 未确认保存结果'));
+		}
 
 		// 保存后回读一次链接，把新建链路的真实 linkid 认领出来，再把每链路的
 		// 带宽/上行/下行监控项写进模块自建表。sysmaps_links 没有空余列，
@@ -1694,6 +1731,70 @@ class TopomapData extends CController {
 		self::$triggerKeywords = null;
 	}
 
+	/**
+	 * 读某张拓扑图记录的树布局（根节点 + 方向）。没记录返回空数组。
+	 *
+	 * 重新发现必须在同一张图上始终用同一个根、同一个方向，否则每次扫描起点
+	 * 一变，根就跟着漂移、画出来的「树」也就不是原来那棵了。所以首次生成时
+	 * 把根与方向写进设置表，之后一律以它为准（老图没记录时才做启发式推断）。
+	 *
+	 * @return array ['root_pkey' => string, 'direction' => string]
+	 */
+	private function loadMapLayout(string $sysmapid): array {
+		$this->ensureSettingsTable();
+
+		$cursor = \DBselect(
+			'SELECT value FROM '.self::SETTINGS_TABLE.' WHERE name='.\zbx_dbstr(self::mapLayoutKey($sysmapid))
+		);
+		$row = \DBfetch($cursor);
+
+		if (!$row) {
+			return [];
+		}
+
+		$data = json_decode((string) $row['value'], true);
+
+		return is_array($data) ? $data : [];
+	}
+
+	/**
+	 * 记下这张图的根与方向（sysmapid 变化即新图，不需要迁移旧记录）。
+	 */
+	private function saveMapLayout(string $sysmapid, string $root_pkey, string $direction): void {
+		$direction = $direction === 'horizontal' ? 'horizontal' : 'vertical';
+
+		if ($root_pkey === '') {
+			return;
+		}
+
+		$this->ensureSettingsTable();
+
+		$value = json_encode(['root_pkey' => $root_pkey, 'direction' => $direction]);
+
+		\DBexecute(
+			'DELETE FROM '.self::SETTINGS_TABLE.' WHERE name='.\zbx_dbstr(self::mapLayoutKey($sysmapid))
+		);
+		\DBexecute(
+			'INSERT INTO '.self::SETTINGS_TABLE.' (name, value) VALUES ('
+			.\zbx_dbstr(self::mapLayoutKey($sysmapid)).', '.\zbx_dbstr($value).')'
+		);
+	}
+
+	/**
+	 * 图删除时顺手清掉它的布局记录，避免设置表攒下无用行。
+	 */
+	private function dropMapLayout(string $sysmapid): void {
+		$this->ensureSettingsTable();
+
+		\DBexecute(
+			'DELETE FROM '.self::SETTINGS_TABLE.' WHERE name='.\zbx_dbstr(self::mapLayoutKey($sysmapid))
+		);
+	}
+
+	private static function mapLayoutKey(string $sysmapid): string {
+		return 'map_layout:'.$sysmapid;
+	}
+
 	private function modeSettings(): array {
 		return ['success' => true, 'trigger_keywords' => $this->loadTriggerKeywords()];
 	}
@@ -2060,32 +2161,27 @@ class TopomapData extends CController {
 	}
 
 	/**
-	 * 自动发现的树形布局（对齐 aiops 的 tidy tree）：
-	 *   - 根节点在最上方，子节点横排，父节点水平居中于子节点；
-	 *   - 叶子按固定槽宽依次排开，子树宽度 = 叶子槽宽之和；
-	 *   - y 按树深度逐层递增。
+	 * 把设备 / 链路整理成一棵生成树（链路按无向处理，BFS 定父子）。
 	 *
-	 * @param array $nodes payload.nodes
-	 * @param array $links payload.links
+	 * 重新发现时前端给的 payload 边方向会随扫描起点变化（同一对设备这次 A→B、
+	 * 下次可能 B→A），照边方向取根会让树的根漂移；这里统一按无向图 + 指定根
+	 * 生成一棵树，根找不到时再退化成「入度为 0 / 连接最多」的节点。
 	 *
-	 * @return array key => ['x' => int, 'y' => int]（x 是图标左上角，按默认 96 宽居中）
+	 * @param array  $order 节点 key，按 payload 顺序（决定邻接与兜底根的稳定顺序）
+	 * @param array  $links payload.links
+	 * @param string $root_key 指定的根（为空则自动挑）
+	 *
+	 * @return array ['children' => [key => [key, ...]], 'parent' => [key => key], 'roots' => [key, ...]]
 	 */
-	private function treeLayout(array $nodes, array $links): array {
-		$keys = [];
+	private function treeStructure(array $order, array $links, string $root_key = ''): array {
+		$rank = [];
+		$adj = [];
+		$indegree = [];
 
-		foreach ($nodes as $node) {
-			if (is_array($node) && isset($node['key'])) {
-				$keys[(string) $node['key']] = true;
-			}
+		foreach ($order as $index => $key) {
+			$rank[$key] = $index;
+			$adj[$key] = [];
 		}
-
-		if (!$keys) {
-			return [];
-		}
-
-		// 一棵树：每个节点只认第一个父；反向边 / 环路都忽略
-		$children = [];
-		$has_parent = [];
 
 		foreach ($links as $link) {
 			if (!is_array($link)) {
@@ -2096,75 +2192,590 @@ class TopomapData extends CController {
 			$target = (string) ($link['target'] ?? '');
 
 			if ($source === '' || $target === '' || $source === $target
-					|| !isset($keys[$source]) || !isset($keys[$target]) || isset($has_parent[$target])) {
+					|| !isset($rank[$source]) || !isset($rank[$target])) {
 				continue;
 			}
 
-			$has_parent[$target] = true;
-			$children[$source][] = $target;
+			$adj[$source][$target] = true;
+			$adj[$target][$source] = true;
+			$indegree[$target] = ($indegree[$target] ?? 0) + 1;
 		}
 
-		$roots = [];
+		// 邻接表按 payload 顺序展开，保证同样的数据每次得到同样的树
+		foreach ($adj as $key => $set) {
+			$neighbors = array_keys($set);
+			usort($neighbors, function (string $a, string $b) use ($rank): int {
+				return $rank[$a] <=> $rank[$b];
+			});
+			$adj[$key] = $neighbors;
+		}
 
-		foreach (array_keys($keys) as $key) {
-			if (!isset($has_parent[$key])) {
-				$roots[] = $key;
+		if ($root_key === '' || !isset($rank[$root_key])) {
+			$root_key = $this->pickTreeRoot($order, $adj, $indegree);
+		}
+
+		$children = [];
+		$parent = [];
+		$roots = [];
+		$visited = [];
+
+		$walk = function (string $start) use (&$children, &$parent, &$roots, &$visited, $adj): void {
+			$visited[$start] = true;
+			$roots[] = $start;
+			$queue = [$start];
+
+			while ($queue) {
+				$key = array_shift($queue);
+
+				foreach ($adj[$key] ?? [] as $neighbor) {
+					if (isset($visited[$neighbor])) {
+						continue;
+					}
+
+					$visited[$neighbor] = true;
+					$parent[$neighbor] = $key;
+					$children[$key][] = $neighbor;
+					$queue[] = $neighbor;
+				}
+			}
+		};
+
+		if ($root_key !== '') {
+			$walk($root_key);
+		}
+
+		// 没连到主树的独立组件：各自成树，整体排在主树旁边（不丢节点）
+		foreach ($order as $key) {
+			if (!isset($visited[$key])) {
+				$walk($key);
 			}
 		}
 
-		$leaf_gap = 190;   // 叶子槽宽：96 图标 + 标签 + 间距
-		// 层间距：96 图标 + 名称/状态文字块（最多约 67，含问题文字行）+ 6px 间隙 + 30px 主干，
-		// 再给「主干下方到子图标顶边」留出 100px 以上，用来竖着放子节点的带宽/流量框。
-		$level_gap = 300;  // 层间距
-		$left = 80;
-		$cursor = $left;
+		return ['children' => $children, 'parent' => $parent, 'roots' => $roots];
+	}
+
+	/**
+	 * 自动挑根：优先「没有入边的源节点」里连接最多的那个，其次全图连接最多的节点。
+	 * 用连接数兜底可以避免把一条没有邻居的孤点当成整张图的根。
+	 */
+	private function pickTreeRoot(array $order, array $adj, array $indegree): string {
+		$best_source = '';
+		$best_source_degree = -1;
+		$best = '';
+		$best_degree = -1;
+
+		foreach ($order as $key) {
+			$degree = count($adj[$key] ?? []);
+
+			if ($degree > $best_degree) {
+				$best = $key;
+				$best_degree = $degree;
+			}
+
+			if (($indegree[$key] ?? 0) === 0 && $degree > $best_source_degree) {
+				$best_source = $key;
+				$best_source_degree = $degree;
+			}
+		}
+
+		return $best_source !== '' ? $best_source : $best;
+	}
+
+	/**
+	 * 生成树在给定 payload 下的根 key（生成新图时用，保证落库后记下的根与
+	 * treeLayout() 实际采用的根一致）。
+	 */
+	private function treeRootKey(array $nodes, array $links): string {
+		$order = [];
+		$seen = [];
+
+		foreach ($nodes as $node) {
+			if (!is_array($node) || !isset($node['key'])) {
+				continue;
+			}
+
+			$key = (string) $node['key'];
+
+			if (!isset($seen[$key])) {
+				$seen[$key] = true;
+				$order[] = $key;
+			}
+		}
+
+		if (!$order) {
+			return '';
+		}
+
+		$structure = $this->treeStructure($order, $links, '');
+
+		return (string) ($structure['roots'][0] ?? '');
+	}
+
+	/**
+	 * 自动发现的树形布局（对齐 aiops 的 tidy tree）：
+	 *   - 指定根节点在最上方（direction=horizontal 时在最左侧）；
+	 *   - 子节点沿横轴排开，父节点居中于子节点；
+	 *   - 主方向按树深度逐层递增（垂直 = y 向下，水平 = x 向右）。
+	 *
+	 * @param array  $nodes payload.nodes
+	 * @param array  $links payload.links
+	 * @param string $root_key 指定根节点（重新发现时传老图的根，保证根不漂移）
+	 * @param string $direction vertical / horizontal，由老图的方向决定
+	 *
+	 * @return array key => ['x' => int, 'y' => int]（x/y 是图标左上角，按默认 96 宽居中）
+	 */
+	private function treeLayout(array $nodes, array $links, string $root_key = '', string $direction = 'vertical'): array {
+		$order = [];
+		$seen = [];
+
+		foreach ($nodes as $node) {
+			if (!is_array($node) || !isset($node['key'])) {
+				continue;
+			}
+
+			$key = (string) $node['key'];
+
+			if (!isset($seen[$key])) {
+				$seen[$key] = true;
+				$order[] = $key;
+			}
+		}
+
+		if (!$order) {
+			return [];
+		}
+
+		$structure = $this->treeStructure($order, $links, $root_key);
+		$horizontal = $direction === 'horizontal';
+		// 叶子槽宽：垂直树沿 x 排（96 图标 + 标签 + 间距）；水平树沿 y 排，
+		// 图标 96 + 下方名称/状态约 60，给到 170 才不会压住上一台的文字。
+		$cross_gap = $horizontal ? 170 : 190;
+		// 层间距：垂直是 y 向下、水平是 x 向右，都要给主干/带宽框留出空间。
+		$level_gap = 300;
+		$start = 80;
+		$cursor = $start;
 		$pos = [];
 		$placed = [];
 
-		$place = function (string $key, int $depth) use (&$place, &$cursor, &$pos, &$placed, $children, $leaf_gap, $level_gap) {
+		$place = function (string $key, int $depth) use (&$place, &$cursor, &$pos, &$placed, $structure,
+				$cross_gap, $level_gap, $start, $horizontal) {
 			if (isset($placed[$key])) {
-				return isset($pos[$key]) ? $pos[$key]['x'] + 48 : $cursor;
+				return isset($pos[$key]) ? ($horizontal ? $pos[$key]['y'] : $pos[$key]['x']) + 48 : $cursor;
 			}
 
 			$placed[$key] = true;
-			$kids = $children[$key] ?? [];
+			$kids = $structure['children'][$key] ?? [];
 
 			if (!$kids) {
 				$center = $cursor;
-				$cursor += $leaf_gap;
+				$cursor += $cross_gap;
 			}
 			else {
-				$xs = [];
+				$centers = [];
 
 				foreach ($kids as $kid) {
-					$xs[] = $place($kid, $depth + 1);
+					$centers[] = $place($kid, $depth + 1);
 				}
 
-				$center = (min($xs) + max($xs)) / 2;
+				$center = (min($centers) + max($centers)) / 2;
 			}
 
-			$pos[$key] = ['x' => (int) round($center - 48), 'y' => 80 + $depth * $level_gap];
+			if ($horizontal) {
+				$pos[$key] = ['x' => $start + $depth * $level_gap, 'y' => (int) round($center - 48)];
+			}
+			else {
+				$pos[$key] = ['x' => (int) round($center - 48), 'y' => $start + $depth * $level_gap];
+			}
 
 			return $center;
 		};
 
-		foreach ($roots as $index => $root) {
+		foreach ($structure['roots'] as $index => $root) {
 			if ($index > 0) {
-				$cursor += 60;
+				$cursor += 100;
 			}
 
 			$place($root, 0);
 		}
 
 		// 兜底：链路没涉及的孤立节点排在同一行最右边
-		foreach (array_keys($keys) as $key) {
+		foreach ($order as $key) {
 			if (!isset($pos[$key])) {
-				$pos[$key] = ['x' => $cursor, 'y' => 80];
-				$cursor += $leaf_gap;
+				$pos[$key] = $horizontal
+					? ['x' => $start, 'y' => $cursor]
+					: ['x' => $cursor, 'y' => $start];
+				$cursor += $cross_gap;
 			}
 		}
 
 		return $pos;
+	}
+
+	/**
+	 * 从老图读出「根节点」和「树的方向」。
+	 *
+	 * 优先用生成/上次重排时记下的布局元数据（root_pkey + direction），这样同一张
+	 * 图无论从哪台设备起扫，重新发现都会回到同一个根、同一个方向。
+	 * 老图没有元数据时按坐标推断（见 inferTreeLayout）。
+	 *
+	 * @param string $sysmapid     当前拓扑图
+	 * @param array  $old_selements map.get 回来的旧元素
+	 * @param array  $old_links     旧的 links
+	 * @param array  $payload_pkeys 本次 payload 里出现的元素匹配键（只在这些元素里挑根）
+	 *
+	 * @return array ['direction' => vertical|horizontal, 'root_pkey' => string]
+	 */
+	private function detectTreeLayout(string $sysmapid, array $old_selements, array $old_links,
+			array $payload_pkeys): array {
+		$stored = $this->loadMapLayout($sysmapid);
+		$direction = (string) ($stored['direction'] ?? '');
+
+		if (!in_array($direction, ['vertical', 'horizontal'], true)) {
+			$direction = '';
+		}
+
+		$root_pkey = (string) ($stored['root_pkey'] ?? '');
+
+		// 记下的根这次没扫到（设备下线 / 改名）⇒ 只剩方向可用，根按坐标重挑
+		if ($root_pkey !== '' && $payload_pkeys && !isset($payload_pkeys[$root_pkey])) {
+			$root_pkey = '';
+		}
+
+		if ($direction !== '' && $root_pkey !== '') {
+			return ['direction' => $direction, 'root_pkey' => $root_pkey];
+		}
+
+		$inferred = $this->inferTreeLayout($old_selements, $old_links, $payload_pkeys, $direction);
+
+		return [
+			'direction' => $direction !== '' ? $direction : $inferred['direction'],
+			'root_pkey' => $root_pkey !== '' ? $root_pkey : $inferred['root_pkey']
+		];
+	}
+
+	/**
+	 * 老图没有布局元数据时，用坐标推断根与方向。
+	 *
+	 * 方向：树是「整齐树」，同一层元素的主轴坐标完全对齐，所以主轴上的坐标簇
+	 * 数量远少于交叉轴，簇少的那根轴就是层级方向（y 少 = 自上而下；x 少 = 自左
+	 * 向右）。不能只看老链路走向：老图一旦被错误布局污染，横向对角连线会占多数，
+	 * 反而把方向带偏。
+	 *
+	 * 根：取主轴最靠前那一层里、交叉轴最接近整图中心（整棵树根应居中于所有
+	 * 后代）的元素，同分取连接数多的；优先有连线的元素，全是孤点时退回最靠前。
+	 *
+	 * @return array ['direction' => string, 'root_pkey' => string]
+	 */
+	private function inferTreeLayout(array $old_selements, array $old_links, array $payload_pkeys,
+			string $direction = ''): array {
+		$points = [];
+		$degree = [];
+		$sum_dx = 0;
+		$sum_dy = 0;
+
+		foreach ($old_selements as $se) {
+			$selementid = (string) ($se['selementid'] ?? '');
+
+			if ($selementid !== '') {
+				$points[$selementid] = [
+					'x' => (int) ($se['x'] ?? 0),
+					'y' => (int) ($se['y'] ?? 0)
+				];
+			}
+		}
+
+		foreach ($old_links as $link) {
+			$id1 = (string) ($link['selementid1'] ?? '');
+			$id2 = (string) ($link['selementid2'] ?? '');
+
+			if ($id1 === '' || $id2 === '' || !isset($points[$id1]) || !isset($points[$id2])) {
+				continue;
+			}
+
+			$sum_dx += abs($points[$id1]['x'] - $points[$id2]['x']);
+			$sum_dy += abs($points[$id1]['y'] - $points[$id2]['y']);
+			$degree[$id1] = ($degree[$id1] ?? 0) + 1;
+			$degree[$id2] = ($degree[$id2] ?? 0) + 1;
+		}
+
+		$candidates = [];
+
+		foreach ($old_selements as $se) {
+			$selementid = (string) ($se['selementid'] ?? '');
+			$pkey = $this->elementPKey($se);
+
+			if ($selementid === '' || $pkey === '' || !isset($points[$selementid])) {
+				continue;
+			}
+
+			if ($payload_pkeys && !isset($payload_pkeys[$pkey])) {
+				continue;
+			}
+
+			$candidates[] = [
+				'pkey' => $pkey,
+				'x' => $points[$selementid]['x'],
+				'y' => $points[$selementid]['y'],
+				'degree' => $degree[$selementid] ?? 0
+			];
+		}
+
+		if (!$candidates) {
+			return ['direction' => $direction !== '' ? $direction : 'vertical', 'root_pkey' => ''];
+		}
+
+		if ($direction === '') {
+			$direction = $this->inferTreeDirection($candidates, $sum_dx, $sum_dy);
+		}
+
+		$vertical = $direction !== 'horizontal';
+		// 有连线的元素才可能是树根，孤点（没被任何链路引用的旧元素）不参与
+		$linked = array_values(array_filter($candidates, function (array $c): bool {
+			return $c['degree'] > 0;
+		}));
+
+		if (!$linked) {
+			$linked = $candidates;
+		}
+
+		$min_main = null;
+		$cross_values = [];
+
+		foreach ($linked as $c) {
+			$main = $vertical ? $c['y'] : $c['x'];
+
+			if ($min_main === null || $main < $min_main) {
+				$min_main = $main;
+			}
+		}
+
+		foreach ($candidates as $c) {
+			// 用图标中心（左上角 +48）比较，根居中于整棵树时最接近整图中心
+			$cross_values[] = ($vertical ? $c['x'] : $c['y']) + 48;
+		}
+
+		sort($cross_values, SORT_NUMERIC);
+		$center = $cross_values[(int) floor(count($cross_values) / 2)];
+
+		$best_pkey = '';
+		$best_dist = PHP_INT_MAX;
+		$best_degree = -1;
+
+		foreach ($linked as $c) {
+			$main = $vertical ? $c['y'] : $c['x'];
+
+			// 最靠前的一层：与最小值相差不到一个层间距
+			if ($main - $min_main > 150) {
+				continue;
+			}
+
+			$dist = abs((($vertical ? $c['x'] : $c['y']) + 48) - $center);
+
+			if ($dist < $best_dist || ($dist === $best_dist && $c['degree'] > $best_degree)) {
+				$best_pkey = $c['pkey'];
+				$best_dist = $dist;
+				$best_degree = $c['degree'];
+			}
+		}
+
+		return ['direction' => $direction, 'root_pkey' => $best_pkey];
+	}
+
+	/**
+	 * 按坐标簇数量推断树的层级方向。
+	 *
+	 * 整齐树同一层的元素主轴坐标对齐（簇数 ≈ 层数），交叉轴则一个元素一个位置
+	 * （簇数 ≈ 节点数）。簇数差距不明显时退回老链路整体走向，再不行按垂直树处理
+	 * （模块自动生成的图默认就是自上而下）。
+	 */
+	private function inferTreeDirection(array $candidates, int $sum_dx, int $sum_dy): string {
+		$xs = [];
+		$ys = [];
+
+		foreach ($candidates as $c) {
+			$xs[] = $c['x'];
+			$ys[] = $c['y'];
+		}
+
+		$yclusters = $this->countCoordinateClusters($ys);
+		$xclusters = $this->countCoordinateClusters($xs);
+
+		if ($yclusters * 3 <= $xclusters * 2) {
+			return 'vertical';
+		}
+
+		if ($xclusters * 3 <= $yclusters * 2) {
+			return 'horizontal';
+		}
+
+		return $sum_dy >= $sum_dx ? 'vertical' : 'horizontal';
+	}
+
+	/**
+	 * 数坐标聚成多少簇（相邻差值超过一个图标宽就视为新的一层）。
+	 */
+	private function countCoordinateClusters(array $values): int {
+		if (!$values) {
+			return 0;
+		}
+
+		sort($values, SORT_NUMERIC);
+
+		$clusters = 1;
+		$anchor = $values[0];
+
+		foreach ($values as $value) {
+			if ($value - $anchor > 100) {
+				$clusters++;
+				$anchor = $value;
+			}
+		}
+
+		return $clusters;
+	}
+
+	/**
+	 * 「保留现有坐标」的新元素增量摆放：
+	 *   - 老元素坐标一律不动；
+	 *   - 新元素按生成树挂到父节点「下方」（垂直树）/「右侧」（水平树），
+	 *     同一父节点下多台新设备沿横轴错开，避开已占位的元素；
+	 *   - 连不到已有树的独立新组件，整体排在已有图的下一层，不并进主树。
+	 *
+	 * @param array  $nodes         payload.nodes
+	 * @param array  $structure     treeStructure() 的结果
+	 * @param array  $old_selements 旧元素（取坐标占位）
+	 * @param string $direction     vertical / horizontal
+	 *
+	 * @return array key => ['x' => int, 'y' => int]
+	 */
+	private function keepLayoutPositions(array $nodes, array $structure, array $old_selements, string $direction): array {
+		$vertical = $direction !== 'horizontal';
+		$level_gap = 300;
+		$cross_gap = $vertical ? 190 : 170;
+
+		$old_pos = [];
+		$occupied = [];
+
+		foreach ($old_selements as $se) {
+			$pkey = $this->elementPKey($se);
+
+			if ($pkey === '' || isset($old_pos[$pkey])) {
+				continue;
+			}
+
+			$point = ['x' => (int) ($se['x'] ?? 0), 'y' => (int) ($se['y'] ?? 0)];
+			$old_pos[$pkey] = $point;
+			$occupied[] = $point;
+		}
+
+		$pkey_of = [];
+
+		foreach ($nodes as $node) {
+			if (is_array($node) && isset($node['key'])) {
+				$pkey_of[(string) $node['key']] = $this->nodePKey($node);
+			}
+		}
+
+		// 老元素在树里的位置：pkey 对上的直接沿用原坐标
+		$placed = [];
+
+		foreach ($pkey_of as $key => $pkey) {
+			if ($pkey !== '' && isset($old_pos[$pkey])) {
+				$placed[$key] = $old_pos[$pkey];
+			}
+		}
+
+		$max_main = 80;
+		$max_cross = 80;
+
+		foreach ($occupied as $point) {
+			$max_main = max($max_main, $vertical ? $point['y'] : $point['x']);
+			$max_cross = max($max_cross, $vertical ? $point['x'] : $point['y']);
+		}
+
+		// 独立新组件（连不到已有图的）统一另起一行排在已有图下方 / 右侧，
+		// 不随主方向逐级下沉，否则多棵树会被摆成一条斜线
+		$annex_main = $max_main + $level_gap;
+		$annex_cross = 40;
+
+		$free = function (int $x, int $y) use (&$occupied): bool {
+			foreach ($occupied as $point) {
+				if (abs($x - $point['x']) < 150 && abs($y - $point['y']) < 150) {
+					return false;
+				}
+			}
+
+			return true;
+		};
+
+		$queue = [];
+		$results = [];
+
+		foreach ($structure['roots'] as $root) {
+			$queue[] = $root;
+		}
+
+		while ($queue) {
+			$key = array_shift($queue);
+
+			foreach ($structure['children'][$key] ?? [] as $kid) {
+				$queue[] = $kid;
+			}
+
+			if (isset($placed[$key])) {
+				continue;
+			}
+
+			$parent_key = (string) ($structure['parent'][$key] ?? '');
+			$point = null;
+
+			if ($parent_key !== '' && isset($placed[$parent_key])) {
+				$parent = $placed[$parent_key];
+				$parent_cross = ($vertical ? $parent['x'] : $parent['y']) + 48;
+				$parent_main = $vertical ? $parent['y'] : $parent['x'];
+
+				// 父节点正下方 / 正右侧开始，向两侧逐个让位：0、-1、+1、-2、+2 …
+				// 大扇出（一台交换机下挂几十台新设备）要留足步数，否则找不到空位会掉到图外
+				for ($step = 0; $step < 40 && $point === null; $step++) {
+					$offset = (int) (ceil($step / 2) * $cross_gap) * ($step % 2 === 0 ? 1 : -1);
+					$cross = $parent_cross + $offset - 48;
+					$main = $parent_main + $level_gap;
+					$x = $vertical ? $cross : $main;
+					$y = $vertical ? $main : $cross;
+
+					if ($cross >= 20 && $free($x, $y)) {
+						$point = ['x' => $x, 'y' => $y];
+					}
+				}
+			}
+
+			if ($point === null) {
+				// 新组件（或父节点不在本次发现里）：沿主方向排到已有图之外
+				for ($step = 0; $step < 40; $step++) {
+					$x = $vertical ? $annex_cross : $annex_main;
+					$y = $vertical ? $annex_main : $annex_cross;
+
+					if ($free($x, $y)) {
+						$point = ['x' => $x, 'y' => $y];
+						break;
+					}
+
+					$annex_cross += $cross_gap;
+				}
+			}
+
+			if ($point === null) {
+				$point = ['x' => $vertical ? 80 : $annex_main, 'y' => $vertical ? $annex_main : 80];
+			}
+
+			$placed[$key] = $point;
+			$results[$key] = $point;
+			$occupied[] = $point;
+			$max_main = max($max_main, $vertical ? $point['y'] : $point['x']);
+			$max_cross = max($max_cross, $vertical ? $point['x'] : $point['y']);
+		}
+
+		return $results;
 	}
 
 	/**
@@ -2197,8 +2808,20 @@ class TopomapData extends CController {
 
 		$selements = [];
 		$host_of_node = [];
-		$positions = $this->treeLayout($payload['nodes'],
-			isset($payload['links']) && is_array($payload['links']) ? $payload['links'] : []);
+		$payload_links = isset($payload['links']) && is_array($payload['links']) ? $payload['links'] : [];
+		// 生成时就把树根定下来并记进设置表，之后重新发现一律沿用这个根
+		$root_key = $this->treeRootKey($payload['nodes'], $payload_links);
+		$positions = $this->treeLayout($payload['nodes'], $payload_links, $root_key);
+		$root_pkey = '';
+
+		if ($root_key !== '') {
+			foreach ($payload['nodes'] as $node) {
+				if (is_array($node) && isset($node['key']) && (string) $node['key'] === $root_key) {
+					$root_pkey = $this->nodePKey($node);
+					break;
+				}
+			}
+		}
 
 		foreach ($payload['nodes'] as $node) {
 			if (!is_array($node) || !isset($node['key'])) {
@@ -2217,6 +2840,13 @@ class TopomapData extends CController {
 			}
 
 			$hostid = isset($node['hostid']) ? trim((string) $node['hostid']) : '';
+
+			// 主机元素的默认标签：名字一行、连接地址一行。库里存宏原文，
+			// 由渲染端按主机的当前值展开，主机改名后不用重新发现也能跟上。
+			if ($hostid !== '' && ctype_digit($hostid) && $hostid !== '0') {
+				$label = self::DEFAULT_HOST_LABEL;
+			}
+
 			$selementid = (string) (count($selements) + 1);
 			// 按设备类型选图标：交换机 Switch_(128)、终端 Workstation_(128)（对齐 aiops）
 			$iconid = $this->iconForKind((string) ($node['kind'] ?? ''));
@@ -2338,6 +2968,14 @@ class TopomapData extends CController {
 					];
 				}
 
+				// Zabbix 8.0 只允许 indicator_type=1 的连线携带 linktriggers，
+				// 不写的话整张图会被 map.create 判为参数非法（8.0 之前的版本不写该字段）。
+				$indicator_type = self::linkIndicatorType(true);
+
+				if ($indicator_type !== null) {
+					$row['indicator_type'] = $indicator_type;
+				}
+
 				$trigger_total += count($triggerids);
 			}
 
@@ -2357,6 +2995,8 @@ class TopomapData extends CController {
 			$height = max($height, $point['y'] + 180);
 		}
 
+		$message_offset = $this->apiMessageCount();
+
 		$result = API::Map()->create([[
 			'name' => $name,
 			'width' => $width,
@@ -2374,20 +3014,29 @@ class TopomapData extends CController {
 
 		$sysmapid = '';
 
-		if (!empty($result['sysmapids'][0])) {
-			$sysmapid = (string) $result['sysmapids'][0];
-		}
-		elseif (!empty($result['sysmapid'])) {
-			$sysmapid = (string) $result['sysmapid'];
+		if (is_array($result)) {
+			if (!empty($result['sysmapids'][0])) {
+				$sysmapid = (string) $result['sysmapids'][0];
+			}
+			elseif (!empty($result['sysmapid'])) {
+				$sysmapid = (string) $result['sysmapid'];
+			}
 		}
 
 		if ($sysmapid === '') {
+			$detail = $this->apiErrorDetail($message_offset);
+
+			if ($detail !== '') {
+				throw new \Exception(LanguageManager::tf('自动发现：生成拓扑图失败：%1$s', $detail));
+			}
+
 			throw new \Exception(LanguageManager::t('自动发现：Zabbix 没有返回拓扑图 ID'));
 		}
 
 		// map.create 不返回 linkid：回读一次按创建顺序对应上，把每条线的两端端口与
 		// 「触发器来源端」写进模块自建表，前端才能在线上标注端口、按端重新匹配触发器。
 		$this->persistDiscoveredLinks($sysmapid, $link_meta);
+		$this->saveMapLayout($sysmapid, $root_pkey, 'vertical');
 
 		return [
 			'success' => true,
@@ -2460,7 +3109,52 @@ class TopomapData extends CController {
 		$payload_links = isset($payload['links']) && is_array($payload['links']) ? $payload['links'] : [];
 		$keep_layout = (string) ($payload['layout'] ?? 'tree') === 'keep';
 		$prune_links = !empty($payload['prune_links']);
-		$positions = $this->treeLayout($payload['nodes'], $payload_links);
+
+		// 老图的方向与根节点：重排要沿用原来的根、原来的层级方向，不能因为
+		// 本次扫描方向变了就把根换掉、或把自上而下的树改成左右布局。
+		$payload_pkeys = [];
+		$node_keys = [];
+		$key_pkey = [];
+
+		foreach ($payload['nodes'] as $node) {
+			if (!is_array($node) || !isset($node['key'])) {
+				continue;
+			}
+
+			$key = (string) $node['key'];
+			$node_keys[] = $key;
+			$pkey = $this->nodePKey($node);
+			$key_pkey[$key] = $pkey;
+
+			if ($pkey !== '') {
+				$payload_pkeys[$pkey] = true;
+			}
+		}
+
+		$layout_hint = $this->detectTreeLayout((string) $sysmapid, $old_selements, $old_links, $payload_pkeys);
+		$direction = (string) ($layout_hint['direction'] ?? 'vertical');
+		$root_key = '';
+
+		if ((string) ($layout_hint['root_pkey'] ?? '') !== '') {
+			foreach ($payload['nodes'] as $node) {
+				if (is_array($node) && isset($node['key'])
+						&& $this->nodePKey($node) === $layout_hint['root_pkey']) {
+					$root_key = (string) $node['key'];
+					break;
+				}
+			}
+		}
+
+		$structure = $this->treeStructure($node_keys, $payload_links, $root_key);
+		// 记下实际生效的根（元数据里没有、由 BFS 兜底挑出来的也算）
+		$effective_root_key = $root_key !== '' ? $root_key : (string) ($structure['roots'][0] ?? '');
+		$root_pkey = (string) ($key_pkey[$effective_root_key] ?? '');
+		$positions = $this->treeLayout($payload['nodes'], $payload_links, $effective_root_key, $direction);
+		$keep_positions = [];
+
+		if ($keep_layout) {
+			$keep_positions = $this->keepLayoutPositions($payload['nodes'], $structure, $old_selements, $direction);
+		}
 		// 老图升级：旧元素如果还是自动发现给的默认图标，按类型换成 Switch_/Workstation；
 		// 用户手动选过其它图标的不动。这里先取一次默认图标做比较基准。
 		$default_iconid = $this->defaultIconId();
@@ -2489,20 +3183,6 @@ class TopomapData extends CController {
 		$new_seq = 0;
 		$added_devices = 0;
 
-		// 保留现有坐标时，新设备统一排到「已有元素最大 y」之下
-		$keep_x = 80;
-		$keep_y = 80;
-
-		if ($keep_layout) {
-			$max_y = 0;
-
-			foreach ($old_selements as $se) {
-				$max_y = max($max_y, (int) ($se['y'] ?? 0));
-			}
-
-			$keep_y = $max_y + 180;
-		}
-
 		foreach ($payload['nodes'] as $node) {
 			if (!is_array($node) || !isset($node['key'])) {
 				continue;
@@ -2516,6 +3196,11 @@ class TopomapData extends CController {
 
 			if (!empty($node['ip'])) {
 				$label = $label."\n".(string) $node['ip'];
+			}
+
+			// 新加进来的主机元素用两行宏标签（名字 / 连接地址）；未纳管图片仍写死名字与 IP
+			if ($valid_host) {
+				$label = self::DEFAULT_HOST_LABEL;
 			}
 
 			$node_pkey[$key] = $pkey;
@@ -2582,14 +3267,10 @@ class TopomapData extends CController {
 				}
 
 				if ($keep_layout) {
-					$row['x'] = $keep_x;
-					$row['y'] = $keep_y;
-					$keep_x += 190;
-
-					if ($new_seq % 8 === 0) {
-						$keep_x = 80;
-						$keep_y += 180;
-					}
+					// 老元素原地不动；新设备按生成树挂到父节点下方 / 右侧
+					$point = $keep_positions[$key] ?? ['x' => 80, 'y' => 80];
+					$row['x'] = (int) $point['x'];
+					$row['y'] = (int) $point['y'];
 				}
 				else {
 					$point = $positions[$key] ?? ['x' => 80, 'y' => 80];
@@ -2831,23 +3512,38 @@ class TopomapData extends CController {
 
 		$update = [
 			'sysmapid' => $sysmapid,
-			'width' => max(100, min(10000, max($width, (int) ($map['width'] ?? 0)))),
-			'height' => max(100, min(10000, max($height, (int) ($map['height'] ?? 0)))),
+			// 大图（上百台设备的树）会很宽，上限放到 60000，避免画布右侧的节点
+			// 被 10000 的旧上限截掉（8.0 API 实测接受 24000 的宽度）
+			'width' => max(100, min(60000, max($width, (int) ($map['width'] ?? 0)))),
+			'height' => max(100, min(60000, max($height, (int) ($map['height'] ?? 0)))),
 			'selements' => $this->sanitizeSelements(array_values($selements)),
-			'links' => $this->sanitizeLinks($links),
+			'links' => $this->sanitizeLinks($links, $this->existingLinkIndicatorTypes((string) $sysmapid)),
 			// 形状原样带回，避免 map.update 把用户画的框删掉
 			'shapes' => $this->sanitizeShapes($old_shapes)
 		];
 
-		// 7.0.x 的链接更新校验要求带 sysmapid（见 modeSave 的说明）
-		foreach ($update['links'] as &$link_row) {
-			if (isset($link_row['linkid'])) {
-				$link_row['sysmapid'] = $sysmapid;
+		// 7.0.x 的链接更新校验要求带 sysmapid；7.4/8.0 的字段白名单不接受该字段（见 modeSave 的说明）
+		if (self::linkSysmapidRequired()) {
+			foreach ($update['links'] as &$link_row) {
+				if (isset($link_row['linkid'])) {
+					$link_row['sysmapid'] = $sysmapid;
+				}
 			}
+			unset($link_row);
 		}
-		unset($link_row);
 
-		API::Map()->update([$update]);
+		$message_offset = $this->apiMessageCount();
+		$update_result = API::Map()->update([$update]);
+
+		if ($update_result === false) {
+			$detail = $this->apiErrorDetail($message_offset);
+
+			if ($detail !== '') {
+				throw new \Exception(LanguageManager::tf('重新发现：保存拓扑图失败：%1$s', $detail));
+			}
+
+			throw new \Exception(LanguageManager::t('重新发现：保存拓扑图失败'));
+		}
 
 		// ------------------------------------------------------------
 		// 指标回写：新链路的 linkid 从回读结果里认领，其余沿用旧配置
@@ -2920,6 +3616,8 @@ class TopomapData extends CController {
 		}
 
 		$this->saveLinkPaths($sysmapid, $final_paths);
+		// 布局元数据回写：下一次重新发现直接用同一个根 / 方向
+		$this->saveMapLayout((string) $sysmapid, $root_pkey, $direction);
 
 		return [
 			'success' => true,
@@ -2948,6 +3646,51 @@ class TopomapData extends CController {
 		}
 
 		return (string) $host['interfaces'][0]['ip'];
+	}
+
+	/**
+	 * {HOST.CONN} 的连接地址：优先主接口，其次 SNMP 接口，再退回到第一个可见接口。
+	 * 接口 useip=1 取 IP，否则优先 DNS；任一为空时回退到另一个。
+	 * 每次 modeGet 都会重新 host.get，所以主机改名/重新发现后取到的都是最新值。
+	 */
+	private function hostConn(array $host): string {
+		if (empty($host['interfaces'])) {
+			return '';
+		}
+
+		$chosen = null;
+
+		foreach ($host['interfaces'] as $iface) {
+			if (isset($iface['main']) && (int) $iface['main'] === 1) {
+				$chosen = $iface;
+				break;
+			}
+		}
+
+		if ($chosen === null) {
+			$snmp_type = defined('INTERFACE_TYPE_SNMP') ? (int) INTERFACE_TYPE_SNMP : 2;
+
+			foreach ($host['interfaces'] as $iface) {
+				if (isset($iface['type']) && (int) $iface['type'] === $snmp_type) {
+					$chosen = $iface;
+					break;
+				}
+			}
+		}
+
+		if ($chosen === null) {
+			$chosen = $host['interfaces'][0];
+		}
+
+		$ip = trim((string) ($chosen['ip'] ?? ''));
+		$dns = trim((string) ($chosen['dns'] ?? ''));
+		$useip = isset($chosen['useip']) ? (int) $chosen['useip'] : 1;
+
+		if ($useip === 1) {
+			return $ip !== '' ? $ip : $dns;
+		}
+
+		return $dns !== '' ? $dns : $ip;
 	}
 
 	// ------------------------------------------------------------------
@@ -3526,6 +4269,68 @@ class TopomapData extends CController {
 		return $name;
 	}
 
+	/**
+	 * 7.0.x 的链路更新校验要求每条带 linkid 的 link 补 sysmapid；
+	 * 7.4/8.0 的 CMap::validateLinkFields() 是严格字段白名单，不接受 sysmapid。
+	 */
+	private static function linkSysmapidRequired(): bool {
+		return !self::supportsLinkIndicatorType();
+	}
+
+	/**
+	 * Zabbix 8.0 起 map link 增加了 indicator_type（0=静态、1=触发器、2=监控项值），
+	 * 且只有 indicator_type=1 时才允许携带 linktriggers。7.x 没有该字段，写了反而会
+	 * 被当成未知参数，所以这里按常量是否存在做特性探测。
+	 */
+	private static function supportsLinkIndicatorType(): bool {
+		return defined('MAP_INDICATOR_TYPE_TRIGGER') && defined('MAP_INDICATOR_TYPE_STATIC_LINK');
+	}
+
+	/**
+	 * 返回当前版本应写入的 indicator_type；7.x 返回 null 表示不写。
+	 */
+	private static function linkIndicatorType(bool $has_triggers): ?int {
+		if (!self::supportsLinkIndicatorType()) {
+			return null;
+		}
+
+		return $has_triggers
+			? (int) constant('MAP_INDICATOR_TYPE_TRIGGER')
+			: (int) constant('MAP_INDICATOR_TYPE_STATIC_LINK');
+	}
+
+	/**
+	 * 当前已登记的消息条数。Zabbix 前端的 API wrapper 出错时只返回 false，
+	 * 真正的错误被记进 CMessageHelper，这里用它把错误捞出来透传。
+	 */
+	private function apiMessageCount(): int {
+		if (!class_exists('\CMessageHelper') || !method_exists('\CMessageHelper', 'getMessages')) {
+			return 0;
+		}
+
+		return count(\CMessageHelper::getMessages());
+	}
+
+	/**
+	 * 取 offset 之后新登记的 API 错误文本（多条用分号拼接）。
+	 */
+	private function apiErrorDetail(int $offset): string {
+		if (!class_exists('\CMessageHelper') || !method_exists('\CMessageHelper', 'getMessages')) {
+			return '';
+		}
+
+		$messages = array_slice(\CMessageHelper::getMessages(), $offset);
+		$errors = [];
+
+		foreach ($messages as $message) {
+			if (($message['type'] ?? '') === 'error' && !empty($message['message'])) {
+				$errors[] = trim((string) $message['message']);
+			}
+		}
+
+		return implode('; ', array_unique($errors));
+	}
+
 	private function sanitizeSelements(array $items): array {
 		$result = [];
 		$seen_tags = [];
@@ -3651,7 +4456,42 @@ class TopomapData extends CController {
 		return $result;
 	}
 
-	private function sanitizeLinks(array $items): array {
+	/**
+	 * 读取当前图上已有连线的 indicator_type（linkid => int）。7.x 没有该字段时返回空数组。
+	 */
+	private function existingLinkIndicatorTypes(string $sysmapid): array {
+		if (!self::supportsLinkIndicatorType()) {
+			return [];
+		}
+
+		$maps = API::Map()->get([
+			'sysmapids' => $sysmapid,
+			'output' => ['sysmapid'],
+			'selectLinks' => ['linkid', 'indicator_type']
+		]);
+
+		if (!is_array($maps) || empty($maps[0]['links'])) {
+			return [];
+		}
+
+		$result = [];
+
+		foreach ($maps[0]['links'] as $link) {
+			if (!empty($link['linkid'])) {
+				$result[(string) $link['linkid']] = (int) ($link['indicator_type'] ?? 0);
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @param array $items                   前端提交的连线
+	 * @param array $existing_indicator_types 8.0 下已有连线的 indicator_type（linkid => int），
+	 *                                        用于在清空触发器时只把「触发器型」链路切回静态，
+	 *                                        不误伤用户在原生命中设置的「监控项值」链路。
+	 */
+	private function sanitizeLinks(array $items, array $existing_indicator_types = []): array {
 		$result = [];
 
 		foreach ($items as $item) {
@@ -3724,6 +4564,23 @@ class TopomapData extends CController {
 				// 空数组也要写：用户点「清空」时，只有把 linktriggers 明确传成 [] 才能让
 				// CMap::update 把库里已有的绑定删掉。
 				$row['linktriggers'] = $linktriggers;
+
+				// 8.0 的校验是「indicator_type=1 才允许带 linktriggers」，反过来
+				// 「indicator_type=1 时 linktriggers 不能为空」。有触发器就必须写 1；
+				// 清空触发器时只把原本的「触发器型」链路切回静态，避免误伤监控项值链路。
+				if (self::linkIndicatorType(true) !== null) {
+					if ($linktriggers !== []) {
+						$row['indicator_type'] = (int) constant('MAP_INDICATOR_TYPE_TRIGGER');
+					}
+					else {
+						$linkid = (string) ($item['linkid'] ?? '');
+						$current_type = $existing_indicator_types[$linkid] ?? null;
+
+						if ($current_type === null || (int) $current_type === (int) constant('MAP_INDICATOR_TYPE_TRIGGER')) {
+							$row['indicator_type'] = (int) constant('MAP_INDICATOR_TYPE_STATIC_LINK');
+						}
+					}
+				}
 			}
 
 			$result[] = $row;

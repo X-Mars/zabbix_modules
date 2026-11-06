@@ -29,17 +29,20 @@ $t = static fn(string $s): string => htmlspecialchars(LanguageManager::t($s), EN
 			JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 	</script>
 
-	<!-- 页头：layout.htmlpage 只输出 <div class="wrapper"> + main_block，不产出 header，
-	     所以标题和右上角按钮得自己写；结构与原生列表页一致，样式由主题的 header 规则接管。 -->
-	<header class="header-title">
-		<div><h1 id="page-title-general"><?= $t('自动拓扑图') ?></h1></div>
-		<div class="header-controls">
-			<nav aria-label="<?= $t('内容控制') ?>">
-				<ul>
-					<li><button type="button" id="tm-discover-btn" class="btn-alt"><?= $t('自动发现') ?></button></li>
-					<li><button type="button" id="tm-create-btn"><?= $t('创建拓扑图') ?></button></li>
-				</ul>
-			</nav>
+	<!-- 页头：layout.htmlpage 只输出 wrapper + main_block，不产出 header，所以标题和
+	     按钮组得自己写。结构对齐 8.0 原生页头（header > .header-title > h1 + .header-controls），
+	     7.0 主题没有「header .header-title」这条规则，由模块 CSS 兜底成同一行的 flex 布局。 -->
+	<header>
+		<div class="header-title">
+			<div class="overflow-ellipsis"><h1 id="page-title-general"><?= $t('自动拓扑图') ?></h1></div>
+			<div class="header-controls">
+				<nav aria-label="<?= $t('内容控制') ?>">
+					<ul>
+						<li><button type="button" id="tm-discover-btn" class="btn-alt"><?= $t('自动发现') ?></button></li>
+						<li><button type="button" id="tm-create-btn"><?= $t('创建拓扑图') ?></button></li>
+					</ul>
+				</nav>
+			</div>
 		</div>
 	</header>
 
