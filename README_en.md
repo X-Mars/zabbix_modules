@@ -6,7 +6,7 @@
 
 Supported versions and deployment requirements vary by module. Refer to each module's README for its compatibility status.
 
-Zabbix Switch Visual is a dashboard widget currently targeting Zabbix 7.x. Full 6.0–8.0 compatibility is not yet implemented; changing only `manifest_version` does not enable legacy support. See the [widget compatibility notes](./zabbix_switch_visual/README_en.md#version-compatibility).
+Zabbix Switch Visual loads and renders its configuration form and default view on Zabbix 7.0.32 and 8.0.0. See the [widget compatibility notes](./zabbix_switch_visual/README_en.md#version-compatibility) for test coverage by release.
 
 ## Description
 

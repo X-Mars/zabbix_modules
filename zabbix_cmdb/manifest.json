@@ -16,9 +16,6 @@
             "class": "CmdbGroups",
             "view": "cmdb.groups"
         },
-        "cmdb.debug": {
-            "class": "CmdbDebug"
-        },
         "cmdb.config": {
             "class": "CmdbConfig",
             "view": "cmdb.config"
