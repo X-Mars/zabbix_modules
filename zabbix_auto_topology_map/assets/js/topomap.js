@@ -7075,6 +7075,15 @@
 				return host;
 			}
 
+			// 7.0/7.4 的模块页本身带原生 .wrapper，必须直接复用。
+			// 页面出现两个 .wrapper 时，原生菜单里 `$('.wrapper').append(...)` 会把
+			// 菜单 DOM 克隆到每个 wrapper，点一次主机就弹出两份菜单。
+			var nativeHost = document.querySelector('.wrapper');
+
+			if (nativeHost) {
+				return nativeHost;
+			}
+
 			host = make('div', 'wrapper');
 			host.id = 'tm-popup-host';
 			document.body.appendChild(host);
@@ -7089,7 +7098,7 @@
 		var triggerPopupObserver = null;
 
 		function nativeTriggerDialog() {
-			var host = document.getElementById('tm-popup-host');
+			var host = document.getElementById('tm-popup-host') || document.querySelector('.wrapper');
 
 			if (!host) {
 				return null;
