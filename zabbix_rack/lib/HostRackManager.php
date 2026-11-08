@@ -7,8 +7,10 @@
 namespace Modules\ZabbixRack\Lib;
 
 require_once __DIR__ . '/ZabbixVersion.php';
+require_once __DIR__ . '/RackConfig.php';
 
 class HostRackManager {
+    const CUSTOM_HOST_PREFIX = 'custom:';
     
     // 标签名称常量
     const TAG_ROOM = 'rack_room';
@@ -237,7 +239,49 @@ class HostRackManager {
                 'main_ip' => $mainIp,
                 'groups' => $groups,
                 'side' => $parsed['side'],
+                'custom' => false,
             ];
+        }
+
+        $roomId = '';
+        $rackId = '';
+        foreach (RackConfig::getRooms() as $room) {
+            if ((string) ($room['name'] ?? '') === $roomName) {
+                $roomId = (string) $room['id'];
+                break;
+            }
+        }
+        foreach (RackConfig::getRacks($roomId !== '' ? $roomId : null) as $rack) {
+            if ((string) ($rack['name'] ?? '') === $rackName) {
+                $rackId = (string) $rack['id'];
+                break;
+            }
+        }
+
+        if ($roomId !== '' && $rackId !== '') {
+            foreach (RackConfig::getCustomHosts($roomId, $rackId) as $host) {
+                $hostSide = self::normalizeSide($host['side'] ?? self::SIDE_FRONT);
+                if (!self::sideMatches($hostSide, $side)) {
+                    continue;
+                }
+                $uStart = (int) ($host['u_start'] ?? 0);
+                $uEnd = (int) ($host['u_end'] ?? 0);
+                $result[] = [
+                    'hostid' => self::CUSTOM_HOST_PREFIX . (string) $host['id'],
+                    'host' => (string) ($host['name'] ?? ''),
+                    'name' => (string) ($host['name'] ?? ''),
+                    'status' => 0,
+                    'u_start' => $uStart,
+                    'u_end' => $uEnd,
+                    'u_height' => ($uStart > 0 && $uEnd >= $uStart) ? ($uEnd - $uStart + 1) : 1,
+                    'main_ip' => (string) ($host['ip'] ?? ''),
+                    'groups' => [],
+                    'side' => $hostSide,
+                    'custom' => true,
+                    'problem_count' => 0,
+                    'max_severity' => -1,
+                ];
+            }
         }
         
         // 按U位排序
@@ -246,6 +290,50 @@ class HostRackManager {
         });
         
         return $result;
+    }
+
+    public static function isCustomHostId(string $hostId): bool {
+        return strpos($hostId, self::CUSTOM_HOST_PREFIX) === 0;
+    }
+
+    public static function getCustomHostId(string $hostId): string {
+        return self::isCustomHostId($hostId)
+            ? substr($hostId, strlen(self::CUSTOM_HOST_PREFIX))
+            : $hostId;
+    }
+
+    public static function assignCustomHost(
+        string $id,
+        string $name,
+        string $ip,
+        string $roomId,
+        string $rackId,
+        int $uStart,
+        int $uEnd,
+        string $side = self::SIDE_FRONT
+    ): bool {
+        self::setLastError('');
+        $name = trim($name);
+        $ip = trim($ip);
+        if ($name === '' || $ip === '') {
+            self::setLastError('Custom host name and IP are required');
+            return false;
+        }
+
+        return RackConfig::saveCustomHost([
+            'id' => self::getCustomHostId($id),
+            'name' => $name,
+            'ip' => $ip,
+            'room_id' => $roomId,
+            'rack_id' => $rackId,
+            'u_start' => $uStart,
+            'u_end' => $uEnd,
+            'side' => self::normalizeSide($side),
+        ]);
+    }
+
+    public static function removeCustomHost(string $hostId): bool {
+        return RackConfig::deleteCustomHost(self::getCustomHostId($hostId));
     }
     
     /**
@@ -492,10 +580,24 @@ class HostRackManager {
             return $hosts;
         }
 
-        $hostProblemsData = self::getHostProblems(array_column($hosts, 'hostid'));
+        $zabbixHostIds = array_values(array_filter(
+            array_column($hosts, 'hostid'),
+            static function ($hostId): bool {
+                return !self::isCustomHostId((string) $hostId);
+            }
+        ));
+        $hostProblemsData = self::getHostProblems($zabbixHostIds);
 
         foreach ($hosts as &$host) {
             $hostId = $host['hostid'];
+            if (self::isCustomHostId((string) $hostId)) {
+                $host['problem_count'] = 0;
+                $host['problems'] = [];
+                $host['max_severity'] = -1;
+                $host['groups'] = '';
+                $host['ip'] = $host['main_ip'] ?? '';
+                continue;
+            }
             if (isset($hostProblemsData[$hostId])) {
                 $host['problem_count'] = $hostProblemsData[$hostId]['count'];
                 $host['problems'] = $hostProblemsData[$hostId]['problems'];

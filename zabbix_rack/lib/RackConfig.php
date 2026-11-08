@@ -88,8 +88,66 @@ class RackConfig {
     private static function getDefaultConfig(): array {
         return [
             'rooms' => [],
-            'racks' => []
+            'racks' => [],
+            'custom_hosts' => []
         ];
+    }
+
+    public static function getCustomHosts(?string $roomId = null, ?string $rackId = null): array {
+        $hosts = self::load()['custom_hosts'] ?? [];
+
+        return array_values(array_filter($hosts, static function (array $host) use ($roomId, $rackId): bool {
+            return ($roomId === null || (string) ($host['room_id'] ?? '') === $roomId)
+                && ($rackId === null || (string) ($host['rack_id'] ?? '') === $rackId);
+        }));
+    }
+
+    public static function getCustomHost(string $id): ?array {
+        foreach (self::getCustomHosts() as $host) {
+            if ((string) ($host['id'] ?? '') === $id) {
+                return $host;
+            }
+        }
+        return null;
+    }
+
+    public static function saveCustomHost(array $host): bool {
+        $config = self::load();
+        $config['custom_hosts'] = $config['custom_hosts'] ?? [];
+
+        if (empty($host['id'])) {
+            $host['id'] = self::generateId();
+            $host['created_at'] = date('Y-m-d H:i:s');
+            $config['custom_hosts'][] = $host;
+        } else {
+            $found = false;
+            foreach ($config['custom_hosts'] as &$existingHost) {
+                if ((string) ($existingHost['id'] ?? '') === (string) $host['id']) {
+                    $host['updated_at'] = date('Y-m-d H:i:s');
+                    $existingHost = array_merge($existingHost, $host);
+                    $found = true;
+                    break;
+                }
+            }
+            unset($existingHost);
+            if (!$found) {
+                $host['created_at'] = date('Y-m-d H:i:s');
+                $config['custom_hosts'][] = $host;
+            }
+        }
+
+        return self::save($config);
+    }
+
+    public static function deleteCustomHost(string $id): bool {
+        $config = self::load();
+        $config['custom_hosts'] = array_values(array_filter(
+            $config['custom_hosts'] ?? [],
+            static function (array $host) use ($id): bool {
+                return (string) ($host['id'] ?? '') !== $id;
+            }
+        ));
+        return self::save($config);
     }
     
     /**
@@ -167,6 +225,12 @@ class RackConfig {
             return $room['id'] !== $roomId;
         });
         $config['rooms'] = array_values($config['rooms']);
+        $config['custom_hosts'] = array_values(array_filter(
+            $config['custom_hosts'] ?? [],
+            static function (array $host) use ($roomId): bool {
+                return (string) ($host['room_id'] ?? '') !== $roomId;
+            }
+        ));
         
         return self::save($config);
     }
@@ -245,6 +309,12 @@ class RackConfig {
             return $rack['id'] !== $rackId;
         });
         $config['racks'] = array_values($config['racks']);
+        $config['custom_hosts'] = array_values(array_filter(
+            $config['custom_hosts'] ?? [],
+            static function (array $host) use ($rackId): bool {
+                return (string) ($host['rack_id'] ?? '') !== $rackId;
+            }
+        ));
         
         return self::save($config);
     }

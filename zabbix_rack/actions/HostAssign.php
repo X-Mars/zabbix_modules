@@ -30,7 +30,10 @@ class HostAssign extends CController {
     
     protected function checkInput(): bool {
         $fields = [
-            'hostid' => 'required|string',
+            'hostid' => 'string',
+            'host_type' => 'string',
+            'custom_name' => 'string',
+            'custom_ip' => 'string',
             'room_id' => 'required|string',
             'rack_id' => 'required|string',
             'u_start' => 'required|int32',
@@ -57,7 +60,10 @@ class HostAssign extends CController {
     }
     
     protected function doAction(): void {
-        $hostId = $this->getInput('hostid');
+        $hostId = trim((string) $this->getInput('hostid', ''));
+        $hostType = $this->getInput('host_type', 'zabbix') === 'custom' ? 'custom' : 'zabbix';
+        $customName = trim((string) $this->getInput('custom_name', ''));
+        $customIp = trim((string) $this->getInput('custom_ip', ''));
         $roomId = $this->getInput('room_id');
         $rackId = $this->getInput('rack_id');
         $uStart = $this->getInput('u_start');
@@ -91,8 +97,39 @@ class HostAssign extends CController {
             exit;
         }
         
+        if ($hostType === 'custom') {
+            if ($customName === '' || $customIp === '') {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'error' => LanguageManager::t('custom_host_required')
+                ]);
+                exit;
+            }
+            if (filter_var($customIp, FILTER_VALIDATE_IP) === false) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'error' => LanguageManager::t('invalid_custom_ip')
+                ]);
+                exit;
+            }
+        } elseif ($hostId === '') {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => LanguageManager::t('select_a_host')
+            ]);
+            exit;
+        }
+
+        // 自定义主机编辑时排除自身，避免原位置被判定为占用。
+        $excludeHostId = ($hostType === 'custom' && $hostId !== '')
+            ? HostRackManager::CUSTOM_HOST_PREFIX . HostRackManager::getCustomHostId($hostId)
+            : null;
+
         // 检查U位是否可用（同一机柜面内不可重叠）
-        if (!HostRackManager::isPositionAvailable($room['name'], $rack['name'], $uStart, $uEnd, null, $side)) {
+        if (!HostRackManager::isPositionAvailable($room['name'], $rack['name'], $uStart, $uEnd, $excludeHostId, $side)) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
@@ -101,8 +138,10 @@ class HostAssign extends CController {
             exit;
         }
         
-        // 分配主机
-        $success = HostRackManager::assignHost($hostId, $room['name'], $rack['name'], $uStart, $uEnd, $side);
+        // 分配 Zabbix 主机，或保存自定义主机。
+        $success = $hostType === 'custom'
+            ? HostRackManager::assignCustomHost($hostId, $customName, $customIp, $roomId, $rackId, $uStart, $uEnd, $side)
+            : HostRackManager::assignHost($hostId, $room['name'], $rack['name'], $uStart, $uEnd, $side);
         
         header('Content-Type: application/json');
         $response = [

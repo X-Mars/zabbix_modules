@@ -147,7 +147,8 @@ $buildRackVisualSide = static function (array $rack, array $sideHosts, string $s
                 'u_end' => $host['u_end'],
                 'side' => $host['side'] ?? $side,
                 'status' => $host['status'] == 0 ? LanguageManager::t('enabled') : LanguageManager::t('disabled'),
-                'problem_count' => $problemCount
+                'problem_count' => $problemCount,
+                'custom' => !empty($host['custom'])
             ]);
 
             $slotDiv = (new CDiv())
@@ -743,8 +744,35 @@ $editHostInfo->addItem(
 );
 $assignModalBody->addItem($editHostInfo);
 
+// 添加主机时可在 Zabbix 主机和自定义主机之间切换。
+$hostTypeTabs = (new CDiv())
+    ->setAttribute('id', 'host-type-tabs')
+    ->addClass('modal-tabs')
+    ->setAttribute('role', 'tablist');
+$hostTypeTabs->addItem(
+    (new CTag('button', true, LanguageManager::t('assigned_host')))
+        ->setAttribute('type', 'button')
+        ->setAttribute('id', 'assigned-host-tab')
+        ->setAttribute('role', 'tab')
+        ->setAttribute('aria-selected', 'true')
+        ->addClass('modal-tab is-active')
+        ->setAttribute('onclick', "switchAssignTab('zabbix')")
+);
+$hostTypeTabs->addItem(
+    (new CTag('button', true, LanguageManager::t('custom_host')))
+        ->setAttribute('type', 'button')
+        ->setAttribute('id', 'custom-host-tab')
+        ->setAttribute('role', 'tab')
+        ->setAttribute('aria-selected', 'false')
+        ->addClass('modal-tab')
+        ->setAttribute('onclick', "switchAssignTab('custom')")
+);
+$assignModalBody->addItem($hostTypeTabs);
+
 // 主机选择区域
-$hostSelectSection = (new CDiv())->setAttribute('id', 'host-select-section');
+$hostSelectSection = (new CDiv())
+    ->setAttribute('id', 'host-select-section')
+    ->addClass('modal-tab-panel is-active');
 
 // 主机组选择 - 使用原生 select
 $groupSelectGroup = (new CDiv())->addClass('form-group');
@@ -785,6 +813,37 @@ $hostListGroup->addItem(
 );
 $hostSelectSection->addItem($hostListGroup);
 $assignModalBody->addItem($hostSelectSection);
+
+$customHostSection = (new CDiv())
+    ->setAttribute('id', 'custom-host-section')
+    ->addClass('modal-tab-panel');
+$customNameGroup = (new CDiv())->addClass('form-group');
+$customNameGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('custom_host_name')))
+        ->setAttribute('for', 'modal-custom-host-name')
+);
+$customNameGroup->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'text')
+        ->setAttribute('id', 'modal-custom-host-name')
+        ->setAttribute('placeholder', LanguageManager::t('custom_host_name_placeholder'))
+);
+$customHostSection->addItem($customNameGroup);
+
+$customIpGroup = (new CDiv())->addClass('form-group');
+$customIpGroup->addItem(
+    (new CTag('label', true, LanguageManager::t('custom_host_ip')))
+        ->setAttribute('for', 'modal-custom-host-ip')
+);
+$customIpGroup->addItem(
+    (new CTag('input', false))
+        ->setAttribute('type', 'text')
+        ->setAttribute('id', 'modal-custom-host-ip')
+        ->setAttribute('inputmode', 'decimal')
+        ->setAttribute('placeholder', LanguageManager::t('custom_host_ip_placeholder'))
+);
+$customHostSection->addItem($customIpGroup);
+$assignModalBody->addItem($customHostSection);
 
 // U位范围
 $maxU = $currentRack['height'] ?? 42;
@@ -908,6 +967,8 @@ $i18n = [
     'assign_host' => LanguageManager::t('assign_host'),
     'no_matching_hosts' => LanguageManager::t('no_matching_hosts'),
     'select_a_host' => LanguageManager::t('select_a_host'),
+    'custom_host_required' => LanguageManager::t('custom_host_required'),
+    'invalid_custom_ip' => LanguageManager::t('invalid_custom_ip'),
     'invalid_u_range' => LanguageManager::t('invalid_u_range'),
     'operation_failed' => LanguageManager::t('operation_failed'),
     'confirm_remove_host' => LanguageManager::t('confirm_remove_host'),
@@ -935,6 +996,8 @@ $content->addItem(new CJsScript('<script>
     var currentRackId = "' . $rackId . '";
     var isEditMode = false;
     var editingHostId = null;
+    var activeHostTab = "zabbix";
+    var editingHostType = "zabbix";
     var detailRackData = null;
 
     // HTML 转义
@@ -971,6 +1034,24 @@ $content->addItem(new CJsScript('<script>
         }
         return select.value === "back" ? "back" : "front";
     }
+
+    window.switchAssignTab = function(type) {
+        if (isEditMode) return;
+        activeHostTab = type === "custom" ? "custom" : "zabbix";
+
+        var assignedTab = document.getElementById("assigned-host-tab");
+        var customTab = document.getElementById("custom-host-tab");
+        var assignedPanel = document.getElementById("host-select-section");
+        var customPanel = document.getElementById("custom-host-section");
+        var customActive = activeHostTab === "custom";
+
+        assignedTab.classList.toggle("is-active", !customActive);
+        customTab.classList.toggle("is-active", customActive);
+        assignedTab.setAttribute("aria-selected", customActive ? "false" : "true");
+        customTab.setAttribute("aria-selected", customActive ? "true" : "false");
+        assignedPanel.classList.toggle("is-active", !customActive);
+        customPanel.classList.toggle("is-active", customActive);
+    };
 
     // ============ 筛选栏联动（select 事件监听） ============
     var roomSelect = document.getElementById("room-select");
@@ -1117,7 +1198,8 @@ $content->addItem(new CJsScript('<script>
                     u_end: uEnd,
                     side: host.side || side,
                     status: hostStatus === 0 ? i18n.enabled : i18n.disabled,
-                    problem_count: problemCount
+                    problem_count: problemCount,
+                    custom: !!host.custom
                 }).replace(/\x27/g, "\\\x27").replace(/"/g, "&quot;");
 
                 html += "<div class=\\"" + classes.join(" ") + "\\" data-host=\\"" + hostDataJson + "\\" data-u-span=\\"" + span + "\\" onclick=\\"openEditModalFromDetail(this)\\" style=\\"cursor:pointer;\\">";
@@ -1199,6 +1281,7 @@ $content->addItem(new CJsScript('<script>
         isEditMode = true;
         editingHostId = hostData.hostid;
         selectedHostId = hostData.hostid;
+        editingHostType = hostData.custom || String(hostData.hostid).indexOf("custom:") === 0 ? "custom" : "zabbix";
 
         document.getElementById("modal-title").textContent = i18n.edit_host_position;
         document.getElementById("edit-host-name").textContent = hostData.name;
@@ -1206,7 +1289,11 @@ $content->addItem(new CJsScript('<script>
         document.getElementById("modal-u-start").value = hostData.u_start;
         document.getElementById("modal-u-end").value = hostData.u_end;
         setModalRackSide(hostData.side || "front");
-        document.getElementById("host-select-section").style.display = "none";
+        document.getElementById("host-type-tabs").style.display = "none";
+        document.getElementById("host-select-section").classList.remove("is-active");
+        document.getElementById("custom-host-section").classList.remove("is-active");
+        document.getElementById("modal-custom-host-name").value = editingHostType === "custom" ? (hostData.name || "") : "";
+        document.getElementById("modal-custom-host-ip").value = editingHostType === "custom" ? (hostData.ip || "") : "";
         document.getElementById("edit-host-info").style.display = "block";
         document.getElementById("btn-remove-host").style.display = "inline-block";
         document.getElementById("assign-modal").classList.add("visible");
@@ -1453,6 +1540,7 @@ $content->addItem(new CJsScript('<script>
 
         isEditMode = false;
         editingHostId = null;
+        editingHostType = "zabbix";
         selectedHostId = null;
         document.getElementById("modal-title").textContent = i18n.assign_host;
         document.getElementById("modal-u-start").value = minU;
@@ -1461,7 +1549,10 @@ $content->addItem(new CJsScript('<script>
         document.getElementById("modal-group-select").value = "";
         document.getElementById("modal-host-search").value = "";
         document.getElementById("host-select-list").innerHTML = "";
-        document.getElementById("host-select-section").style.display = "block";
+        document.getElementById("modal-custom-host-name").value = "";
+        document.getElementById("modal-custom-host-ip").value = "";
+        document.getElementById("host-type-tabs").style.display = "flex";
+        switchAssignTab("zabbix");
         document.getElementById("edit-host-info").style.display = "none";
         document.getElementById("btn-remove-host").style.display = "none";
         document.getElementById("assign-modal").classList.add("visible");
@@ -1473,6 +1564,7 @@ $content->addItem(new CJsScript('<script>
         isEditMode = true;
         editingHostId = hostData.hostid;
         selectedHostId = hostData.hostid;
+        editingHostType = hostData.custom || String(hostData.hostid).indexOf("custom:") === 0 ? "custom" : "zabbix";
 
         document.getElementById("modal-title").textContent = i18n.edit_host_position;
         document.getElementById("edit-host-name").textContent = hostData.name;
@@ -1480,7 +1572,11 @@ $content->addItem(new CJsScript('<script>
         document.getElementById("modal-u-start").value = hostData.u_start;
         document.getElementById("modal-u-end").value = hostData.u_end;
         setModalRackSide(hostData.side || "front");
-        document.getElementById("host-select-section").style.display = "none";
+        document.getElementById("host-type-tabs").style.display = "none";
+        document.getElementById("host-select-section").classList.remove("is-active");
+        document.getElementById("custom-host-section").classList.remove("is-active");
+        document.getElementById("modal-custom-host-name").value = editingHostType === "custom" ? (hostData.name || "") : "";
+        document.getElementById("modal-custom-host-ip").value = editingHostType === "custom" ? (hostData.ip || "") : "";
         document.getElementById("edit-host-info").style.display = "block";
         document.getElementById("btn-remove-host").style.display = "inline-block";
         document.getElementById("assign-modal").classList.add("visible");
@@ -1542,9 +1638,17 @@ $content->addItem(new CJsScript('<script>
     };
 
     window.saveHost = function() {
+        var hostType = isEditMode ? editingHostType : activeHostTab;
         var hostId = isEditMode ? editingHostId : selectedHostId;
+        var customName = document.getElementById("modal-custom-host-name").value.trim();
+        var customIp = document.getElementById("modal-custom-host-ip").value.trim();
 
-        if (!hostId) {
+        if (hostType === "custom" && (!customName || !customIp)) {
+            RackUI.message(i18n.custom_host_required);
+            return;
+        }
+
+        if (hostType !== "custom" && !hostId) {
             RackUI.message(i18n.select_a_host);
             return;
         }
@@ -1557,7 +1661,9 @@ $content->addItem(new CJsScript('<script>
             return;
         }
 
-        if (isEditMode) {
+        if (hostType === "custom") {
+            doAssignCustomHost(isEditMode ? hostId : "", customName, customIp, uStart, uEnd);
+        } else if (isEditMode) {
             var removeFormData = new FormData();
             removeFormData.append("action", "host.remove");
             removeFormData.append("hostid", hostId);
@@ -1586,6 +1692,37 @@ $content->addItem(new CJsScript('<script>
         var formData = new FormData();
         formData.append("action", "host.assign");
         formData.append("hostid", hostId);
+        formData.append("host_type", "zabbix");
+        formData.append("room_id", currentRoomId);
+        formData.append("rack_id", currentRackId);
+        formData.append("u_start", uStart);
+        formData.append("u_end", uEnd);
+        formData.append("side", getModalRackSide());
+
+        fetch("zabbix.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                RackUI.message(data.error || data.message || i18n.operation_failed);
+            }
+        })
+        .catch(function() {
+            RackUI.message(i18n.operation_failed);
+        });
+    }
+
+    function doAssignCustomHost(hostId, name, ip, uStart, uEnd) {
+        var formData = new FormData();
+        formData.append("action", "host.assign");
+        formData.append("hostid", hostId || "");
+        formData.append("host_type", "custom");
+        formData.append("custom_name", name);
+        formData.append("custom_ip", ip);
         formData.append("room_id", currentRoomId);
         formData.append("rack_id", currentRackId);
         formData.append("u_start", uStart);
@@ -1742,7 +1879,7 @@ $content->addItem(new CJsScript('<script>
                 for (var k = 0; k < hostKeys.length; k++) {
                     var hosts = allRacksData[i][hostKeys[k]] || [];
                     for (var j = 0; j < hosts.length; j++) {
-                        if (hosts[j].hostid && hostIds.indexOf(hosts[j].hostid) === -1) {
+                        if (hosts[j].hostid && String(hosts[j].hostid).indexOf("custom:") !== 0 && hostIds.indexOf(hosts[j].hostid) === -1) {
                             hostIds.push(hosts[j].hostid);
                         }
                     }
@@ -1753,7 +1890,7 @@ $content->addItem(new CJsScript('<script>
         document.querySelectorAll(".rack-unit-slot.occupied[data-host]").forEach(function(slot) {
             try {
                 var hostData = JSON.parse(slot.getAttribute("data-host"));
-                if (hostData.hostid && hostIds.indexOf(hostData.hostid) === -1) {
+                if (hostData.hostid && String(hostData.hostid).indexOf("custom:") !== 0 && hostIds.indexOf(hostData.hostid) === -1) {
                     hostIds.push(hostData.hostid);
                 }
             } catch(e) {}
