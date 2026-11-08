@@ -1,1 +1,3 @@
 .vscode/settings.json
+.devtools/
+/zabbix_export_import/tests/

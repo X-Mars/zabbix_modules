@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "record_type": "items",
+  "source_zabbix_version": "7.0.32",
+  "exported_at": "2026-11-04T15:00:00Z",
+  "records": [
+    {
+      "host": "example-linux-01",
+      "name": "主监控项, \"😀\"",
+      "key_": "example.master",
+      "type": 2,
+      "value_type": 4,
+      "delay": "0",
+      "status": 0,
+      "origin": "local",
+      "tags": [
+        {
+          "tag": "service",
+          "value": "a,b"
+        }
+      ]
+    },
+    {
+      "host": "example-linux-01",
+      "name": "依赖监控项\nsecond line",
+      "key_": "example.dependent",
+      "type": 18,
+      "value_type": 4,
+      "delay": "0",
+      "status": 0,
+      "origin": "local",
+      "master_item": {
+        "key_": "example.master"
+      },
+      "preprocessing": [
+        {
+          "type": 5,
+          "params": "$.value",
+          "error_handler": 0,
+          "error_handler_params": ""
+        }
+      ]
+    }
+  ]
+}

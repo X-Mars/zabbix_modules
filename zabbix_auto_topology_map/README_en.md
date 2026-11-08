@@ -7,8 +7,9 @@
 This module is developed for Zabbix 7.0 and uses `manifest_version: 2.0`.
 
 - ✅ Zabbix 7.0.28: verified against the source code and tested in a live environment
+- ✅ Zabbix 8.0: adapted to the new `indicator_type` validation on map links and the frontend API error handling
 - ⚠️ Zabbix 6.x: includes partial compatibility handling, but has not been tested
-- ⚠️ Other Zabbix 7.x releases and 8.x: require verification in the target environment
+- ⚠️ Other Zabbix 7.x releases: require verification in the target environment
 
 **Compatibility notes**: The module includes compatibility handling for older and newer module base classes and menu components. This does not mean every version has been tested. Before upgrading, verify menu registration, map reading and writing, and automatic discovery in a test environment.
 
@@ -32,6 +33,7 @@ The module reads and writes maps through native Zabbix APIs and shares the same 
 - **Link status**: Automatically match port status triggers or select them manually. When a trigger reports a problem, the corresponding member link changes color.
 - **Link routing**: Supports automatic curves, automatic orthogonal routing with obstacle avoidance, and manual waypoints. Aggregated links share labels and routing settings.
 - **Host status**: Displays normal, problem, maintenance, and disabled states, with problem highlighting and status icons.
+- **Macro expansion**: Shape text and host element labels support `{MAP.NAME}`, `{HOST.NAME}`, and `{HOST.CONN}`, expanded at render time from the current map name and the latest host name/connection address.
 - **Automatic refresh**: Refreshes status and metrics every 60 seconds in preview mode. Refreshing pauses while editing or when the page is hidden.
 - **Native host menu**: Click a host in preview mode to open the native Zabbix host menu and access problems, latest data, graphs, and other pages.
 - **View persistence**: Remembers the user's last list or map view and supports zooming, panning, and fitting the map to the window.
@@ -102,7 +104,7 @@ You can also access the module directly at `zabbix.php?action=topomap.view`.
 - **Discovery performance**: For large networks, start with a small number of seed hosts and a shallow discovery depth. SNMP timeouts, access restrictions, or disabled neighbor discovery protocols can cause devices to be skipped or produce incomplete results.
 - **Canvas dimensions**: Dimensions are calculated automatically from the content, and the canvas can expand in all four directions. Manual width and height entry is not available.
 - **Native element limitations**: Host group, trigger, and nested map elements can be previewed, dragged, and deleted, but their properties must be edited in the native editor. Status calculations currently apply only to host elements.
-- **Icon and macro limitations**: The module preview does not resolve icon mappings or expand custom macro labels. Use the native Zabbix map page when full native rendering is required.
+- **Icon and macro limitations**: The module preview does not resolve icon mappings. Shape text and host element labels support the `{MAP.NAME}`, `{HOST.NAME}`, and `{HOST.CONN}` macros, expanded at render time from the current map name and the latest host name/connection address (`{HOST.CONN}` prefers the main interface, then the SNMP interface IP or DNS). Other macros are not expanded. Use the native Zabbix map page when full native rendering is required.
 - **Upgrades and backups**: Back up native map data and the module's custom tables to preserve link metrics, routing, and settings. After upgrading, use `Ctrl+F5` to refresh the browser cache. If the menu does not update, check the PHP OPcache cache.
 
 ## Development

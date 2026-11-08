@@ -132,7 +132,7 @@
 		var MIN_CANVAS_W = 1000;
 		var MIN_CANVAS_H = 700;
 		var CANVAS_PAD = 60;   // 内容四周留白
-		var CANVAS_MAX = 10000; // sysmaps.width/height 的上限
+		var CANVAS_MAX = 60000; // sysmaps.width/height 的上限（8.0 API 实测 60000 可用，与后端一致）
 		var DRAG_EDGE = 56;    // 拖拽时指针距离画布边缘多少像素开始自动平移
 		var PAN_STEP = 16;     // 每次自动平移的像素（屏幕坐标）
 
@@ -182,6 +182,8 @@
 			triggerNames: {},
 			// 触发器是否正在报警（triggerid => true）：手工刚绑上就能立刻按触发器色画线
 			triggerProblems: {},
+			// 触发器严重性（triggerid => priority 0~5）：链接属性里的「指标」色块用它
+			triggerSeverity: {},
 			// 列表：筛选 / 排序 / 勾选（对齐原生拓扑图列表的交互）
 			filterName: '',
 			sortField: 'name',
@@ -730,6 +732,9 @@
 				se._hostid = hostid;
 				se._hostName = host ? host.name : '';
 				se._ip = host ? String(host.ip || '') : '';
+				// {HOST.CONN} 用的连接地址：后端按主接口/SNMP 接口的 IP 或 DNS 计算，
+				// 旧数据没有 conn 字段时退回 ip，保证兼容。
+				se._conn = host ? String(host.conn || host.ip || '') : '';
 				se._status = host ? num(host.status, 0) : 0;
 				se._maintenance = host ? num(host.maintenance, 0) : 0;
 				se._problems = host ? num(host.problems, 0) : 0;
@@ -743,6 +748,8 @@
 				link.drawtype = num(link.drawtype, 0);
 				link.color = link.color || DEFAULT_LINK_COLOR;
 				link.label = link.label || '';
+				// 原生链接属性里的「显示标签」：默认 -1 / 始终 1 / 自动隐藏 0
+				link.show_label = num(link.show_label, -1);
 				link.linktriggers = link.linktriggers || [];
 				link.metrics = normalizeMetrics(link.metrics);
 				// 两端端口名与「触发器来源端」口径：后端存在模块自建表里，随链路一起带回
@@ -2461,14 +2468,22 @@
 			return shape.type === 2 ? 'line' : (shape.type === 1 ? 'ellipse' : 'rect');
 		}
 
+		// 形状文本里的 {MAP.NAME} 宏：库中保存的是宏原文，渲染时按当前拓扑图名称展开。
+		// 每次打开/重命名都重新渲染，所以不需要回写数据库。
+		function shapeDisplayText(shape) {
+			return String(shape.text || '').replace(/\{MAP\.NAME\}/gi, state.map ? String(state.map.name || '') : '');
+		}
+
 		// 文字：对齐方式、字体、内边距都按原生（内边距 5px），并裁剪在形内部
 		function drawShapeText(shape, clipId) {
+			var display_text = shapeDisplayText(shape);
+
 			// 原生对线不画文字
-			if (shape.type === 2 || !shape.text) {
+			if (shape.type === 2 || !display_text) {
 				return;
 			}
 
-			var lines = String(shape.text).split(/\r?\n/);
+			var lines = display_text.split(/\r?\n/);
 			var fontSize = Math.max(1, num(shape.font_size, 11));
 			var lineH = fontSize * 1.2;
 			var total = lines.length * lineH;
@@ -2583,7 +2598,7 @@
 
 				elSvg.appendChild(node);
 
-				var hasText = shape.type !== 2 && !!shape.text;
+				var hasText = shape.type !== 2 && !!shapeDisplayText(shape);
 				var clipId = '';
 
 				if (hasText) {
@@ -3199,15 +3214,27 @@
 			return '';
 		}
 
-		// 组的绑定触发器：取第一个有绑定的成员（整组共用一份）
+		// 组的绑定触发器：合并所有成员（按 triggerid 去重）。
+		// 原生拓扑图里同一对元素的并行链路是各自独立的，每条可能有不同的链接指示器；
+		// 只取第一条会把另一条上的触发器吞掉（用户反馈「关联多个只显示 1 个」就是这个）。
 		function familyLinkTriggers(family) {
-			for (var i = 0; i < family.length; i++) {
-				if (family[i].linktriggers && family[i].linktriggers.length) {
-					return copy(family[i].linktriggers);
-				}
-			}
+			var out = [];
+			var seen = {};
 
-			return [];
+			family.forEach(function (link) {
+				(link.linktriggers || []).forEach(function (lt) {
+					var tid = String(lt && lt.triggerid ? lt.triggerid : '');
+
+					if (!tid || seen[tid]) {
+						return;
+					}
+
+					seen[tid] = true;
+					out.push(copy(lt));
+				});
+			});
+
+			return out;
 		}
 
 		// 组的端口名（聚合时是多个成员口）：在「链接」对话框里列出来，方便确认这条链路覆盖了哪些口。
@@ -4434,6 +4461,21 @@
 			return se.label || '';
 		}
 
+		// 主机元素标签里的原生宏 {HOST.NAME} / {HOST.CONN}。
+		// 标签在库里存的是宏原文，只有渲染时才展开，所以主机改名或重新发现后
+		// 每次打开画布都会用 host.get 的最新值替换。
+		function expandHostMacros(text, se) {
+			text = String(text || '');
+
+			if (text.indexOf('{') === -1) {
+				return text;
+			}
+
+			return text
+				.replace(/\{HOST\.NAME\}/gi, se._hostName || '')
+				.replace(/\{HOST\.CONN\}/gi, se._conn || se._ip || '');
+		}
+
 		// 标签第一段：具体显示什么由 label_type 决定，语义对齐 7.0.28 maps.inc.php
 		function elementLabel(se) {
 			var type = num(se._labelType, LT_LABEL);
@@ -4450,7 +4492,11 @@
 				return se._ip || '';
 			}
 
-			// LT_LABEL / LT_CUSTOM：用元素自己的标签文本
+			// LT_LABEL / LT_CUSTOM：用元素自己的标签文本，主机元素展开原生宏
+			if (se.elementtype === ET_HOST) {
+				return expandHostMacros(se.label, se);
+			}
+
 			return se.label || '';
 		}
 
@@ -5242,6 +5288,7 @@
 				urls: [],
 				_hostid: '',
 				_hostName: '',
+				_conn: '',
 				_status: 0,
 				_problems: 0,
 				_severity: -1
@@ -5381,7 +5428,9 @@
 			elDialogTitle.textContent = options.title;
 			clear(elDialogBody);
 			clear(elDialogFoot);
-			elDialog.className = 'tm-dialog' + (options.narrow ? ' tm-dialog-narrow' : '');
+			elDialog.className = 'tm-dialog'
+				+ (options.narrow ? ' tm-dialog-narrow' : '')
+				+ (options.linkDialog ? ' tm-dialog-link' : '');
 
 			if (options.build) {
 				options.build(elDialogBody);
@@ -5586,9 +5635,10 @@
 							draft.elements = [{hostid: host.hostid}];
 							hostInput.value = host.name + (host.ip ? T('（') + host.ip + T('）') : '');
 
-							// 标签是空 / 还是「新的组件」占位时，自动填「主机名 + IP」两行
+							// 标签仍是空 / 「新的组件」占位时，默认填两行宏文本：
+							// 第一行主机名、第二行连接地址（渲染时按主机最新值展开）
 							if (!labelTouched) {
-								labelInput.value = host.ip ? host.name + '\n' + host.ip : host.name;
+								labelInput.value = '{HOST.NAME}\n{HOST.CONN}';
 							}
 						});
 					});
@@ -6077,17 +6127,26 @@
 			// 在这里一次改完，不做逐条编辑。
 			var family = linkFamily(link);
 			var draft = copy(link);
-			// 触发器也是整组共用一份：取组里第一个有绑定的成员
+			// 触发器跨成员合并展示（每条成员连线的链接指示器都要出现在列表里）
 			var triggersEdited = false;
 
 			draft.metrics = familyMetrics(family);
 			draft.label = familyLabel(family);
 			draft.linktriggers = familyLinkTriggers(family);
+			// 打开时整组已有的触发器集合：应用时据此判断哪些是本次新加的，
+			// 只把新增项同步给每个成员，避免把 A 成员独有的触发器复制到 B 成员。
+			var initialTriggerIds = {};
+
+			draft.linktriggers.forEach(function (lt) {
+				initialTriggerIds[String(lt.triggerid)] = true;
+			});
+
 			draft.routing = Math.max(0, Math.min(2, num(draft.routing, 0)));
 			draft.waypoints = normalizeWaypointList(draft.waypoints);
 
 			openDialog({
 				title: T('链接属性'),
+				linkDialog: true,
 				build: function (body) {
 					var tbody = dialogForm(body);
 
@@ -6099,19 +6158,50 @@
 					}
 
 					var labelRow = formRow(tbody, T('标签'), false);
-					var labelInput = make('input', 'tm-input tm-input-block');
-					labelInput.type = 'text';
+					var labelInput = make('textarea', 'tm-input tm-link-labelbox');
+					labelInput.rows = 2;
 					labelInput.maxLength = 2048;
 					labelInput.value = draft.label || '';
 					labelRow.td.appendChild(labelInput);
 
-					var colorRow = formRow(tbody, T('颜色'), false);
-					var color = buildColorInput(draft.color || DEFAULT_LINK_COLOR);
-					colorRow.td.appendChild(color.wrap);
+					// 显示标签：和原生链接属性完全一致的三选一（分段按钮）
+					var showRow = formRow(tbody, T('显示标签'), false);
+					var showLine = make('div', 'tm-seg-radio');
+					var showRadios = [];
+					var showName = 'tm-link-show-' + Date.now();
 
-					var typeRow = formRow(tbody, T('线型'), false);
+					[[-1, T('默认')], [1, T('始终')], [0, T('自动隐藏')]].forEach(function (pair) {
+						var lab = make('label');
+						var radio = make('input');
+						radio.type = 'radio';
+						radio.name = showName;
+						radio.value = String(pair[0]);
+						radio.checked = num(draft.show_label, -1) === pair[0];
+						radio.addEventListener('change', updateShowSeg);
+						lab.appendChild(radio);
+						lab.appendChild(document.createTextNode(pair[1]));
+						showLine.appendChild(lab);
+						showRadios.push(radio);
+					});
+
+					function updateShowSeg() {
+						Array.prototype.forEach.call(showLine.querySelectorAll('label'), function (lab) {
+							lab.classList.toggle('tm-seg-radio-on', lab.querySelector('input').checked);
+						});
+					}
+
+					updateShowSeg();
+					showRow.td.appendChild(showLine);
+
+					var colorRow = formRow(tbody, T('颜色 (OK)'), false);
+					var colorInput = make('input', 'tm-trig-color');
+					colorInput.type = 'color';
+					colorInput.value = '#' + String(draft.color || DEFAULT_LINK_COLOR).replace('#', '');
+					colorRow.td.appendChild(colorInput);
+
+					var typeRow = formRow(tbody, T('类型 (OK)'), false);
 					var typeSel = makeSelect(LINK_DRAWTYPES, draft.drawtype);
-					typeSel.style.width = '180px';
+					typeSel.style.width = '68px';
 					typeRow.td.appendChild(typeSel);
 
 					// 走线：自动曲线 / 自动直角 / 手动折点。选手动后点按钮进画布加折点。
@@ -6154,20 +6244,21 @@
 					srcSel.style.width = '220px';
 					srcRow.td.appendChild(srcSel);
 
-					// 端口信息只在对话框里展示（画布上不再标注端口）：聚合时列出全部成员口
+					// 端口信息只在 tooltip 里给排查用，不再占位拼进来源文本：
+					// 那一长串端口名会把「触发器来源」这一栏撑宽，右侧下拉框跟着错位。
 					var ports = familyPorts(family);
-					var portHint = make('div', 'tm-hint');
-					portHint.textContent = T('源端端口：') + (ports.src.length ? ports.src.join(T('、')) : T('未知'))
+					srcSel.title = T('源端端口：') + (ports.src.length ? ports.src.join(T('、')) : T('未知'))
 						+ T('　本端端口：') + (ports.tgt.length ? ports.tgt.join(T('、')) : T('未知'))
 						+ T('（源端 = 连线起点，本端 = 连线终点）');
-					srcRow.td.appendChild(portHint);
 
 					// 带宽 / 上行 / 下行：从两端主机（聚合成员口）的监控项里手工多选，
 					// 显示时把选中的监控项最新值求和，再按单位换算。
 					var rows = {};
+					var metricRows = [];
 
 					METRIC_KINDS.forEach(function (kind) {
 						var defRow = formRow(tbody, kind.label, false);
+						metricRows.push(defRow);
 						var wrap = make('div', 'tm-metric-row');
 						var summary = make('span', 'tm-metric-summary');
 						var pick = make('button', 'tm-btn tm-btn-sm', T('选择…'));
@@ -6207,88 +6298,134 @@
 						rows[key]();
 					});
 
-					// 触发器：手工绑定。自动关联只认端口状态关键词 + 端口名，手工建的线
-					// （比如新加的一台电脑接到交换机）没有端口信息，只能在这里直接挑。
-					// 绑上之后，这条线在触发器报警时同样会变红（和自动关联的效果一致）。
-					var trigRow = formRow(tbody, T('触发器'), false);
-					var trigWrap = make('div', 'tm-metric-row');
-					var trigBox = make('div', 'tm-pick-box tm-trig-box');
-					var trigPick = make('button', 'tm-btn tm-btn-sm', T('选择…'));
-					trigPick.type = 'button';
-					var trigClear = make('button', 'tm-btn tm-btn-sm', T('清空'));
-					trigClear.type = 'button';
-					var trigNames = {};
+					// 链接指示器：与原生 8.0 链接表单保持一致。
+					// 表头「空 / 触发器 / 空」，行首是每个触发器的颜色，行尾「移除」，
+					// 下方一个「添加」链接打开原生 popup.generic 触发器多选弹层。
+					var trigRow = formRow(tbody, T('指标'), true);
+					var trigTable = make('table', 'tm-trig-table');
+					var trigHead = make('thead');
+					var trigHeadRow = make('tr');
+					var trigBody = make('tbody');
 
-					function renderTriggerChips() {
-						var ids = (draft.linktriggers || []).map(function (lt) {
-							return String(lt.triggerid);
-						});
+					trigHeadRow.appendChild(make('th', 'tm-trig-sev', ''));
+					trigHeadRow.appendChild(make('th', null, T('触发器')));
+					trigHeadRow.appendChild(make('th', 'tm-trig-act', ''));
+					trigHead.appendChild(trigHeadRow);
+					trigTable.appendChild(trigHead);
+					trigTable.appendChild(trigBody);
+					trigRow.td.appendChild(trigTable);
 
-						ids.forEach(function (id) {
-							trigNames[id] = triggerName(id);
-						});
+					function renderTriggerTable() {
+						clear(trigBody);
 
-						renderChips(trigBox, ids, trigNames, T('未关联触发器'), function (id) {
-							draft.linktriggers = (draft.linktriggers || []).filter(function (lt) {
-								return String(lt.triggerid) !== id;
+						(draft.linktriggers || []).forEach(function (lt) {
+							var tid = String(lt.triggerid);
+							var tr = make('tr');
+
+							// 第一列：每个触发器自己的颜色（原生 linktrigger 的 color，默认 DD0000）
+							var tdColor = make('td', 'tm-trig-sev');
+							var colorInput = make('input', 'tm-trig-color');
+							colorInput.type = 'color';
+							colorInput.value = '#' + String(lt.color || DEFAULT_TRIGGER_COLOR).replace('#', '');
+							colorInput.title = TRIGGER_SEVERITY_LABELS[num(state.triggerSeverity[tid], 0)]
+								|| (T('级别 ') + num(state.triggerSeverity[tid], 0));
+							colorInput.addEventListener('input', function () {
+								lt.color = colorInput.value.replace('#', '').toUpperCase();
 							});
-							triggersEdited = true;
-							renderTriggerChips();
+							tdColor.appendChild(colorInput);
+
+							var tdName = make('td', 'tm-trig-name', triggerName(tid));
+							tdName.title = triggerName(tid);
+
+							var tdAct = make('td', 'tm-trig-act');
+							var rm = make('button', 'tm-linkbtn', T('移除'));
+							rm.type = 'button';
+							rm.addEventListener('click', function () {
+								draft.linktriggers = (draft.linktriggers || []).filter(function (item) {
+									return String(item.triggerid) !== tid;
+								});
+								triggersEdited = true;
+								renderTriggerTable();
+							});
+							tdAct.appendChild(rm);
+
+							tr.appendChild(tdColor);
+							tr.appendChild(tdName);
+							tr.appendChild(tdAct);
+							trigBody.appendChild(tr);
 						});
 					}
 
-					trigPick.addEventListener('click', function () {
-						openTriggerPicker(linkEndHostids(link), draft.linktriggers, function (triggerids) {
-							var previous = {};
+					var trigAdd = make('button', 'tm-linkbtn tm-trig-add', T('添加'));
+					trigAdd.type = 'button';
+					trigRow.td.appendChild(trigAdd);
+
+					// 原生触发器弹层（popup.generic）回传：按 triggerid 去重后追加，
+					// 不重建已有列表——原生 addNewTriggers 也是这个行为。
+					trigAdd.addEventListener('click', function () {
+						openNativeTriggerPopup(function (values) {
+							var known = {};
 
 							(draft.linktriggers || []).forEach(function (lt) {
-								previous[String(lt.triggerid)] = lt;
+								known[String(lt.triggerid)] = true;
 							});
 
-							draft.linktriggers = triggerids.map(function (tid) {
-								var old = previous[tid] || {};
+							(values || []).forEach(function (value) {
+								var tid = String(value.triggerid || value.id || '');
 
-								return {
-									triggerid: String(tid),
-									drawtype: num(old.drawtype, 0),
-									color: String(old.color || DEFAULT_TRIGGER_COLOR).replace('#', ''),
-									// 手工挑的触发器如果正在报警，画布上立刻按触发器色画（和自动关联一致）
+								if (!tid || known[tid]) {
+									return;
+								}
+
+								known[tid] = true;
+
+								if (value.description) {
+									state.triggerNames[tid] = String(value.description);
+								}
+
+								if (value.priority !== undefined) {
+									state.triggerSeverity[tid] = num(value.priority, 0);
+								}
+
+								draft.linktriggers.push({
+									triggerid: tid,
+									drawtype: 0,
+									color: DEFAULT_TRIGGER_COLOR,
 									problem: !!state.triggerProblems[tid]
-								};
+								});
 							});
+
 							triggersEdited = true;
-							renderTriggerChips();
+							renderTriggerTable();
 						});
 					});
 
-					trigClear.addEventListener('click', function () {
-						draft.linktriggers = [];
-						triggersEdited = true;
-						renderTriggerChips();
-					});
-
-					trigWrap.appendChild(trigBox);
-					trigWrap.appendChild(trigPick);
-					trigWrap.appendChild(trigClear);
-					trigRow.td.appendChild(trigWrap);
-
-					var trigHint = make('div', 'tm-hint');
-					trigHint.textContent = T('自动关联只匹配端口状态类关键词（link down / 处于关闭状态 / 接口关闭…）')
-						+ T('并按连线上的端口名定位；手工建的连线在这里直接选，保存后不会被自动匹配覆盖。');
-					trigRow.td.appendChild(trigHint);
-
-					// 库里只存 triggerid，名字按 triggerid 批量取一次再刷新 chip
+					// 库里只存 triggerid，名字/严重性按 triggerid 批量取一次再刷新表格
 					resolveTriggerNames((draft.linktriggers || []).map(function (lt) {
 						return String(lt.triggerid);
-					})).then(renderTriggerChips);
-					renderTriggerChips();
+					})).then(renderTriggerTable);
+					renderTriggerTable();
+
+					// 字段顺序向原生链接表单靠：标签 → 显示标签 → 类型(OK) → 颜色(OK)
+					// → 指标（链接指示器），模块专有的来源/走线/监控项放在后面。
+					[labelRow, showRow, typeRow, colorRow, trigRow, srcRow, routeRow]
+						.concat(metricRows).forEach(function (row) {
+						tbody.appendChild(row.tr);
+					});
 
 					openLinkDialog.collect = function () {
 						draft.label = labelInput.value;
-						draft.color = color.value() || DEFAULT_LINK_COLOR;
+						draft.color = colorInput.value.replace('#', '').toUpperCase() || DEFAULT_LINK_COLOR;
 						draft.drawtype = num(typeSel.value, 0);
 						draft.routing = Math.max(0, Math.min(2, num(routeSel.value, 0)));
 						draft.trigger_source = num(srcSel.value, 0);
+						draft.show_label = -1;
+
+						(showRadios || []).forEach(function (radio) {
+							if (radio.checked) {
+								draft.show_label = num(radio.value, -1);
+							}
+						});
 					};
 				},
 				buttons: [
@@ -6297,8 +6434,10 @@
 
 						openLinkDialog.collect();
 
-						// 整组一起改：标签 / 颜色 / 线型 / 触发器来源 / 绑定触发器对所有成员生效
-						var linktriggers = (draft.linktriggers || []).map(function (lt) {
+						// 整组一起改：标签 / 显示标签 / 颜色 / 线型 / 触发器来源 / 走线；
+						// 绑定触发器按成员各自保留原有项，只把本次新增/移除/线型改动同步过去，
+						// 避免把 A 成员独有的链接指示器复制到 B 成员（原生里每条链路是独立的）。
+						var draftTriggers = (draft.linktriggers || []).map(function (lt) {
 							return {
 								triggerid: String(lt.triggerid),
 								drawtype: num(lt.drawtype, 0),
@@ -6306,12 +6445,42 @@
 								problem: !!lt.problem
 							};
 						});
+						var draftById = {};
+
+						draftTriggers.forEach(function (lt) {
+							draftById[lt.triggerid] = lt;
+						});
 
 						// 整组共用一份折点：应用时把同一组坐标写给每个成员（保存时各自按 linkid 落库）
 						var waypoints = normalizeWaypointList(draft.waypoints);
 
 						family.forEach(function (item) {
+							var ownIds = {};
+
+							(item.linktriggers || []).forEach(function (lt) {
+								ownIds[String(lt.triggerid)] = true;
+							});
+
+							var nextTriggers = [];
+
+							// 成员原有、本次没有移除的触发器：保留并应用表格里的线型/颜色
+							(item.linktriggers || []).forEach(function (lt) {
+								var tid = String(lt.triggerid);
+
+								if (draftById[tid]) {
+									nextTriggers.push(copy(draftById[tid]));
+								}
+							});
+
+							// 本次新加的触发器：同步给组内每个成员
+							draftTriggers.forEach(function (lt) {
+								if (!ownIds[lt.triggerid] && !initialTriggerIds[lt.triggerid]) {
+									nextTriggers.push(copy(lt));
+								}
+							});
+
 							item.label = draft.label;
+							item.show_label = draft.show_label;
 							item.color = draft.color;
 							item.drawtype = draft.drawtype;
 							item.routing = draft.routing;
@@ -6319,7 +6488,7 @@
 								return {x: p.x, y: p.y};
 							});
 							item.trigger_source = draft.trigger_source;
-							item.linktriggers = copy(linktriggers);
+							item.linktriggers = nextTriggers;
 						});
 
 						// 指标只挂在组里第一条连线上（整组共用一份），避免同一批监控项被重复求和
@@ -6879,8 +7048,14 @@
 
 			return api('hostTriggers', {triggerids: missing.join(',')}).then(function (data) {
 				(data.triggers || []).forEach(function (trigger) {
-					state.triggerNames[String(trigger.triggerid)] = trigger.description;
+					var desc = String(trigger.description || '');
+					var host = String(trigger.hostname || '');
+					// 原生链接指示器的 desc_exp 是「主机名: 触发器名」，这里保持一致
+					state.triggerNames[String(trigger.triggerid)] = host && desc.indexOf(host + ': ') !== 0
+						? host + ': ' + desc
+						: desc;
 					state.triggerProblems[String(trigger.triggerid)] = num(trigger.value, 0) === 1;
+					state.triggerSeverity[String(trigger.triggerid)] = num(trigger.priority, 0);
 				});
 			}).catch(function () {
 				// 取不到名字就退回 #id，不影响编辑
@@ -6890,6 +7065,194 @@
 		function triggerName(triggerid) {
 			return state.triggerNames[String(triggerid)] || ('#' + triggerid);
 		}
+
+		// 原生触发器多选弹层（popup.generic）。8.0 的 PopUp 是页内 overlay，
+		// 需要 .wrapper 承载；模块页面布局里没有，这里按需补一个只放弹层的容器。
+		function ensurePopupHost() {
+			var host = document.getElementById('tm-popup-host');
+
+			if (host) {
+				return host;
+			}
+
+			host = make('div', 'wrapper');
+			host.id = 'tm-popup-host';
+			document.body.appendChild(host);
+
+			return host;
+		}
+
+		// 原生触发器弹层的「过滤」输入：8.0 的 popup.generic 触发器弹层只带「主机」多选，
+		// 没有过滤框。这里在主机行下方补一行，按触发器名称（弹层里的名称已带主机名前缀）
+		// 即时筛选表格，与主机的服务端筛选叠加；改主机后原生会整块重绘弹层，靠 MutationObserver 重新注入。
+		var triggerFilterQuery = '';
+		var triggerPopupObserver = null;
+
+		function nativeTriggerDialog() {
+			var host = document.getElementById('tm-popup-host');
+
+			if (!host) {
+				return null;
+			}
+
+			// 只认「触发器」弹层（表格表单 id 是 triggers）；
+			// 主机多选切主机时还会叠一个主机弹层，别给它加过滤框。
+			var dialogs = host.querySelectorAll('.overlay-dialogue');
+			var i;
+
+			for (i = dialogs.length - 1; i >= 0; i--) {
+				if (dialogs[i].querySelector('#triggers')) {
+					return dialogs[i];
+				}
+			}
+
+			return null;
+		}
+
+		function applyNativeTriggerFilter(dialog) {
+			if (!dialog) {
+				return;
+			}
+
+			var tbody = dialog.querySelector('.list-table tbody');
+
+			if (!tbody) {
+				return;
+			}
+
+			var query = triggerFilterQuery.toLowerCase();
+
+			// 弹层的主机是单选，按主机名搜索时该主机的所有触发器都算命中；
+			// 触发器名在每行文本里，主机名不一定出现，所以单独取一次已选主机名。
+			var hostMatch = false;
+
+			Array.prototype.forEach.call(dialog.querySelectorAll('.multiselect .selected li'), function (chip) {
+				var label = String(chip.getAttribute('data-label') || chip.innerText || '').toLowerCase();
+
+				if (query && label.indexOf(query) !== -1) {
+					hostMatch = true;
+				}
+			});
+
+			Array.prototype.forEach.call(tbody.rows, function (row) {
+				row.style.display = (!query || hostMatch || row.innerText.toLowerCase().indexOf(query) !== -1)
+					? ''
+					: 'none';
+			});
+		}
+
+		function installNativeTriggerFilter() {
+			var dialog = nativeTriggerDialog();
+
+			if (!dialog) {
+				return;
+			}
+
+			var list = dialog.querySelector('#generic-popup-form ul.table-forms');
+
+			if (!list) {
+				return;
+			}
+
+			var input = dialog.querySelector('#tm-popup-trigger-filter');
+
+			if (!input) {
+				var li = make('li');
+				var left = make('div', 'table-forms-td-left');
+				var label = make('label', null, T('过滤'));
+				label.setAttribute('for', 'tm-popup-trigger-filter');
+				left.appendChild(label);
+
+				var right = make('div', 'table-forms-td-right');
+				// 原生 .table-forms-td-right 是 text-align:right（为了按钮靠右），
+				// 过滤框要像原生 filter 行一样紧贴标签左侧，这里单独左对齐。
+				right.style.textAlign = 'left';
+				input = make('input', 'input');
+				input.type = 'text';
+				input.id = 'tm-popup-trigger-filter';
+				input.autocomplete = 'off';
+				input.placeholder = T('在此输入搜索');
+				input.style.width = '300px';
+				right.appendChild(input);
+
+				li.appendChild(left);
+				li.appendChild(right);
+
+				var hostRow = list.querySelector('li');
+				list.insertBefore(li, hostRow ? hostRow.nextSibling : null);
+
+				input.addEventListener('input', function () {
+					triggerFilterQuery = input.value;
+					applyNativeTriggerFilter(nativeTriggerDialog());
+				});
+
+				// 原生弹层的表格在 form 里，回车会提交表单，这里只做过滤
+				input.addEventListener('keydown', function (event) {
+					if (event.key === 'Enter') {
+						event.preventDefault();
+					}
+				});
+			}
+
+			if (input.value !== triggerFilterQuery) {
+				input.value = triggerFilterQuery;
+			}
+
+			applyNativeTriggerFilter(dialog);
+		}
+
+		function watchNativeTriggerPopup() {
+			var host = ensurePopupHost();
+
+			if (triggerPopupObserver || typeof MutationObserver !== 'function') {
+				return;
+			}
+
+			var pending = false;
+			triggerPopupObserver = new MutationObserver(function () {
+				if (pending) {
+					return;
+				}
+
+				pending = true;
+				setTimeout(function () {
+					pending = false;
+					installNativeTriggerFilter();
+				}, 0);
+			});
+			triggerPopupObserver.observe(host, {childList: true, subtree: true});
+		}
+
+		function openNativeTriggerPopup(onAdd) {
+			state.linkTriggerAdd = onAdd;
+			triggerFilterQuery = '';
+			watchNativeTriggerPopup();
+
+			if (typeof PopUp !== 'function') {
+				return false;
+			}
+
+			// 参数与原生拓扑图链接表单完全一致：多选、真实主机、带触发器
+			PopUp('popup.generic', {
+				srctbl: 'triggers',
+				srcfld1: 'triggerid',
+				reference: 'linktrigger',
+				multiselect: '1',
+				real_hosts: '1',
+				with_triggers: '1'
+			}, {dialogue_class: 'modal-popup-generic'});
+
+			return true;
+		}
+
+		// 弹层确认后由 Zabbix 核心调用（与原生 addPopupValues 同一约定）
+		window.addPopupValues = function (data) {
+			if (!data || data.object !== 'linktrigger' || typeof state.linkTriggerAdd !== 'function') {
+				return;
+			}
+
+			state.linkTriggerAdd(data.values || []);
+		};
 
 		function openTriggerPicker(hostids, current, onDone) {
 			state.trigPick = {
@@ -7088,9 +7451,10 @@
 					toggle(box.checked);
 				});
 
-				// 勾选过的触发器顺手把名字缓存下来，chip 立刻就有名字
+				// 勾选过的触发器顺手把名字/严重性缓存下来，表格立刻就有名字和色块
 				state.triggerNames[tid] = trigger.description;
 				state.triggerProblems[tid] = num(trigger.value, 0) === 1;
+				state.triggerSeverity[tid] = num(trigger.priority, 0);
 
 				elTrigList.appendChild(tr);
 			});
@@ -7111,6 +7475,7 @@
 
 			list.forEach(function (trigger) {
 				state.triggerNames[String(trigger.triggerid)] = trigger.description;
+				state.triggerSeverity[String(trigger.triggerid)] = num(trigger.priority, 0);
 			});
 
 			closeTriggerPicker();
@@ -7721,6 +8086,7 @@
 						selementid1: link.selementid1,
 						selementid2: link.selementid2,
 						label: link.label || '',
+						show_label: num(link.show_label, -1),
 						color: link.color || DEFAULT_LINK_COLOR,
 						drawtype: link.drawtype
 					};
@@ -7981,6 +8347,11 @@
 		// ---------------------------------------------------------------
 
 		syncSortArrows();
+
+		// 原生菜单/弹层（menuPopup、Overlay）都依赖页面里的 .wrapper 定位。
+		// 模块页没有原生 .wrapper，提前建好容器，否则预览模式点主机时
+		// 菜单定位会对 undefined 调 getBoundingClientRect。
+		ensurePopupHost();
 
 		loadIcons().then(loadList);
 

@@ -3,7 +3,7 @@
     "id": "topomap",
     "name": "Zabbix Auto Topology Map",
     "namespace": "Topomap",
-    "version": "1.0.28",
+    "version": "1.0.36",
     "author": "Peterson Basso/火星小魏/火星小刘",
     "description": "Automatically discover and generate network topology maps./自动发现生成网络拓扑图",
     "actions": {
