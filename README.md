@@ -265,6 +265,20 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 
 **兼容性**：已在 Zabbix 7.0.32 验证；提供 6.0 / 7.4 适配，需在目标环境验证。
 
+### 13. Zabbix Rebrand Logo（品牌 logo 设置）
+
+**简介**：用于自定义 Zabbix 前端品牌外观，入口为「管理 → 品牌 logo 设置」。
+
+**功能特性**：
+
+- 更换登录页标志、侧边栏标志、折叠侧边栏图标和浏览器图标
+- 支持原位预览、图片裁剪及登录页标志 4:1 尺寸调整
+- 自定义服务器名称、页脚文本和帮助链接，支持中英文界面
+
+**文档链接**：[zabbix_rebrand_logo/README.md](./zabbix_rebrand_logo/README.md)（[English](./zabbix_rebrand_logo/README_en.md)）
+
+**兼容性**：已在 Zabbix 7.0 和 8.0 环境验证。
+
 ## 安装说明
 
 以下为普通前端模块的通用部署步骤。Zabbix Switch Visual 请按其[独立安装说明](./zabbix_switch_visual/README.md#安装步骤)部署，并通过仪表盘编辑模式添加组件。
