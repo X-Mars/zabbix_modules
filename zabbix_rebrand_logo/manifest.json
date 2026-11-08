@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2.0,
+  "id": "zabbix-rebrand-logo",
+  "name": "Zabbix Rebrand Logo",
+  "author": "Keberneth/火星小刘",
+  "url": "https://github.com/X-Mars/zabbix_modules",
+  "namespace": "ZabbixRebrandLogo",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "Customize Zabbix branding by uploading custom logos for the login page, sidebar, compact sidebar icon, and browser favicon, and replace or hide the server name shown under the sidebar logo. Settings and uploaded files are synced to local/conf so they survive module updates.",
+  "actions": {
+    "rebrand.config": {
+      "class": "RebrandConfig",
+      "view": "rebrand.config",
+      "layout": "layout.htmlpage"
+    },
+      "rebrand.config.update": {
+      "class": "RebrandConfigUpdate"
+    }
+  },
+  "assets": {
+    "css": [
+      "rebrand.css"
+    ]
+  }
+}

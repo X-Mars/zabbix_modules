@@ -152,6 +152,13 @@ This repository contains a collection of independent Zabbix frontend modules tha
 - **Docs**: [zabbix_auto_topology_map/README_en.md](./zabbix_auto_topology_map/README_en.md) ([中文](./zabbix_auto_topology_map/README.md))
 - **Compatibility**: Developed for Zabbix 7.0 and verified on 7.0.28. Zabbix 6.x has not been tested; other 7.x and 8.x versions require validation in the target environment.
 
+### 16. Zabbix Rebrand Logo
+
+- **Purpose**: Customize Zabbix frontend branding under **Administration → Zabbix Rebrand Logo**.
+- **Features**: replace the login logo, sidebar logo, compact sidebar icon, and browser favicon; preview and crop images in place; resize the login logo at a 4:1 ratio; customize the server name, footer text, and Help URL; Chinese and English UI.
+- **Docs**: [zabbix_rebrand_logo/README_en.md](./zabbix_rebrand_logo/README_en.md) ([中文](./zabbix_rebrand_logo/README.md))
+- **Compatibility**: Verified on Zabbix 7.0 and 8.0.
+
 ## Installation
 
 The following general steps apply to standard frontend modules. For Zabbix Switch Visual, follow its [installation instructions](./zabbix_switch_visual/README_en.md#installation) and add it through dashboard edit mode.
