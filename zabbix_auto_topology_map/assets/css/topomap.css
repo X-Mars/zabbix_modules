@@ -66,6 +66,35 @@
 	box-sizing: border-box;
 }
 
+/*
+ * 页头：7.0 的 header 自带 display:flex，8.0 只给「header .header-title」套 flex，
+ * 且 app/views/layout.htmlpage.php 不输出页头，所以这里自己兜底。
+ * 目标与 7.x 一致：标题在左、按钮组在右，二者同处一行且垂直居中。
+ */
+#topomap-root > header {
+	padding: 0 10px;
+}
+
+#topomap-root > header > .header-title {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	padding: 0;
+}
+
+#topomap-root > header > .header-title > .overflow-ellipsis {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+}
+
+#topomap-root > header > .header-title > .header-controls {
+	flex: 0 0 auto;
+	margin-left: auto;
+}
+
 /* ---------------------------------------------------------------- 通用控件 */
 
 .tm-btn {
@@ -620,6 +649,12 @@
 	width: 460px;
 }
 
+/* 链接属性弹窗：宽度贴齐原生 8.0 链接表单（约 842px） */
+.tm-dialog-link {
+	width: 840px;
+	max-width: calc(100vw - 40px);
+}
+
 .tm-dialog-wide {
 	width: 920px;
 	max-width: calc(100vw - 40px);
@@ -692,6 +727,47 @@
 .tm-form .tm-req::before {
 	content: '* ';
 	color: #e45959;
+}
+
+/* 链接标签：与原生链接表单一致，两行文本域 */
+.tm-form textarea.tm-link-labelbox {
+	width: 280px;
+	max-width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+}
+
+/* 显示标签：原生分段按钮（radio 版） */
+.tm-seg-radio {
+	display: inline-flex;
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+
+.tm-seg-radio label {
+	padding: 4px 10px;
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--tm-fg);
+	background: var(--tm-panel);
+	border-right: 1px solid var(--tm-border);
+	cursor: pointer;
+	user-select: none;
+}
+
+.tm-seg-radio label:last-child {
+	border-right: 0;
+}
+
+.tm-seg-radio label.tm-seg-radio-on {
+	background: #0275b0;
+	color: #fff;
+}
+
+.tm-seg-radio input {
+	display: none;
 }
 
 .tm-form select,
@@ -1047,11 +1123,87 @@
 	min-height: 26px;
 }
 
-/* 链接属性里的触发器行：chip 框 + 选择… / 清空（交互对齐上面的指标行） */
-.tm-trig-box {
-	flex: 1 1 240px;
-	min-height: 26px;
-	cursor: default;
+/* 链接属性里的触发器指示器表：指标（严重性色块）/ 触发器 / 移除，
+   固定列宽避免长触发器名把表撑歪 */
+.tm-trig-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-size: 12px;
+}
+
+.tm-trig-table thead th {
+	padding: 4px 6px;
+	text-align: left;
+	font-weight: normal;
+	color: var(--tm-fg-dim);
+	background: var(--tm-panel);
+	border-bottom: 1px solid var(--tm-border);
+	white-space: nowrap;
+}
+
+.tm-trig-table td {
+	padding: 4px 6px;
+	border-bottom: 1px solid var(--tm-border-soft);
+	vertical-align: middle;
+	color: var(--tm-fg);
+}
+
+.tm-trig-table .tm-trig-sev {
+	width: 44px;
+}
+
+.tm-trig-table .tm-trig-act {
+	width: 56px;
+	text-align: right;
+}
+
+.tm-trig-name {
+	white-space: normal;
+	word-break: break-word;
+}
+
+.tm-trig-empty {
+	color: var(--tm-fg-dim);
+}
+
+/* 每个触发器的颜色选择器：对齐原生链接指示器行首的色块 */
+.tm-trig-color {
+	width: 32px;
+	height: 26px;
+	padding: 0;
+	border: 1px solid var(--tm-border);
+	border-radius: 2px;
+	background: transparent;
+	cursor: pointer;
+}
+
+.tm-trig-add {
+	display: inline-block;
+	margin-top: 6px;
+}
+
+/* 原生 PopUp（popup.generic）在 8.0 是页内 overlay，需要 .wrapper 承载。
+   模块页面没有这个容器，运行时补一个：只放弹层，空着时不拦截画布点击。 */
+#tm-popup-host {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+#tm-popup-host > * {
+	pointer-events: auto;
+}
+
+/* 触发器严重性色块：指标列 12×12，和原生一致 */
+.tm-sev-box {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+	vertical-align: -2px;
 }
 
 /* 触发器选择器里严重级别的色块 */
