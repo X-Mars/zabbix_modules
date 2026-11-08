@@ -34,7 +34,7 @@ class LanguageManager {
             "e.g. https://github.com/X-Mars/zabbix_modules" => "例如：https://github.com/X-Mars/zabbix_modules",
             "Logo settings" => "标志设置",
             "Update" => "更新",
-            "Invalid input." => "输入无效。"
+            "Invalid input." => "输入无效。",
             "Cannot update branding." => "无法更新品牌设置。",
             "Branding updated successfully. Clear your browser cache to see the changes." => "品牌设置已更新。请清除浏览器缓存以查看更改。",
             "Branding update failed." => "品牌设置更新失败。",
