@@ -112,6 +112,39 @@ main:has(.rack-ui) { min-width: 0; }
 .rack-ui.rack-ui .modal-header, .rack-ui.rack-ui .problem-modal-header, .rack-ui.rack-ui .rack-detail-header { background: #fff; border-bottom: 1px solid #ebeef5; padding: 18px 20px; }
 .rack-ui.rack-ui .modal-header h3, .rack-ui.rack-ui .problem-modal-header h3, .rack-ui.rack-ui .rack-detail-title { color: #303133; font-size: 18px; font-weight: 400; }
 .rack-ui.rack-ui .modal-body, .rack-ui.rack-ui .problem-modal-body, .rack-ui.rack-ui .rack-detail-body { padding: 20px; }
+.rack-ui.rack-ui .modal-tabs {
+    display: flex;
+    gap: 24px;
+    margin: 0 0 20px;
+    border-bottom: 1px solid #e4e7ed;
+}
+.rack-ui.rack-ui .modal-tab {
+    position: relative;
+    min-width: 0;
+    padding: 0 4px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #606266;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: none;
+}
+.rack-ui.rack-ui .modal-tab:hover,
+.rack-ui.rack-ui .modal-tab.is-active { color: #409eff; background: transparent; }
+.rack-ui.rack-ui .modal-tab.is-active::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: #409eff;
+    content: "";
+}
+.rack-ui.rack-ui .modal-tab-panel { display: none; }
+.rack-ui.rack-ui .modal-tab-panel.is-active { display: block; }
 .rack-ui.rack-ui .modal-footer { background: #fff; border-top: 1px solid #ebeef5; padding: 12px 20px 20px; gap: 12px; }
 .rack-ui.rack-ui .modal-close, .rack-ui.rack-ui .problem-modal-close, .rack-ui.rack-ui .rack-detail-close { color: #909399; background: transparent; border: 0; box-shadow: none; font-size: 24px; border-radius: 50%; }
 .rack-ui.rack-ui .modal-close:hover, .rack-ui.rack-ui .problem-modal-close:hover, .rack-ui.rack-ui .rack-detail-close:hover { color: #409eff; background: #ecf5ff; }

@@ -81,6 +81,12 @@ class LanguageManager {
             
             // 主机分配
             'assign_host' => '分配主机',
+            'assigned_host' => '分配主机',
+            'custom_host' => '自定义主机',
+            'custom_host_name' => '主机名',
+            'custom_host_ip' => 'IP 地址',
+            'custom_host_name_placeholder' => '请输入自定义主机名',
+            'custom_host_ip_placeholder' => '例如：192.168.1.10',
             'remove_host' => '移除主机',
             'select_host' => '选择主机',
             'host_group' => '主机分组',
@@ -115,6 +121,8 @@ class LanguageManager {
             'rack_not_found' => '机柜不存在',
             'invalid_position' => 'U位范围无效',
             'position_occupied' => '该U位已被占用',
+            'custom_host_required' => '请输入自定义主机名和 IP 地址',
+            'invalid_custom_ip' => '请输入有效的 IP 地址',
             'room_name_required' => '请输入机房名称',
             'rack_name_required' => '请输入机柜名称',
             'room_selection_required' => '请选择机房',
@@ -278,6 +286,12 @@ class LanguageManager {
             
             // 主机分配
             'assign_host' => 'Assign Host',
+            'assigned_host' => 'Assigned Host',
+            'custom_host' => 'Custom Host',
+            'custom_host_name' => 'Host Name',
+            'custom_host_ip' => 'IP Address',
+            'custom_host_name_placeholder' => 'Enter a custom host name',
+            'custom_host_ip_placeholder' => 'For example: 192.168.1.10',
             'remove_host' => 'Remove Host',
             'select_host' => 'Select Host',
             'host_group' => 'Host Group',
@@ -312,6 +326,8 @@ class LanguageManager {
             'rack_not_found' => 'Rack not found',
             'invalid_position' => 'Invalid U position range',
             'position_occupied' => 'Position is occupied',
+            'custom_host_required' => 'Please enter a custom host name and IP address',
+            'invalid_custom_ip' => 'Please enter a valid IP address',
             'room_name_required' => 'Room name is required',
             'rack_name_required' => 'Rack name is required',
             'room_selection_required' => 'Please select a room',

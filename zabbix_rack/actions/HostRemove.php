@@ -8,10 +8,12 @@ namespace Modules\ZabbixRack\Actions;
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+require_once dirname(__DIR__) . '/lib/RackConfig.php';
 require_once dirname(__DIR__) . '/lib/RackPermission.php';
 require_once dirname(__DIR__) . '/lib/HostRackManager.php';
 
 use Modules\ZabbixRack\Lib\LanguageManager;
+use Modules\ZabbixRack\Lib\RackConfig;
 use Modules\ZabbixRack\Lib\RackPermission;
 use Modules\ZabbixRack\Lib\HostRackManager;
 
@@ -52,12 +54,25 @@ class HostRemove extends CController {
     protected function doAction(): void {
         $hostId = $this->getInput('hostid');
 
+        if (HostRackManager::isCustomHostId($hostId)) {
+            $customHost = RackConfig::getCustomHost(HostRackManager::getCustomHostId($hostId));
+            if (!$customHost || !RackPermission::userCanAccessRoomId((string) ($customHost['room_id'] ?? ''))) {
+                RackPermission::denyAccessJson();
+            }
+            $success = HostRackManager::removeCustomHost($hostId);
+            $this->sendResponse($success);
+        }
+
         if (!RackPermission::userCanAccessHostId($hostId)) {
             RackPermission::denyAccessJson();
         }
         
         $success = HostRackManager::removeHost($hostId);
         
+        $this->sendResponse($success);
+    }
+
+    private function sendResponse(bool $success): void {
         header('Content-Type: application/json');
         $response = [
             'success' => $success,
