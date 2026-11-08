@@ -275,6 +275,8 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 - 支持原位预览、图片裁剪及登录页标志 4:1 尺寸调整
 - 自定义服务器名称、页脚文本和帮助链接，支持中英文界面
 
+![Zabbix Rebrand Logo（品牌 logo 设置）](zabbix_rebrand_logo/images/1.png)
+
 **文档链接**：[zabbix_rebrand_logo/README.md](./zabbix_rebrand_logo/README.md)（[English](./zabbix_rebrand_logo/README_en.md)）
 
 **兼容性**：已在 Zabbix 7.0 和 8.0 环境验证。
