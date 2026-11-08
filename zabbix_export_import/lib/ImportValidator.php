@@ -110,13 +110,17 @@ final class ImportValidator
             if ((int) $r["type"] === 22 && !ZabbixVersion::modern()) {
                 throw new \RuntimeException("Browser items require Zabbix 7.0.");
             }
-            if ((int) $r["value_type"] > 5 || (int) $r["value_type"] < 0) {
+            $valueType = (int) $r["value_type"];
+            if ($valueType > 6) {
                 throw new \RuntimeException("Unsupported value type.");
             }
-            if ((int) $r["value_type"] === 5 && !ZabbixVersion::modern()) {
+            if ($valueType === 6 && !ZabbixVersion::atLeast("8.0")) {
+                throw new \RuntimeException("JSON value type requires Zabbix 8.0.");
+            }
+            if ($valueType === 5 && !ZabbixVersion::modern()) {
                 throw new \RuntimeException("Binary value type requires Zabbix 7.0.");
             }
-            if ((int) $r["value_type"] === 5 && (int) $r["type"] !== 18) {
+            if ($valueType === 5 && (int) $r["type"] !== 18) {
                 throw new \RuntimeException("Binary values require a dependent item.");
             }
             if (($r["origin"] ?? "local") !== "local") {

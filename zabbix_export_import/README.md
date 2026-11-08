@@ -52,7 +52,9 @@ php /usr/share/zabbix/modules/zabbix_export_import/tools/prepare.php /usr/share/
 
 ### 3. 启用或升级
 
-在“管理 → 常规 → 模块”扫描目录并启用 `Zabbix Import/Export`。`prepare.php` 根据目标源码设置 manifest：6.0 使用版本 1，7.x 使用版本 2。升级时覆盖本模块文件，再重新准备 manifest。不修改 CMDB 或 Zabbix 核心文件。
+在“管理 → 常规 → 模块”扫描目录并启用 `Zabbix Import/Export`。`prepare.php` 根据目标源码设置 manifest：6.0 使用版本 1，7.0 和 8.0 使用版本 2。升级时覆盖本模块文件，再重新准备 manifest。
+
+监控项的 JSON 值类型需要 Zabbix 8.0。模板导入遵循目标 Zabbix 的原生配置格式，7.0 无法导入 8.0 格式的原生模板。
 
 ## 使用方法
 

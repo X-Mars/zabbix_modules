@@ -6,7 +6,7 @@
 
 不同模块的适用版本和部署要求不同，请以各模块 README 的兼容性说明为准。
 
-Zabbix Switch Visual 是仪表盘组件，当前主要面向 Zabbix 7.x；其 6.0–8.0 全版本兼容尚未完成，不能仅修改 `manifest_version` 后用于旧版。详见[组件兼容性说明](./zabbix_switch_visual/README.md#版本兼容性)。
+Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 7.0.32 与 8.0.0 验证。各版本的验证范围见[组件兼容性说明](./zabbix_switch_visual/README.md#版本兼容性)。
 
 ## 描述
 

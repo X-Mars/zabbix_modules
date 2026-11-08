@@ -52,7 +52,9 @@ php /usr/share/zabbix/modules/zabbix_export_import/tools/prepare.php /usr/share/
 
 ### 3. Enable or upgrade
 
-Scan and enable **Zabbix Import/Export** under Administration → General → Modules. The preparation command selects manifest version 1 for 6.0 and version 2 for 7.x. To upgrade, replace the module files and rerun the preparation command. The module does not change the CMDB module or core frontend files.
+Scan and enable **Zabbix Import/Export** under Administration → General → Modules. The preparation command selects manifest version 1 for 6.0 and version 2 for 7.0 and 8.0. To upgrade, replace the module files and rerun the preparation command.
+
+The JSON item value type requires Zabbix 8.0. Template import follows the target's native configuration format. Zabbix 7.0 cannot import native templates in the 8.0 format.
 
 ## Usage
 
