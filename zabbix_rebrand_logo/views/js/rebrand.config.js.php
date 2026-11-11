@@ -36,23 +36,33 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 			'Logo size (4:1, %s)', 'Apply crop', 'Zoom', 'Horizontal position', 'Vertical position',
 			'Unable to load image.', 'Crop applied.',
 			'The cropped image exceeds the upload limit.',
-			'Preparing image for upload…', 'Check the login page logo and try again.'
+			'Image resized for upload.', 'Preparing image for upload…', 'Check the selected images and try again.',
+			'Image scale', 'Image scaled for upload.'
 		]), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 		const [sizeLabelFormat, applyLabel, zoomLabel, xLabel, yLabel, imageError, appliedLabel, limitError,
-			preparingLabel, uploadError] = labels;
+			resizedLabel, preparingLabel, uploadError, imageScaleLabel, scaledLabel] = labels;
 		const sizes = {logo_main: [120, 30], logo_sidebar: [91, 24], logo_compact: [24, 24], favicon: [32, 32]};
 		const sizeSlider = form.elements['logo_main_width'];
 		const uploadLimit = <?= json_encode($data['logo_upload_limit']) ?>;
+		const postBudget = <?= json_encode($data['logo_post_budget']) ?>;
 		const updateButton = form.elements['update'];
 		const updateStatus = document.getElementById('rebrand-update-status');
+		const uploads = [];
 		let pendingCrops = 0;
-		let loginUploadNeedsCrop = () => false;
-		let prepareLoginUpload;
 		let preparingSubmit = false;
 
 		function loginLogoSize() {
 			const width = sizeSlider.valueAsNumber;
 			return [width, width / Number(sizeSlider.dataset.aspectRatio)];
+		}
+
+		function getUploadLimit() {
+			const files = uploads.map(upload => upload.getFile()).filter(Boolean);
+			const total = files.reduce((sum, file) => sum + file.size, 0);
+			if (postBudget !== null && total > postBudget) {
+				return Math.min(uploadLimit, Math.floor(postBudget / files.length));
+			}
+			return uploadLimit;
 		}
 
 		form.addEventListener('submit', async event => {
@@ -61,7 +71,9 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				return;
 			}
 			updateStatus.textContent = '';
-			if (!loginUploadNeedsCrop()) {
+			const limit = getUploadLimit();
+			const pendingUploads = uploads.filter(upload => upload.needsCrop(limit));
+			if (!pendingUploads.length) {
 				return;
 			}
 
@@ -70,7 +82,24 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 			updateButton.disabled = true;
 			updateStatus.textContent = preparingLabel;
 			try {
-				if (!await prepareLoginUpload()) {
+				for (const upload of pendingUploads) {
+					if (!await upload.prepare(limit)) {
+						updateStatus.textContent = uploadError;
+						return;
+					}
+				}
+
+				const finalLimit = getUploadLimit();
+				if (finalLimit < limit) {
+					// Resizing a saved image can add a file to the request.
+					for (const upload of uploads.filter(upload => upload.needsCrop(finalLimit))) {
+						if (!await upload.prepare(finalLimit)) {
+							updateStatus.textContent = uploadError;
+							return;
+						}
+					}
+				}
+				if (uploads.some(upload => upload.needsCrop(getUploadLimit()))) {
 					updateStatus.textContent = uploadError;
 					return;
 				}
@@ -93,13 +122,53 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 
 		form.querySelectorAll('[data-rebrand-upload]').forEach(input => {
 			const key = input.dataset.rebrandUpload;
-			const customSizing = key === 'logo_main' && Boolean(sizeSlider);
+			const isLoginLogo = key === 'logo_main';
+			const isSidebar = key === 'logo_sidebar';
+			const customSizing = isLoginLogo && Boolean(sizeSlider);
+			const pixelDensity = Math.min(3, window.devicePixelRatio || 1);
 			const savedLogo = form.querySelector('[data-rebrand-preview="' + key + '"]');
 			const sizeLabel = customSizing ? sizeSlider.closest('label') : null;
+			const uploadActions = input.closest('.rebrand-upload-actions');
 			const canvas = document.createElement('canvas');
 			canvas.className = 'rebrand-logo-preview';
 			canvas.hidden = true;
-			(savedLogo ?? input).before(canvas);
+			(savedLogo ?? uploadActions).before(canvas);
+
+			let scaleSlider;
+			let scaleValue;
+			if (!isLoginLogo) {
+				const viewport = document.createElement('div');
+				viewport.className = 'rebrand-preview-viewport';
+				canvas.before(viewport);
+				viewport.append(canvas);
+				if (savedLogo) {
+					viewport.append(savedLogo);
+					setPreviewSize(savedLogo, ...sizes[key]);
+					if (isSidebar) {
+						savedLogo.style.objectFit = 'cover';
+					}
+					savedLogo.addEventListener('load', updateImageScale);
+				}
+				setPreviewSize(canvas, ...sizes[key]);
+
+				const label = document.createElement('label');
+				label.className = 'rebrand-logo-size rebrand-preview-size';
+				scaleValue = document.createElement('span');
+				scaleSlider = document.createElement('input');
+				scaleSlider.type = 'range';
+				scaleSlider.min = '25';
+				scaleSlider.max = '300';
+				scaleSlider.step = '5';
+				scaleSlider.value = '100';
+				scaleSlider.setAttribute('aria-label', imageScaleLabel);
+				label.append(scaleValue, scaleSlider);
+				viewport.after(label);
+				scaleSlider.addEventListener('input', () => {
+					revision++;
+					status.textContent = '';
+					updateImageScale();
+				});
+			}
 
 			const controls = document.createElement('div');
 			controls.className = 'rebrand-crop-controls';
@@ -131,15 +200,61 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 			status.setAttribute('role', 'status');
 			status.className = 'rebrand-crop-status';
 			controls.hidden = !sizeLabel;
-			input.after(controls, apply, status);
+			const cropActions = document.createElement('div');
+			cropActions.className = 'rebrand-crop-actions';
+			cropActions.append(apply, status);
+			uploadActions.after(controls, cropActions);
 
 			let img = null;
 			let sourceUrl = null;
 			let revision = 0;
 			let encodedRevision = -1;
 			let cropRequested = false;
+			let scalePrepared = false;
+			let selectedFile = null;
 			let imageReady = Promise.resolve();
 			const remove = form.elements['remove_' + key];
+			updateImageScale();
+
+			function setPreviewSize(preview, width, height) {
+				preview.style.width = width + 'px';
+				preview.style.aspectRatio = width + ' / ' + height;
+			}
+
+			function iconSource() {
+				return img || (selectedFile ? null : savedLogo);
+			}
+
+			function needsScale() {
+				return scaleSlider && (scaleSlider.valueAsNumber !== 100 || scalePrepared);
+			}
+
+			function scaledIconFrame(source) {
+				if (isSidebar) {
+					const [width, height] = sizes[key];
+					const units = Math.max(1, Math.round(source.naturalWidth * scaleSlider.valueAsNumber / (100 * width)));
+					return getCrop(source, [width * units, height * units]);
+				}
+				const frame = cropRequested ? getCrop() : imageFrame(source);
+				const scale = scaleSlider.valueAsNumber / 100;
+				return {...frame, width: Math.max(1, Math.round(frame.width * scale)),
+					height: Math.max(1, Math.round(frame.height * scale))};
+			}
+
+			function updateImageScale() {
+				if (!scaleSlider) {
+					return;
+				}
+				const source = iconSource();
+				const percentage = scaleSlider.valueAsNumber + '%';
+				let value = percentage;
+				if (source?.naturalWidth) {
+					const {width, height} = scaledIconFrame(source);
+					value += ', ' + width + ' × ' + height + ' px';
+				}
+				scaleValue.textContent = imageScaleLabel + ' (' + value + ')';
+				scaleSlider.setAttribute('aria-valuetext', value);
+			}
 
 			function updateSavedPreview() {
 				const [width, height] = loginLogoSize();
@@ -147,8 +262,7 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				sizeLabel.querySelector('span').textContent = sizeLabelFormat.replace('%s', label);
 				sizeSlider.setAttribute('aria-valuetext', label);
 				if (savedLogo) {
-					savedLogo.style.width = width + 'px';
-					savedLogo.style.aspectRatio = width + ' / ' + height;
+					setPreviewSize(savedLogo, width, height);
 				}
 			}
 
@@ -161,22 +275,30 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				}
 			}
 
-			function getCrop() {
-				const [width, height] = customSizing ? loginLogoSize() : sizes[key];
-				const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight) * sliders[0].valueAsNumber;
+			function getCrop(source = img, [width, height] = customSizing ? loginLogoSize() : sizes[key]) {
+				const scale = Math.max(width / source.naturalWidth, height / source.naturalHeight) * sliders[0].valueAsNumber;
 				const sourceWidth = width / scale;
 				const sourceHeight = height / scale;
-				const x = (img.naturalWidth - sourceWidth) * sliders[1].valueAsNumber / 100;
-				const y = (img.naturalHeight - sourceHeight) * sliders[2].valueAsNumber / 100;
-				return {width, height, sourceWidth, sourceHeight, x, y, scale};
+				const x = (source.naturalWidth - sourceWidth) * sliders[1].valueAsNumber / 100;
+				const y = (source.naturalHeight - sourceHeight) * sliders[2].valueAsNumber / 100;
+				return {width, height, sourceWidth, sourceHeight, x, y, scale, source};
+			}
+
+			function imageFrame(source, [width, height] = [source.naturalWidth, source.naturalHeight]) {
+				const sourceWidth = source.naturalWidth;
+				const sourceHeight = source.naturalHeight;
+				const scale = Math.min(1, width / sourceWidth, height / sourceHeight);
+
+				return {width: sourceWidth * scale, height: sourceHeight * scale, sourceWidth, sourceHeight,
+					x: 0, y: 0, scale, source};
 			}
 
 			function render(target, crop, density) {
-				target.width = Math.round(crop.width * density);
-				target.height = Math.round(crop.height * density);
+				target.width = Math.max(1, Math.round(crop.width * density));
+				target.height = Math.max(1, Math.round(crop.height * density));
 				const context = target.getContext('2d');
 				context.imageSmoothingQuality = 'high';
-				context.drawImage(img, crop.x, crop.y, crop.sourceWidth, crop.sourceHeight,
+				context.drawImage(crop.source ?? img, crop.x, crop.y, crop.sourceWidth, crop.sourceHeight,
 					0, 0, target.width, target.height);
 			}
 
@@ -187,10 +309,23 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 					return;
 				}
 
-				const crop = getCrop();
-				canvas.style.width = crop.width + 'px';
-				canvas.style.aspectRatio = crop.width + ' / ' + crop.height;
-				render(canvas, crop, Math.min(3, window.devicePixelRatio || 1));
+				const crop = isSidebar ? scaledIconFrame(img)
+					: (!isLoginLogo && !cropRequested ? imageFrame(img) : getCrop());
+				renderPreview(crop);
+				updateImageScale();
+			}
+
+			function renderPreview(crop) {
+				if (isLoginLogo) {
+					setPreviewSize(canvas, crop.width, crop.height);
+					render(canvas, crop, Math.max(1, Math.min(pixelDensity, 1 / crop.scale)));
+				}
+				else {
+					const [width, height] = sizes[key];
+					const fitScale = Math.min(width / crop.width, height / crop.height);
+					// Keep enough detail for the largest preview without allocating a full-size canvas.
+					render(canvas, crop, Math.min(1 / crop.scale, 3 * pixelDensity * fitScale));
+				}
 			}
 
 			function editCrop() {
@@ -218,8 +353,14 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				showCrop(false);
 				revision++;
 				cropRequested = false;
+				scalePrepared = false;
 				status.textContent = '';
 				const file = input.files[0];
+				selectedFile = file ?? null;
+				if (scaleSlider) {
+					scaleSlider.value = '100';
+					updateImageScale();
+				}
 				imageReady = Promise.resolve();
 				if (!file) {
 					return;
@@ -250,33 +391,64 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				});
 			});
 
-			async function encodeCrop() {
-				if (!img) {
+			async function encodeCrop(limit, {manual = false, resize = false} = {}) {
+				const source = isLoginLogo ? img : iconSource();
+				if (!source?.naturalWidth) {
 					status.textContent = imageError;
 					return false;
 				}
 
-				cropRequested = true;
-				const crop = getCrop();
+				const scaleRequested = Boolean(needsScale());
+				cropRequested = !resize;
+				const crop = scaleRequested || isSidebar
+					? scaledIconFrame(source)
+					: (resize ? imageFrame(source, sizes[key]) : getCrop());
 				const appliedRevision = revision;
 				const output = document.createElement('canvas');
-				// Keep up to twice the display resolution when the source actually has that detail.
-				const density = customSizing ? Math.max(1, Math.min(2, 1 / crop.scale)) : 1;
-				const encode = () => new Promise(resolve => output.toBlob(resolve, 'image/png'));
+				const maxDensity = isLoginLogo ? (customSizing ? 2 : 1) : 3 * pixelDensity;
+				const longestEdge = Math.max(crop.width, crop.height);
+				const density = scaleRequested || isSidebar
+					? Math.min(1, 4096 / longestEdge)
+					: Math.max(1, Math.min(maxDensity, 1 / crop.scale));
+				const sidebarUnits = isSidebar ? crop.width / sizes[key][0] : 0;
+				// Both exported dimensions must use the same integer multiple of 91 × 24.
+				const outputDensity = scale => isSidebar
+					? Math.max(1, Math.floor(sidebarUnits * scale + Number.EPSILON)) / sidebarUnits
+					: scale;
+				const encode = (scale) => {
+					render(output, crop, outputDensity(scale));
+					return new Promise(resolve => output.toBlob(resolve, 'image/png'));
+				};
 
 				pendingCrops++;
 				apply.disabled = true;
 				try {
-					render(output, crop, density);
-					let blob = await encode();
-					if (blob && blob.size > uploadLimit && density > 1 && revision === appliedRevision) {
-						render(output, crop, 1);
-						blob = await encode();
+					let blob = await encode(density);
+					let savedDensity = density;
+					const minimumDensity = isSidebar ? 1 / sidebarUnits : 1 / Math.max(1, longestEdge);
+					if (blob?.size > limit && density > minimumDensity && revision === appliedRevision) {
+						// Start with a version that fits, then keep the largest successful encode.
+						let low = minimumDensity;
+						let high = density;
+						blob = await encode(low);
+						savedDensity = low;
+						for (let attempt = 0; blob && blob.size <= limit && revision === appliedRevision
+								&& attempt < 7 && (high - low) * longestEdge >= 1; attempt++) {
+							const middle = (low + high) / 2;
+							const candidate = await encode(middle);
+							if (candidate && candidate.size <= limit) {
+								blob = candidate;
+								savedDensity = low = middle;
+							}
+							else {
+								high = middle;
+							}
+						}
 					}
 					if (revision !== appliedRevision) {
 						return false;
 					}
-					if (!blob || blob.size > uploadLimit) {
+					if (!blob || blob.size > limit) {
 						status.textContent = blob ? limitError : imageError;
 						return false;
 					}
@@ -284,11 +456,18 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 					const transfer = new DataTransfer();
 					transfer.items.add(new File([blob], key + '.png', {type: 'image/png'}));
 					input.files = transfer.files;
-					if (remove) {
+					if (remove && manual) {
 						remove.checked = false;
 					}
 					encodedRevision = revision;
-					status.textContent = appliedLabel;
+					scalePrepared = scaleRequested;
+					renderPreview(crop);
+					updateImageScale();
+					const finalDensity = outputDensity(savedDensity);
+					const dimensions = Math.max(1, Math.round(crop.width * finalDensity)) + ' × '
+						+ Math.max(1, Math.round(crop.height * finalDensity)) + ' px';
+					status.textContent = scaleRequested ? scaledLabel + ' ' + dimensions
+						: (resize ? resizedLabel : appliedLabel);
 					return true;
 				}
 				catch (error) {
@@ -303,31 +482,62 @@ use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 				}
 			}
 
-			apply.addEventListener('click', encodeCrop);
-			if (key === 'logo_main') {
-				loginUploadNeedsCrop = () => {
-					const file = input.files[0];
-					return Boolean(file && !remove?.checked && encodedRevision !== revision
-						&& (cropRequested || file.size > uploadLimit));
-				};
+			apply.addEventListener('click', () => {
+				if (!preparingSubmit) {
+					encodeCrop(uploadLimit, {manual: true});
+				}
+			});
 
-				prepareLoginUpload = async () => {
-					const file = input.files[0];
+			const getFile = () => remove?.checked ? null : input.files[0];
+			function sidebarNeedsCrop() {
+				if (!isSidebar) {
+					return false;
+				}
+				const source = iconSource();
+				const [width, height] = sizes[key];
+				return (selectedFile && !source) || (source?.naturalWidth
+					&& (source.naturalWidth * height !== source.naturalHeight * width || cropRequested));
+			}
+
+			uploads.push({
+				getFile,
+				needsCrop(limit) {
+					const file = getFile();
+					const changed = encodedRevision !== revision;
+					return !remove?.checked && Boolean((file && file.size > limit)
+						|| (file && isLoginLogo && cropRequested && changed)
+						|| (sidebarNeedsCrop() && changed)
+						|| ((selectedFile || savedLogo) && needsScale() && changed));
+				},
+				async prepare(limit) {
+					const file = getFile();
 					await imageReady;
-					// A new file may have been chosen while the previous one was decoding.
-					if (input.files[0] !== file) {
-						return false;
+					if (!selectedFile && savedLogo && (needsScale() || sidebarNeedsCrop())) {
+						await savedLogo.decode();
 					}
 					if (remove?.checked) {
 						return true;
 					}
-					if (!/\.(png|jpe?g|gif)$/i.test(file.name)) {
+					// A new file may have been chosen while the previous one was decoding.
+					if (input.files[0] !== file) {
+						return false;
+					}
+					const extension = selectedFile && '.' + selectedFile.name.split('.').pop().toLowerCase();
+					if (extension && !input.accept.split(',').includes(extension)) {
 						status.textContent = imageError;
 						return false;
 					}
-					return encodeCrop();
-				};
-			}
+					if (!this.needsCrop(limit)) {
+						return true;
+					}
+					return encodeCrop(limit, {resize: !isLoginLogo && !cropRequested});
+				}
+			});
+			form.addEventListener('formdata', event => {
+				if (remove?.checked) {
+					event.formData.delete(input.name);
+				}
+			});
 		});
 
 		// Re-sync after the browser restores form state on back/forward navigation.

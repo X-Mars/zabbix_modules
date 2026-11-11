@@ -47,30 +47,30 @@ $build_logo_fields = static function (
 		?string $current_file, string $logo_key, string $remove_name, string $remove_label,
 		string $accept, string $help_text
 	) use ($logos_url, $cache_bust): array {
-	$fields = [];
+	$help_id = 'rebrand-help-'.$logo_key;
+	$fields = [(new CDiv($help_text))->setId($help_id)->addClass('rebrand-hint')];
+	$actions = [(new CTag('input', false))
+		->setAttribute('type', 'file')
+		->setId('rebrand-file-'.$logo_key)
+		->setAttribute('name', $logo_key)
+		->setAttribute('accept', $accept)
+		->setAttribute('aria-labelledby', 'rebrand-label-rebrand-file-'.$logo_key)
+		->setAttribute('aria-describedby', $help_id)
+		->setAttribute('data-rebrand-upload', $logo_key)];
 
 	if ($current_file) {
 		$img = (new CTag('img', true))
 			->setAttribute('src', $logos_url.'/'.$current_file.'?'.$cache_bust($current_file))
+			->setAttribute('alt', LanguageManager::t('Preview'))
 			->addClass('rebrand-logo-preview')
 			->setAttribute('data-rebrand-preview', $logo_key);
 
-		$fields[] = (new CDiv($img));
-		$fields[] = (new CDiv([
-			(new CCheckBox($remove_name, '1')),
-			' ',
-			$remove_label
-		]))->addClass('rebrand-remove-label');
+		$fields[] = $img;
+		$actions[] = (new CDiv((new CCheckBox($remove_name, '1'))->setLabel($remove_label)))
+			->addClass('rebrand-remove-label');
 	}
 
-	$fields[] = (new CTag('input', false))
-		->setAttribute('type', 'file')
-		->setAttribute('name', $logo_key)
-		->setAttribute('accept', $accept)
-		->setAttribute('data-rebrand-upload', $logo_key);
-	$fields[] = (new CTag('div', true, $help_text))
-		->addClass(ZBX_STYLE_GREY)
-		->setAttribute('style', 'margin-top: 4px;');
+	$fields[] = (new CDiv($actions))->addClass('rebrand-upload-actions');
 
 	return $fields;
 };
@@ -101,7 +101,7 @@ if ($data['login_logo_sizing']) {
 else {
 	$logo_main_fields[] = (new CDiv(LanguageManager::t(
 		'Install the local login view described in the module README to enable custom dimensions.'
-	)))->addClass(ZBX_STYLE_GREY);
+	)))->addClass('rebrand-hint');
 }
 
 $logo_sidebar_fields = $build_logo_fields(
@@ -134,10 +134,10 @@ $server_name_fields = [
 		->setModern(),
 	(new CDiv(
 		(new CTextBox('server_name', $data['server_name'], false, ServerNameOverride::MAX_LENGTH))
-			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 			->setAttribute('placeholder', LanguageManager::t('e.g. Production monitoring'))
+			->setAttribute('aria-labelledby', 'rebrand-server-name')
 			->setEnabled($data['server_name_mode'] === ServerNameOverride::MODE_CUSTOM)
-	))->setAttribute('style', 'margin-top: 6px;'),
+	)),
 	(new CTag('div', true, [
 		LanguageManager::t('Shown under the sidebar logo and before the page title in the browser tab.'),
 		BR(),
@@ -149,41 +149,51 @@ $server_name_fields = [
 		BR(),
 		LanguageManager::t('The sign-in page always shows the default, because Zabbix loads modules only after sign-in.')
 	]))
-		->addClass(ZBX_STYLE_GREY)
-		->setAttribute('style', 'margin-top: 4px;')
+		->addClass('rebrand-hint')
 ];
 
-// --- Build form list ---
+$field = static function (string $label, array $items, ?string $input_id = null): CDiv {
+	$heading = (new CDiv($label))->setId($input_id === null ? 'rebrand-server-name' : 'rebrand-label-'.$input_id);
 
-$logo_column = (new CFormList())
-	->addRow(LanguageManager::t('Compact sidebar icon'), $logo_compact_fields)
-	->addRow(LanguageManager::t('Browser favicon'), $favicon_fields)
-	->addRow(LanguageManager::t('Sidebar logo'), $logo_sidebar_fields)
-	->addRow(LanguageManager::t('Login page logo'), $logo_main_fields);
+	return (new CDiv([$heading->addClass('rebrand-label'), ...$items]))->addClass('rebrand-field');
+};
 
-$settings_column = (new CFormList())
-	->addRow(LanguageManager::t('Server name'), $server_name_fields)
-	->addRow(LanguageManager::t('Footer text'),
+$panel = static function (string $id, string $label, array $fields): CTag {
+	return (new CTag('section', true, [
+		(new CTag('h2', true, $label))->setId($id)->addClass('rebrand-panel-heading'),
+		(new CDiv($fields))->addClass('rebrand-panel-body')
+	]))->addClass('rebrand-panel')->setAttribute('aria-labelledby', $id);
+};
+
+$logo_column = $panel('rebrand-logos', LanguageManager::t('Logo settings'), [
+	$field(LanguageManager::t('Compact sidebar icon'), $logo_compact_fields, 'rebrand-file-logo_compact'),
+	$field(LanguageManager::t('Browser favicon'), $favicon_fields, 'rebrand-file-favicon'),
+	$field(LanguageManager::t('Sidebar logo'), $logo_sidebar_fields, 'rebrand-file-logo_sidebar'),
+	$field(LanguageManager::t('Login page logo'), $logo_main_fields, 'rebrand-file-logo_main')
+]);
+
+$settings_column = $panel('rebrand-settings', LanguageManager::t('General settings'), [
+	$field(LanguageManager::t('Server name'), $server_name_fields),
+	$field(LanguageManager::t('Footer text'), [
 		(new CTextBox('brand_footer', $data['brand_footer'], false, 128))
-			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			->setAttribute('aria-labelledby', 'rebrand-label-brand_footer')
 			->setAttribute('placeholder', LanguageManager::t('e.g. My Company'))
-	)
-	->addRow(LanguageManager::t('Help URL'),
+	], 'brand_footer'),
+	$field(LanguageManager::t('Help URL'), [
 		(new CTextBox('brand_help_url', $data['brand_help_url'], false, 255))
-			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			->setAttribute('aria-labelledby', 'rebrand-label-brand_help_url')
 			->setAttribute('placeholder', LanguageManager::t('e.g. https://example.com/help'))
-	);
-
-$tab_content = new CDiv();
+	], 'brand_help_url')
+]);
 
 if ($data['runtime_error']) {
-	$tab_content->addItem(
+	$form->addItem(
 		(new CDiv($data['runtime_error']))->addClass('rebrand-banner')->addClass('rebrand-banner-error')
 	);
 }
 
 if (!$data['storage_writable'] || !$data['conf_writable']) {
-	$tab_content->addItem(
+	$form->addItem(
 		(new CDiv(
 			'Warning: Logo files are stored in '.$data['storage_dir'].' and branding config in '.$data['brand_conf_file'].'. ' .
 			'The PHP process user "'.$data['runtime_user'].'" needs write access to these paths. ' .
@@ -192,12 +202,8 @@ if (!$data['storage_writable'] || !$data['conf_writable']) {
 	);
 }
 
-$tab_content->addItem((new CDiv([$logo_column, $settings_column]))->addClass('rebrand-columns'));
-
-$tab_view = (new CTabView())->addTab('rebrand_tab', LanguageManager::t('Logo settings'), $tab_content);
-
 $form->addItem([
-	$tab_view,
+	(new CDiv([$logo_column, $settings_column]))->addClass('rebrand-columns'),
 	(new CDiv([
 		new CSubmit('update', LanguageManager::t('Update')),
 		(new CSpan())->setId('rebrand-update-status')->setAttribute('role', 'status')

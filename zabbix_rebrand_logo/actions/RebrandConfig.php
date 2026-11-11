@@ -32,6 +32,7 @@ class RebrandConfig extends CController {
 			'login_logo_ratio' => BrandingLimits::LOGIN_LOGO_RATIO,
 			'login_logo_max_width' => $this->getLoginLogoSliderMaxWidth(),
 			'logo_upload_limit' => $this->getLogoUploadLimit(),
+			'logo_post_budget' => $this->getLogoPostBudget(),
 			'logo_sidebar' => null,
 			'logo_compact' => null,
 			'favicon' => null,

@@ -10,17 +10,19 @@ trait RebrandStorageTrait {
 	private function getLogoUploadLimit(): int {
 		$limit = BrandingLimits::LOGO_UPLOAD_LIMIT;
 		$file_limit = str2mem((string) ini_get('upload_max_filesize'));
-		$post_limit = str2mem((string) ini_get('post_max_size'));
 
 		if ($file_limit > 0) {
 			$limit = min($limit, $file_limit);
 		}
-		if ($post_limit > 0) {
-			// Leave room for the form fields and multipart headers.
-			$limit = min($limit, max(1, $post_limit - 8192));
-		}
 
-		return $limit;
+		return min($limit, $this->getLogoPostBudget() ?? $limit);
+	}
+
+	private function getLogoPostBudget(): ?int {
+		$post_limit = str2mem((string) ini_get('post_max_size'));
+
+		// Leave room for the form fields and multipart headers.
+		return $post_limit > 0 ? max(1, $post_limit - 8192) : null;
 	}
 
 	private function getLoginLogoSliderMaxWidth(): int {
