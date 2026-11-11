@@ -1,0 +1,5 @@
+{
+    "template_name": "Lldp Discovery",
+    "item_key_prefix": "lldp.remote.info",
+    "discovery_key": "lldp_discovery"
+}

@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2.0,
+    "id": "zabbix-lldp",
+    "name": "Zabbix LLDP Topology",
+    "author": "火星小刘",
+    "url": "https://github.com/X-Mars/zabbix_modules",
+    "version": "1.0.0-beta",
+    "namespace": "ZabbixLldp",
+    "description": "Visualize LLDP neighbor topology from Zabbix LLDP discovery items",
+    "actions": {
+        "lldp": {
+            "class": "Lldp",
+            "view": "lldp"
+        },
+        "lldp.data": {
+            "class": "LldpData"
+        }
+    }
+}
