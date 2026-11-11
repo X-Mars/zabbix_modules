@@ -33,6 +33,7 @@ class LanguageManager {
             "Help URL" => "帮助链接",
             "e.g. https://github.com/X-Mars/zabbix_modules" => "例如：https://github.com/X-Mars/zabbix_modules",
             "Logo settings" => "标志设置",
+            "General settings" => "常规设置",
             "Update" => "更新",
             "Invalid input." => "输入无效。",
             "Cannot update branding." => "无法更新品牌设置。",
@@ -40,6 +41,8 @@ class LanguageManager {
             "Branding update failed." => "品牌设置更新失败。",
             "Check write access for local/conf and review the web server error log." => "请检查 local/conf 的写入权限以及 Web 服务器错误日志。",
             "Preview" => "预览",
+            "Image scale" => "图片缩放比例",
+            "Image scaled for upload." => "图片已按比例调整。",
             "Crop image" => "裁剪图片",
             "Apply crop" => "应用裁剪",
             "Zoom" => "缩放",
@@ -50,8 +53,9 @@ class LanguageManager {
             "Logo size (4:1, %s)" => "标志尺寸（4:1，%s）",
             "Install the local login view described in the module README to enable custom dimensions." => "安装模块 README 中说明的本地登录视图，即可自定义尺寸。",
             "The cropped image exceeds the upload limit." => "裁剪后的图片超出上传限制。",
+            "Image resized for upload." => "图片已缩小至可上传大小。",
             "Preparing image for upload…" => "正在处理上传图片…",
-            "Check the login page logo and try again." => "请检查登录页标志后重试。",
+            "Check the selected images and try again." => "请检查所选图片后重试。",
         ];
         return $translations[$text] ?? $text;
     }

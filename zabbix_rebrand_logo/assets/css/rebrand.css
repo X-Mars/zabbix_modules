@@ -1,179 +1,317 @@
-/*
- * Branding (Rebrand) module styles.
- * Convention A theming: light values inline below, paired dark overrides under
- * html[theme="dark-theme"] / html[theme="hc-dark"] / .rebrand-page[data-rebrand-theme="dark"].
- * Every rule that sets a color/background/border has a matching dark override.
- */
-
+/* Scoped palette and layout for the Branding settings page. */
 .wrapper > main:has(> .rebrand-page) {
 	display: flex;
 	flex: 1;
 	flex-direction: column;
+	min-inline-size: 0;
 	padding: 10px;
 }
 
 .rebrand-page {
+	--rebrand-bg: #fff;
+	--rebrand-surface: #f7f8fa;
+	--rebrand-text: #303133;
+	--rebrand-muted: #606266;
+	--rebrand-line: #dcdfe6;
+	--rebrand-control-border: #838993;
+	--rebrand-accent: #1466b8;
+	--rebrand-accent-soft: #ecf5ff;
+	--rebrand-primary-hover: #09539d;
+	--rebrand-preview-bg: #2b3648;
+	--rebrand-error: #9c2424;
+	--rebrand-error-bg: #fef0f0;
+	--rebrand-warning: #75520d;
+	--rebrand-warning-bg: #fdf6ec;
+	--rebrand-section-padding: clamp(16px, 2.5cqw, 24px);
+
+	container-type: inline-size;
 	flex: 1;
 	min-inline-size: 0;
-	background-color: #fff;
+	background: var(--rebrand-bg);
+	color: var(--rebrand-text);
 }
 
 .rebrand-page[data-rebrand-theme="dark"] {
-	background-color: #2b2b2b;
+	--rebrand-bg: #2b2b2b;
+	--rebrand-surface: #24262b;
+	--rebrand-text: #eeeef1;
+	--rebrand-muted: #b6bbc4;
+	--rebrand-line: #484d57;
+	--rebrand-control-border: #858b98;
+	--rebrand-accent: #90c7ff;
+	--rebrand-accent-soft: #253a50;
+	--rebrand-primary-hover: #1b72ca;
+	--rebrand-preview-bg: #1f2c3d;
+	--rebrand-error: #f0a8a4;
+	--rebrand-error-bg: #3d1f1f;
+	--rebrand-warning: #f0d58d;
+	--rebrand-warning-bg: #3d3520;
 }
 
 html[theme="hc-dark"] .rebrand-page {
-	background-color: #000;
+	--rebrand-bg: #000;
+	--rebrand-surface: #131313;
+	--rebrand-line: #9fa3ad;
 }
 
 .rebrand-page > form {
 	box-sizing: border-box;
 	width: 100%;
-	max-width: 1040px;
 	margin-inline: auto;
-	padding-inline: clamp(16px, 3vw, 32px);
+	padding-block: clamp(16px, 3cqw, 32px);
 }
 
-.rebrand-page .table-forms-container {
-	background-color: transparent;
-	border: 0;
+.rebrand-columns {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 45%));
+	justify-content: center;
+	align-items: start;
+	gap: min(24px, 4%);
 }
 
-.rebrand-banner {
-	padding: 10px 12px;
+.rebrand-panel {
+	min-inline-size: 0;
+	border: 1px solid var(--rebrand-line);
 	border-radius: 6px;
-	margin-bottom: 12px;
-	font-weight: 600;
 }
 
-.rebrand-banner-error {
-	color: #b22f2f;
-	background: #fff1f0;
-	border: 1px solid #f2c2bf;
+.rebrand-page h2.rebrand-panel-heading {
+	margin: 0;
+	padding: 14px var(--rebrand-section-padding);
+	border-block-end: 1px solid var(--rebrand-line);
+	border-radius: 5px 5px 0 0;
+	background: var(--rebrand-surface);
+	color: inherit;
+	font-size: 15px;
+	font-weight: 650;
+	line-height: 1.5;
 }
 
-.rebrand-banner-warning {
-	color: #c08a1f;
-	background: #fff8dd;
-	border: 1px solid #f1c40f;
+.rebrand-panel-body {
+	padding-inline: var(--rebrand-section-padding);
 }
 
-.rebrand-remove-label {
+.rebrand-field {
+	display: grid;
+	gap: 9px;
+	min-inline-size: 0;
+	padding-block: 16px;
+}
+
+.rebrand-field + .rebrand-field {
+	border-block-start: 1px solid var(--rebrand-line);
+}
+
+.rebrand-page .rebrand-label {
 	display: block;
-	margin-bottom: 8px;
-	color: #c14545;
+	color: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.rebrand-hint,
+.rebrand-crop-status,
+.rebrand-update [role="status"] {
+	color: var(--rebrand-muted);
+	font-size: 12px;
+	line-height: 1.55;
+	overflow-wrap: anywhere;
 }
 
 .rebrand-logo-preview {
 	display: block;
 	box-sizing: content-box;
-	max-width: 100%;
+	max-width: calc(100% - 4px);
 	height: auto;
 	object-fit: contain;
-	margin-bottom: 8px;
 	padding: 1px;
+	border: 1px solid var(--rebrand-line);
 	border-radius: 4px;
-	background: #2b3648;
-	border: 1px solid #dfe4ea;
+	background: var(--rebrand-preview-bg);
 }
 
-.rebrand-columns {
-	display: grid;
-	grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-	gap: 24px;
+.rebrand-preview-viewport {
+	max-block-size: 256px;
+	overflow: auto;
 }
 
-.rebrand-columns > .table-forms,
-.rebrand-columns > .table-forms > li,
-.rebrand-columns > .table-forms > li > div {
-	display: block;
-	width: auto;
+.rebrand-preview-viewport .rebrand-logo-preview {
+	max-width: none;
 }
 
-.rebrand-columns > .table-forms > li {
-	padding: 8px 0;
+.rebrand-field:not(:has(.rebrand-preview-viewport .rebrand-logo-preview:not([hidden]))) > .rebrand-preview-size,
+.rebrand-preview-viewport:not(:has(.rebrand-logo-preview:not([hidden]))) {
+	display: none;
 }
 
-.rebrand-columns > .table-forms > li > .table-forms-td-left {
-	text-align: left;
-	font-weight: 600;
-	padding: 0 0 6px;
+.rebrand-preview-size {
+	width: min(100%, 256px);
 }
 
-.rebrand-columns > .table-forms > li > .table-forms-td-right {
-	padding: 0;
+.rebrand-upload-actions,
+.rebrand-crop-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	min-inline-size: 0;
 }
 
-.rebrand-columns input {
+.rebrand-page input[type="file"] {
+	box-sizing: border-box;
+	width: 15rem;
 	max-width: 100%;
+	min-width: 0;
+	color: var(--rebrand-muted);
+	font: inherit;
+}
+
+.rebrand-page input[type="file"]::file-selector-button,
+.rebrand-page button.rebrand-crop-apply,
+.rebrand-page .rebrand-update button {
+	box-sizing: border-box;
+	min-height: 32px;
+	height: auto;
+	width: auto;
+	padding: 6px 12px;
+	border: 1px solid var(--rebrand-control-border);
+	border-radius: 4px;
+	background: var(--rebrand-bg);
+	color: var(--rebrand-text);
+	font: inherit;
+	font-weight: 550;
+	line-height: 1.4;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.rebrand-page input[type="file"]::file-selector-button {
+	margin-inline-end: 8px;
+}
+
+.rebrand-page input[type="file"]:hover::file-selector-button,
+.rebrand-page button.rebrand-crop-apply:not(:disabled):hover {
+	border-color: var(--rebrand-accent);
+	background: var(--rebrand-accent-soft);
+	color: var(--rebrand-accent);
+}
+
+.rebrand-page .rebrand-remove-label label {
+	color: var(--rebrand-error);
+}
+
+.rebrand-page .rebrand-field input[type="text"] {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 32px;
+	border-radius: 4px;
+}
+
+.rebrand-page .rebrand-field input[type="text"]:not(:disabled) {
+	border-color: var(--rebrand-control-border);
+}
+
+.rebrand-page :is(input[type="file"], input[type="range"], input[type="text"], button):focus-visible {
+	outline: 2px solid var(--rebrand-accent);
+	outline-offset: 2px;
+}
+
+.rebrand-crop-controls {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 105px), 1fr));
+	gap: 8px 14px;
+	padding: 10px 12px;
+	border-radius: 4px;
+	background: var(--rebrand-surface);
+}
+
+.rebrand-crop-controls label,
+.rebrand-logo-size {
+	display: grid;
+	align-content: end;
+	gap: 3px;
+	min-inline-size: 0;
+	color: var(--rebrand-text);
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.rebrand-logo-size span {
+	font-variant-numeric: tabular-nums;
+}
+
+.rebrand-page input[type="range"] {
+	width: 100%;
+	min-width: 0;
+	margin: 0;
+	accent-color: var(--rebrand-accent);
+}
+
+.rebrand-page [hidden],
+.rebrand-crop-actions:not(:has(button:not([hidden]), [role="status"]:not(:empty))) {
+	display: none;
 }
 
 .rebrand-update {
-	margin: 16px 0;
-	text-align: center;
+	display: grid;
+	justify-items: center;
+	gap: 8px;
+	margin-block-start: 24px;
+	margin-inline: auto;
+	width: 90%;
+	padding-block-start: 18px;
+	border-block-start: 1px solid var(--rebrand-line);
 }
 
-.rebrand-update [role="status"]:not(:empty) {
-	display: block;
-	margin-top: 8px;
+.rebrand-page .rebrand-update button {
+	min-width: 112px;
+	min-height: 36px;
+	border-color: #1466b8;
+	background: #1466b8;
+	color: #fff;
 }
 
-@media (max-width: 900px) {
+.rebrand-page .rebrand-update button:not(:disabled):hover {
+	border-color: var(--rebrand-primary-hover);
+	background: var(--rebrand-primary-hover);
+}
+
+.rebrand-page :is(.rebrand-crop-apply, .rebrand-update button):disabled {
+	opacity: .65;
+	cursor: not-allowed;
+}
+
+.rebrand-update [role="status"]:empty {
+	display: none;
+}
+
+.rebrand-banner {
+	margin-block-end: 16px;
+	padding: 10px 12px;
+	border-inline-start: 3px solid currentColor;
+	border-radius: 4px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.rebrand-banner-error {
+	background: var(--rebrand-error-bg);
+	color: var(--rebrand-error);
+}
+
+.rebrand-banner-warning {
+	background: var(--rebrand-warning-bg);
+	color: var(--rebrand-warning);
+}
+
+@container (max-width: 760px) {
+	.rebrand-page > form {
+		padding-inline: 16px;
+	}
+
 	.rebrand-columns {
 		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
 	}
 }
-
-/* --- Dark theme overrides --- */
-
-html[theme="dark-theme"] .rebrand-banner-error,
-html[theme="hc-dark"] .rebrand-banner-error,
-.rebrand-page[data-rebrand-theme="dark"] .rebrand-banner-error {
-	color: #f0a8a4;
-	background: #3d1f1f;
-	border-color: #6b3030;
-}
-
-html[theme="dark-theme"] .rebrand-banner-warning,
-html[theme="hc-dark"] .rebrand-banner-warning,
-.rebrand-page[data-rebrand-theme="dark"] .rebrand-banner-warning {
-	color: #e0c060;
-	background: #3d3520;
-	border-color: #7a6a1e;
-}
-
-html[theme="dark-theme"] .rebrand-remove-label,
-html[theme="hc-dark"] .rebrand-remove-label,
-.rebrand-page[data-rebrand-theme="dark"] .rebrand-remove-label {
-	color: #e08a8a;
-}
-
-html[theme="dark-theme"] .rebrand-logo-preview,
-html[theme="hc-dark"] .rebrand-logo-preview,
-.rebrand-page[data-rebrand-theme="dark"] .rebrand-logo-preview {
-	background: #1f2c3d;
-	border-color: #4a5568;
-}
-
-.rebrand-page .rebrand-logo-preview[hidden],
-.rebrand-page .rebrand-crop-controls[hidden],
-.rebrand-page .rebrand-crop-controls label[hidden],
-.rebrand-page .rebrand-crop-apply[hidden] { display: none; }
-.rebrand-crop-controls { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0; }
-.rebrand-crop-controls label { display: flex; flex-direction: column; gap: 5px; }
-.rebrand-crop-controls input { accent-color: #409eff; }
-.rebrand-page button.rebrand-crop-apply {
-	box-sizing: border-box;
-	width: auto;
-	height: auto;
-	line-height: 1.4;
-	white-space: nowrap;
-	background: #409eff;
-	border: 1px solid #409eff;
-	color: white;
-	border-radius: 4px;
-	padding: 7px 14px;
-	cursor: pointer;
-}
-.rebrand-page button.rebrand-crop-apply:hover { background: #66b1ff; }
-.rebrand-crop-status { margin-left: 10px; }
