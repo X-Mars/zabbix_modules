@@ -281,6 +281,19 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 
 **兼容性**：已在 Zabbix 7.0 和 8.0 环境验证。
 
+### 14. Zabbix MySQL Backup（数据库备份）
+
+Zabbix 超级管理员可在「管理 → MySQL 备份」将当前 Zabbix 的 MySQL 或 MariaDB 数据库导出为 SQL 文件。
+
+- 查看各表的预估大小，按表名筛选并批量选择。
+- 支持导出表结构和数据、仅结构或仅数据。未选中的表保留建表语句。
+- 支持浏览器下载和服务器保存。选择浏览器下载时，超过 500 MB 的 SQL 文件自动保存到指定目录，默认为 `/tmp/zabbix`。
+- 支持中英文界面，文件名使用当前用户的时区。
+  
+![1](zabbix_backup_mysql/images/1.png)
+
+支持 Zabbix 7.0 和 8.0，已在 7.0.32 和 8.0.0 验证。 [中文文档](./zabbix_backup_mysql/README.md) · [English](./zabbix_backup_mysql/README_en.md)
+
 ## 安装说明
 
 以下为普通前端模块的通用部署步骤。Zabbix Switch Visual 请按其[独立安装说明](./zabbix_switch_visual/README.md#安装步骤)部署，并通过仪表盘编辑模式添加组件。
@@ -399,6 +412,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 - **Inventory → IPAM** (IP 管理 / IP 详情 / 任务管理)
 - **仪表盘 → 编辑 → 添加组件 → Zabbix Switch Visual**（交换机端口可视化）
 - **监测 → 自动拓扑图**（网络设备自动发现与拓扑图编辑）
+- **管理 → MySQL 备份**（数据库 SQL 导出，仅超级管理员）
 
 ### 单独安装模块
 

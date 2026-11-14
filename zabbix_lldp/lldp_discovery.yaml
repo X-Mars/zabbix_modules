@@ -1,0 +1,142 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: b1728cbb8a1048aebc5a1926e58331be
+      template: 'Lldp Discovery'
+      name: 'Lldp Discovery'
+      groups:
+        - name: 'Templates/Network devices'
+      discovery_rules:
+        - uuid: b323a4a836e942d8ac54ff9f16430244
+          name: lldp_discovery
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.2.1.1.5.0,1.0.8802.1.1.2.1.3.7,1.0.8802.1.1.2.1.4.1.1]'
+          key: lldp_discovery
+          item_prototypes:
+            - uuid: 244ad4093bf548008413e7d2b15c0c3c
+              name: 'LLDP 对端设备 {#LOCAL_DEVICE}({#LOCAL_PORT})'
+              type: SNMP_AGENT
+              snmp_oid: '1.0.8802.1.1.2.1.4.1.1.7.{#SNMPINDEX}'
+              key: 'lldp.remote.info[{#LOCAL_PORT}]'
+              history: 7d
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '(.*)'
+                    - '{#REMOTE_DEVICE}({#REMOTE_PORT})'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  try {
+                      var lines = value.split('\n');
+                     
+                      // 临时存储本地端口映射 (Local Port Index -> Port Name)
+                      var localPorts = {};
+                      // 本地设备名称（sysName）
+                      var localDevice = "Unknown";
+                      // 存储最终生成的 LLD 数组
+                      var lldData = [];
+                  
+                      // 0. 提取本地设备名称 (.1.3.6.1.2.1.1.5.0)
+                      for (var i = 0; i < lines.length; i++) {
+                          var line = lines[i].trim();
+                          if (line.indexOf('.1.3.6.1.2.1.1.5.0') !== -1) {
+                              var match = line.match(/\.1\.3\.6\.1\.2\.1\.1\.5\.0\s+=\s+\w+:\s*"?(.*?)"?\s*$/);
+                              if (match) {
+                                  localDevice = match[1].trim();
+                              }
+                              break; // 只需取一次
+                          }
+                      }
+                  
+                      // 1. 第一遍扫描：提取本地端口名称与本地索引的映射
+                      for (var i = 0; i < lines.length; i++) {
+                          var line = lines[i].trim();
+                          if (!line) continue;
+                          if (line.indexOf('.1.0.8802.1.1.2.1.3.7.1.3.') !== -1) {
+                              var match = line.match(/\.1\.0\.8802\.1\.1\.2\.1\.3\.7\.1\.3\.(\d+)\s+=\s+\w+:\s*"?([^"]+)"?/);
+                              if (match) {
+                                  var localIdx = match[1];
+                                  var localPortName = match[2];
+                                  localPorts[localIdx] = localPortName;
+                              }
+                          }
+                      }
+                  
+                      // 2. 结构化远端邻居数据
+                      var remoteNodes = {};
+                      for (var i = 0; i < lines.length; i++) {
+                          var line = lines[i].trim();
+                          if (!line) continue;
+                  
+                          var remoteMatch = line.match(/\.1\.0\.8802\.1\.1\.2\.1\.4\.1\.1\.(\d+)\.([\d.]+)\s+=\s+(\w+):\s*(.*)/);
+                          if (remoteMatch) {
+                              var attrId = remoteMatch[1];
+                              var snmpIndex = remoteMatch[2];
+                              var type = remoteMatch[3];
+                              var val = remoteMatch[4].replace(/^"|"$/g, '');
+                  
+                              if (!remoteNodes[snmpIndex]) {
+                                  remoteNodes[snmpIndex] = {
+                                      snmpIndex: snmpIndex,
+                                      localPort: "Unknown",
+                                      remotePort: "",
+                                      remoteDevice: "",
+                                      remoteDesc: "No description"
+                                  };
+                              }
+                  
+                              // 提取本地端口索引
+                              var indexParts = snmpIndex.split('.');
+                              if (indexParts.length >= 2) {
+                                  var localPortIdx = indexParts[1];
+                                  if (localPorts[localPortIdx]) {
+                                      remoteNodes[snmpIndex].localPort = localPorts[localPortIdx];
+                                  }
+                              }
+                  
+                              if (attrId === "7") {
+                                  remoteNodes[snmpIndex].remotePort = val;
+                              } else if (attrId === "9") {
+                                  remoteNodes[snmpIndex].remoteDevice = val || "Unknown Device";
+                              } else if (attrId === "10") {
+                                  var descLines = [];
+                                  descLines.push(val);
+                                  while (i + 1 < lines.length && lines[i + 1].indexOf('.1.0.8802.') === -1) {
+                                      i++;
+                                      descLines.push(lines[i].trim().replace(/^"|"$/g, ''));
+                                  }
+                                  var fullDesc = descLines.join(' ').replace(/\s+/g, ' ').trim();
+                                  remoteNodes[snmpIndex].remoteDesc = fullDesc || "No description";
+                              }
+                          }
+                      }
+                  
+                      // 3. 构建 Zabbix LLD 格式（增加 {#LOCAL_DEVICE}）
+                      for (var snmpIndex in remoteNodes) {
+                          if (remoteNodes.hasOwnProperty(snmpIndex)) {
+                              var node = remoteNodes[snmpIndex];
+                             
+                              if (!node.remotePort && !node.remoteDevice) continue;
+                  
+                              lldData.push({
+                                  "{#SNMPINDEX}": node.snmpIndex,
+                                  "{#LOCAL_PORT}": node.localPort,
+                                  "{#LOCAL_DEVICE}": localDevice,          // 新增
+                                  "{#REMOTE_PORT}": node.remotePort,
+                                  "{#REMOTE_DEVICE}": node.remoteDevice,
+                                  "{#REMOTE_SYS_DESC}": node.remoteDesc
+                              });
+                          }
+                      }
+                  
+                      return JSON.stringify(lldData);
+                  } catch (error) {
+                      return JSON.stringify([{ "{#ERROR}": error.message }]);
+                  }
