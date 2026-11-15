@@ -6,7 +6,6 @@
 
 ![本项目被访问次数](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
 
-
 ## ✨ 版本兼容性
 
 不同模块的适用版本和部署要求不同，请以各模块 README 的兼容性说明为准。
@@ -18,6 +17,24 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 这是一个包含多个Zabbix模块的项目集合，每个模块都是独立的，为Zabbix监控系统提供额外的功能。
 
 ## 模块列表
+
+| 序号 | 模块 | 版本号 | 功能介绍 |
+| ---: | --- | --- | --- |
+| 1 | [Zabbix Reports](./zabbix_reports/README.md) | `1.1.0` | 生成日报、周报、月报和自定义时段报表，支持在线预览、PDF 导出和邮件发送。 |
+| 2 | [Zabbix CMDB](./zabbix_cmdb/README.md) | `1.1.0` | 集中查看主机资产和配置信息，支持按主机名或 IP 地址搜索，并按主机组筛选。 |
+| 3 | [Zabbix Graph Trees](./zabbix_graphtrees/README.md) | `1.0.0` | 以树形结构浏览主机组和主机，按标签筛选监控项并查看自动刷新的图表。 |
+| 4 | [Zabbix Rack](./zabbix_rack/README.md) | `1.1.0` | 管理机房和机柜，以可视化方式将 Zabbix 主机分配到指定 U 位。 |
+| 5 | [Zabbix SNMP](./zabbix_snmp/README.md) | `1.0.0` | 浏览 MIB、执行 SNMP Walk 并解析 OID，可从结果创建监控项或批量生成 SNMP 模板。 |
+| 6 | [Zabbix JumpServer](./zabbix_jumpserver/README.md) | `1.0.0` | 将 Zabbix 主机和主机组同步到 JumpServer，自动创建缺失节点，并可从 Zabbix 直接打开资产连接。 |
+| 7 | [IM 同步助手（Zabbix IM）](./zabbix_im/README.md) | `1.0.0` | 同步企业微信、飞书或钉钉的部门和成员，创建或匹配 Zabbix 用户并加入对应用户组。 |
+| 8 | [Zabbix Clonehosts](./zabbix_clonehosts/README.md) | `1.3.0` | 通过 CSV 或在线表格批量克隆已有主机配置，支持导入预览、冲突检测、自动创建主机组和进度反馈。 |
+| 9 | [Zabbix IPAM](./zabbix_ipam/README.md) | `1.5.0` | 管理 IPv4 地址段，执行异步 ICMP 存活扫描，并按接口 IP 自动关联 Zabbix 主机。 |
+| 10 | [Zabbix Switch Visual](./zabbix_switch_visual/README.md) | `1.6.0` | 在仪表盘展示交换机机箱、RJ45/SFP 端口状态、速率、流量趋势和设备状态。 |
+| 11 | [Zabbix Auto Topology Map](./zabbix_auto_topology_map/README.md) | `1.0.37` | 通过 SNMP 读取 LLDP、CDP 和 EDP 邻居信息，自动发现网络链路并生成可编辑的 Zabbix 拓扑图。 |
+| 12 | [Zabbix 导入导出](./zabbix_export_import/README.md) | `1.3.1` | 通过 CSV 或 JSON 迁移主机、监控模板和主机本地监控项，支持导入预览和重复项处理。 |
+| 13 | [Zabbix Rebrand Logo（品牌设置）](./zabbix_rebrand_logo/README.md) | `1.1.0` | 更换登录页和侧边栏标志及浏览器图标，并自定义服务器名称、页脚和帮助链接。 |
+| 14 | [Zabbix MySQL Backup（数据库备份）](./zabbix_backup_mysql/README.md) | `2.0.3` | 将 Zabbix 的 MySQL 或 MariaDB 表结构和数据导出为 SQL 文件，支持浏览器下载或保存到服务器。 |
+| 15 | [Zabbix LLDP Topology](./zabbix_lldp/README.md) | `1.0.0-beta` | 根据 Zabbix 的 LLDP 发现监控项绘制设备邻居拓扑，支持按主机组或主机筛选和查看链路端口。 |
 
 ### 1. Zabbix Reports
 

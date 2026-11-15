@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_modules",
     "version": "1.0.0-beta",
     "namespace": "ZabbixLldp",
-    "description": "Visualize LLDP neighbor topology from Zabbix LLDP discovery items",
+    "description": "Draw neighbor topology from Zabbix LLDP discovery items, filter by host group or host, and inspect link ports. / 根据 Zabbix 的 LLDP 发现监控项绘制设备邻居拓扑，支持按主机组或主机筛选和查看链路端口。",
     "actions": {
         "lldp": {
             "class": "Lldp",

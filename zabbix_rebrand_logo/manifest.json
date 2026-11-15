@@ -7,7 +7,7 @@
   "namespace": "ZabbixRebrandLogo",
   "version": "1.1.0",
   "type": "module",
-  "description": "Customize Zabbix branding by uploading custom logos for the login page, sidebar, compact sidebar icon, and browser favicon, and replace or hide the server name shown under the sidebar logo. Settings and uploaded files are synced to local/conf so they survive module updates.",
+  "description": "Replace the login and sidebar logos and browser favicon, and customize the server name, footer, and help link. / 更换登录页和侧边栏标志及浏览器图标，并自定义服务器名称、页脚和帮助链接。",
   "actions": {
     "rebrand.config": {
       "class": "RebrandConfig",

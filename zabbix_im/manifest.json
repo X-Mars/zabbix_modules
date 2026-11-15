@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_modules",
     "version": "1.0.0",
     "namespace": "ZabbixIm",
-    "description": "Sync departments and users from WeCom, Feishu or DingTalk to Zabbix user groups",
+    "description": "Sync departments and members from WeCom, Feishu, or DingTalk, then match or create Zabbix users and assign them to the corresponding user groups. / 同步企业微信、飞书或钉钉的部门和成员，创建或匹配 Zabbix 用户并加入对应用户组。",
     "actions": {
         "im": {
             "class": "Im",

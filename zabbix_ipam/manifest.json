@@ -6,7 +6,7 @@
   "url": "https://github.com/X-Mars/zabbix_modules",
 	"version": "1.5.0",
   "namespace": "ZabbixIpam",
-  "description": "IP address management and asynchronous network discovery for Zabbix",
+  "description": "Manage IPv4 ranges, run asynchronous ICMP reachability scans, and match addresses to Zabbix hosts by interface IP. / 管理 IPv4 地址段，执行异步 ICMP 存活扫描，并按接口 IP 自动关联 Zabbix 主机。",
   "actions": {
     "ip.manager": {"class": "IpManager", "view": "ip.manager"},
     "ip.detail": {"class": "IpDetail", "view": "ip.detail"},

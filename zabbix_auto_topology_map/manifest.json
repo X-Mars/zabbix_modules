@@ -5,7 +5,7 @@
     "namespace": "Topomap",
     "version": "1.0.37",
     "author": "Peterson Basso/火星小魏/火星小刘",
-    "description": "Automatically discover and generate network topology maps./自动发现生成网络拓扑图",
+    "description": "Discover network links from LLDP, CDP, and EDP neighbor data over SNMP and generate editable Zabbix topology maps. / 通过 SNMP 读取 LLDP、CDP 和 EDP 邻居信息，自动发现网络链路并生成可编辑的 Zabbix 拓扑图。",
     "actions": {
         "topomap.view": {
             "class": "TopomapView",

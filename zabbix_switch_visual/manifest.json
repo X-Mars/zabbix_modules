@@ -6,7 +6,7 @@
     "namespace": "SwitchVisual",
     "version": "1.6.0",
     "author": "Mauro Serafini/火星小魏/火星小刘",
-    "description": "Visual SVG panel for switch port monitoring. / 交换机端口监控 SVG 可视化面板。",
+    "description": "Visualize switch chassis, RJ45 and SFP port status, link speed, traffic trends, and device health in a dashboard widget. / 在仪表盘展示交换机机箱、RJ45/SFP 端口状态、速率、流量趋势和设备状态。",
     "widget": {
         "js_class": "CWidgetSwitchVisual"
     },

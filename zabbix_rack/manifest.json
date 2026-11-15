@@ -6,7 +6,7 @@
     "namespace": "ZabbixRack",
     "author": "火星小刘",
     "url": "https://github.com/X-Mars/zabbix_modules",
-    "description": "Data center rack visualization and host placement management module for Zabbix. Supports room/rack management and visual host assignment.",
+    "description": "Manage server rooms and racks, and visually assign Zabbix hosts to individual rack units. / 管理机房和机柜，以可视化方式将 Zabbix 主机分配到指定 U 位。",
     "actions": {
         "rack.view": {
             "class": "RackView",

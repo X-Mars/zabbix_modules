@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_modules",
     "version": "1.0.0",
     "namespace": "ZabbixGraphTrees",
-    "description": "Resource tree and monitoring graph visualization for Zabbix",
+    "description": "Browse host groups and hosts in a tree, filter monitoring items by tag, and view auto-refreshing charts. / 以树形结构浏览主机组和主机，按标签筛选监控项并查看自动刷新的图表。",
     "actions": {
         "graphtrees": {
             "class": "GraphTrees",

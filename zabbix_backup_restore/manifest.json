@@ -1,0 +1,24 @@
+{
+  "manifest_version": 2.0,
+  "id": "zabbix-backup-restore",
+  "name": "Zabbix Backup and Restore",
+  "author": "火星小刘",
+  "url": "https://github.com/X-Mars/zabbix_modules",
+  "version": "1.1.0",
+  "namespace": "ZabbixBackupRestore",
+  "description": "Export Zabbix configuration such as hosts, templates, users, and permissions by category to YAML, then preview and restore it on a target instance. / 按类别将主机、模板、用户及权限等 Zabbix 配置导出为 YAML，可在目标实例预览并还原。",
+  "actions": {
+    "backuprestore": {
+      "class": "BackupRestore",
+      "view": "backuprestore"
+    }
+  },
+  "assets": {
+    "css": [
+      "backuprestore.css"
+    ],
+    "js": [
+      "backuprestore.js"
+    ]
+  }
+}

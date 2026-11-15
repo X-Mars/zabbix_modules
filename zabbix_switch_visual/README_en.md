@@ -4,14 +4,14 @@
 
 ## Version compatibility
 
-The current code uses the Zabbix custom dashboard widget framework with `manifest_version: 2.0` and primarily targets **Zabbix 7.x**. It includes a guard for the color-picker change in 7.4, but there is no version-by-version installation or interaction test record yet.
+The widget uses the Zabbix custom dashboard widget framework with `manifest_version: 2.0` and handles the color-picker change introduced in 7.4.
 
 | Zabbix version | Current status |
 | --- | --- |
 | 6.0 / 6.2 | Not supported yet. These releases register dashboard widgets differently; changing only `manifest_version` to `1.0` cannot install this widget. |
 | 6.4 | Adaptation and validation are incomplete. The current collapsible form groups and JavaScript lifecycle methods may need changes. |
-| 7.0–7.4 | Target range of the current implementation. Verify the form, port links, and data on your exact frontend version before deployment. |
-| 8.0 | Not validated. Frontend APIs may change while 8.0 is in development. |
+| 7.0.32 / 8.0.0 | Widget loading, configuration form rendering, and the view without a selected host were verified. Device data and browser port interactions still need verification. |
+| Other 7.x | Compatibility depends on the specific release. Individual releases have not been verified. |
 
 Full 6.0–8.0 coverage requires a separate legacy widget entry point for 6.0/6.2 and practical validation of 6.4 and 8.0. The `manifest_version` adjustment described in [Zabbix CMDB](../zabbix_cmdb/README_en.md) is insufficient for this widget.
 

@@ -18,6 +18,24 @@ This collection contains independent modules that extend the Zabbix monitoring s
 
 ## Modules
 
+| No. | Module | Version | What it does |
+| ---: | --- | --- | --- |
+| 1 | [Zabbix Reports](./zabbix_reports/README_en.md) | `1.1.0` | Generate daily, weekly, monthly, and custom-period reports with previews, PDF export, and email delivery. |
+| 2 | [Zabbix CMDB](./zabbix_cmdb/README_en.md) | `1.1.0` | View host inventory and configuration in one place, search by host name or IP address, and filter by host group. |
+| 3 | [Zabbix Graph Trees](./zabbix_graphtrees/README_en.md) | `1.0.0` | Browse host groups and hosts in a tree, filter monitoring items by tag, and view auto-refreshing charts. |
+| 4 | [Zabbix Rack](./zabbix_rack/README_en.md) | `1.1.0` | Manage server rooms and racks, and visually assign Zabbix hosts to individual rack units. |
+| 5 | [Zabbix SNMP](./zabbix_snmp/README_en.md) | `1.0.0` | Browse MIBs, run SNMP walks, resolve OIDs, and create monitoring items or build SNMP templates in bulk from the results. |
+| 6 | [Zabbix JumpServer](./zabbix_jumpserver/README_en.md) | `1.0.0` | Sync Zabbix hosts and host groups to JumpServer, create missing nodes, and open asset connections directly from Zabbix. |
+| 7 | [IM Sync Assistant (Zabbix IM)](./zabbix_im/README_en.md) | `1.0.0` | Sync departments and members from WeCom, Feishu, or DingTalk, then match or create Zabbix users and assign them to the corresponding user groups. |
+| 8 | [Zabbix Clonehosts](./zabbix_clonehosts/README_en.md) | `1.3.0` | Clone existing host configurations in bulk from CSV or an online table, with import previews, conflict detection, automatic host group creation, and progress updates. |
+| 9 | [Zabbix IPAM](./zabbix_ipam/README_en.md) | `1.5.0` | Manage IPv4 ranges, run asynchronous ICMP reachability scans, and match addresses to Zabbix hosts by interface IP. |
+| 10 | [Zabbix Switch Visual](./zabbix_switch_visual/README_en.md) | `1.6.0` | Visualize switch chassis, RJ45 and SFP port status, link speed, traffic trends, and device health in a dashboard widget. |
+| 11 | [Zabbix Auto Topology Map](./zabbix_auto_topology_map/README_en.md) | `1.0.37` | Discover network links from LLDP, CDP, and EDP neighbor data over SNMP and generate editable Zabbix topology maps. |
+| 12 | [Zabbix Import/Export](./zabbix_export_import/README_en.md) | `1.3.1` | Transfer hosts, monitoring templates, and host-level items via CSV or JSON, with import previews and options for handling duplicates. |
+| 13 | [Zabbix Rebrand Logo](./zabbix_rebrand_logo/README_en.md) | `1.1.0` | Replace the login and sidebar logos and browser favicon, and customize the server name, footer, and help link. |
+| 14 | [Zabbix MySQL Backup](./zabbix_backup_mysql/README_en.md) | `2.0.3` | Export Zabbix MySQL or MariaDB table structures and data as SQL, with options to download the file or save it on the server. |
+| 15 | [Zabbix LLDP Topology](./zabbix_lldp/README_en.md) | `1.0.0-beta` | Draw neighbor topology from Zabbix LLDP discovery items, filter by host group or host, and inspect link ports. |
+
 ### 1. Zabbix Reports
 
 A Zabbix frontend module for generating daily, weekly, and monthly reports, with report previews, PDF export, and email delivery.
