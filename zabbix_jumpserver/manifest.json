@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_modules",
     "version": "1.0.0",
     "namespace": "ZabbixJumpserver",
-    "description": "Sync Zabbix hosts and host groups to JumpServer and quickly connect to assets",
+    "description": "Sync Zabbix hosts and host groups to JumpServer, create missing nodes, and open asset connections directly from Zabbix. / 将 Zabbix 主机和主机组同步到 JumpServer，自动创建缺失节点，并可从 Zabbix 直接打开资产连接。",
     "actions": {
         "jumpserver": {
             "class": "Jumpserver",

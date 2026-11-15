@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_reports",
     "version": "1.1.0",
     "namespace": "ZabbixReports",
-    "description": "Generate daily, weekly, monthly reports for Zabbix",
+    "description": "Generate daily, weekly, monthly, and custom-period reports with previews, PDF export, and email delivery. / 生成日报、周报、月报和自定义时段报表，支持在线预览、PDF 导出和邮件发送。",
     "actions": {
         "reports.daily": {
             "class": "DailyReport",

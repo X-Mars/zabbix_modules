@@ -6,7 +6,7 @@
   "url": "https://github.com/X-Mars/zabbix_modules",
   "version": "1.3.1",
   "namespace": "ZabbixImportExport",
-  "description": "Portable hosts, monitoring templates and host items",
+  "description": "Transfer hosts, monitoring templates, and host-level items via CSV or JSON, with import previews and options for handling duplicates. / 通过 CSV 或 JSON 迁移主机、监控模板和主机本地监控项，支持导入预览和重复项处理。",
   "actions": {
     "importexport.hosts": {
       "class": "Transfer",

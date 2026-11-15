@@ -6,7 +6,7 @@
   "url": "https://github.com/X-Mars/zabbix_modules",
   "version": "1.1.0",
   "namespace": "ZabbixCmdb",
-  "description": "Configuration Management Database for Zabbix",
+  "description": "View host inventory and configuration in one place, search by host name or IP address, and filter by host group. / 集中查看主机资产和配置信息，支持按主机名或 IP 地址搜索，并按主机组筛选。",
   "actions": {
     "cmdb": {
       "class": "Cmdb",

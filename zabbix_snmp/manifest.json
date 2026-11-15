@@ -6,7 +6,7 @@
     "url": "https://github.com/X-Mars/zabbix_modules",
     "version": "1.0.0",
     "namespace": "ZabbixSnmp",
-    "description": "Browse operating system MIB files from common SNMP directories in Zabbix",
+    "description": "Browse MIBs, run SNMP walks, resolve OIDs, and create monitoring items or build SNMP templates in bulk from the results. / 浏览 MIB、执行 SNMP Walk 并解析 OID，可从结果创建监控项或批量生成 SNMP 模板。",
     "actions": {
         "snmp": {
             "class": "Snmp",
