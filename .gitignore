@@ -1,3 +1,5 @@
 .vscode/settings.json
 .devtools/
 /zabbix_export_import/tests/
+开发说明.md
+开发要求.md
