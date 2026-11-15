@@ -18,6 +18,8 @@ This collection contains independent modules that extend the Zabbix monitoring s
 
 ## Modules
 
+![1](images/1.png)
+
 | No. | Module | Version | What it does |
 | ---: | --- | --- | --- |
 | 1 | [Zabbix Reports](./zabbix_reports/README_en.md) | `1.1.0` | Generate daily, weekly, monthly, and custom-period reports with previews, PDF export, and email delivery. |
@@ -35,6 +37,7 @@ This collection contains independent modules that extend the Zabbix monitoring s
 | 13 | [Zabbix Rebrand Logo](./zabbix_rebrand_logo/README_en.md) | `1.1.0` | Replace the login and sidebar logos and browser favicon, and customize the server name, footer, and help link. |
 | 14 | [Zabbix MySQL Backup](./zabbix_backup_mysql/README_en.md) | `2.0.3` | Export Zabbix MySQL or MariaDB table structures and data as SQL, with options to download the file or save it on the server. |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README_en.md) | `1.0.0-beta` | Draw neighbor topology from Zabbix LLDP discovery items, filter by host group or host, and inspect link ports. |
+| 16 | [Zabbix Backup and Restore](./zabbix_backup_restore/README_en.md) | `1.1.0` | Export Zabbix configuration such as hosts, templates, users, and permissions to YAML by category, then preview and restore it on a target instance. |
 
 ### 1. Zabbix Reports
 
@@ -315,6 +318,34 @@ Zabbix Super admins can export the current Zabbix MySQL or MariaDB database as a
 ![1](zabbix_backup_mysql/images/1.png)
 
 Supports Zabbix 7.0 and 8.0, verified on 7.0.32 and 8.0.0. [Chinese documentation](./zabbix_backup_mysql/README.md) · [English documentation](./zabbix_backup_mysql/README_en.md)
+
+### 15. Zabbix LLDP Topology
+
+Explore device and port connections using LLDP neighbor data already collected by Zabbix. Open **Monitoring → LLDP Topology**.
+
+**Features**
+
+- Filter by host group or host. The module reads the latest values of `lldp.remote.info[*]` items on hosts linked to the `Lldp Discovery` template.
+- View disconnected networks separately in the SVG map. The map shows three levels by default and lets you expand nodes to see more.
+- Hover over a link to see the local and remote devices, their ports, and when the data was last updated.
+
+**Compatibility** — Zabbix 6.0.x, 7.0.x, 7.4.x, and 8.0.x.
+
+[English documentation](./zabbix_lldp/README_en.md) · [中文](./zabbix_lldp/README.md)
+
+### 16. Zabbix Backup and Restore
+
+Zabbix Super admins can export configuration by category from **Administration → Backup and restore**, then preview and restore it on the target instance.
+
+**Features**
+
+- Export hosts, templates, users and permissions, actions, maintenance periods, services, and SLAs to a single YAML file. The module supports exports and uploads up to 500 MiB per file. The effective upload limit depends on the deployment configuration.
+- Preview the source and target versions and record counts before restoring. By default, restore creates missing objects. You can also choose to update matching objects.
+- Restore from Zabbix 7.0 to 7.0, 7.0 to 8.0, or 8.0 to 8.0. If restore fails, the entire batch rolls back.
+
+![Configuration backup and restore interface](zabbix_backup_restore/images/1.png)
+
+[English documentation](./zabbix_backup_restore/README_en.md) · [中文](./zabbix_backup_restore/README.md)
 
 ## Installation
 

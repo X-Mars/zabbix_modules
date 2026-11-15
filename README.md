@@ -18,6 +18,8 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 
 ## 模块列表
 
+![1](images/1.png)
+
 | 序号 | 模块 | 版本号 | 功能介绍 |
 | ---: | --- | --- | --- |
 | 1 | [Zabbix Reports](./zabbix_reports/README.md) | `1.1.0` | 生成日报、周报、月报和自定义时段报表，支持在线预览、PDF 导出和邮件发送。 |
@@ -35,6 +37,7 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 | 13 | [Zabbix Rebrand Logo（品牌设置）](./zabbix_rebrand_logo/README.md) | `1.1.0` | 更换登录页和侧边栏标志及浏览器图标，并自定义服务器名称、页脚和帮助链接。 |
 | 14 | [Zabbix MySQL Backup（数据库备份）](./zabbix_backup_mysql/README.md) | `2.0.3` | 将 Zabbix 的 MySQL 或 MariaDB 表结构和数据导出为 SQL 文件，支持浏览器下载或保存到服务器。 |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README.md) | `1.0.0-beta` | 根据 Zabbix 的 LLDP 发现监控项绘制设备邻居拓扑，支持按主机组或主机筛选和查看链路端口。 |
+| 16 | [Zabbix Backup and Restore（配置备份与还原）](./zabbix_backup_restore/README.md) | `1.1.0` | 按类别将主机、模板、用户和权限等 Zabbix 配置导出为 YAML，支持在目标实例预览并还原。 |
 
 ### 1. Zabbix Reports
 
@@ -315,6 +318,34 @@ Zabbix 超级管理员可在「管理 → MySQL 备份」将当前 Zabbix 的 My
 ![1](zabbix_backup_mysql/images/1.png)
 
 支持 Zabbix 7.0 和 8.0，已在 7.0.32 和 8.0.0 验证。 [中文文档](./zabbix_backup_mysql/README.md) · [English](./zabbix_backup_mysql/README_en.md)
+
+### 15. Zabbix LLDP Topology
+
+**简介**：读取 Zabbix 中已有的 LLDP 邻居监控数据，在「监测 → LLDP 拓扑」查看设备与端口的连接关系。
+
+**功能特性**
+
+- 按主机组或主机筛选，读取关联 `Lldp Discovery` 模板的主机上 `lldp.remote.info[*]` 监控项的最新值。
+- 在 SVG 拓扑图中分开展示互不连通的网络，默认显示三层，可展开查看更多节点。
+- 将指针悬停在链路上，可查看本地和对端设备、端口及数据更新时间。
+
+**兼容性**：Zabbix 6.0.x、7.0.x、7.4.x、8.0.x。
+
+[中文文档](./zabbix_lldp/README.md) · [English](./zabbix_lldp/README_en.md)
+
+### 16. Zabbix Backup and Restore（配置备份与还原）
+
+**简介**：Zabbix 超级管理员可在「管理 → 备份与还原」按类别导出配置，并在目标实例预览后还原。
+
+**功能特性**
+
+- 将主机、模板、用户与权限、动作、维护计划、服务及 SLA 等配置导出为单个 YAML 文件。单文件导出和上传上限均为 500 MiB，实际上传上限取决于部署配置。
+- 还原前预览源版本、目标版本和记录数。还原时默认创建缺失对象，也可选择更新匹配对象。
+- 支持 Zabbix 7.0 → 7.0、7.0 → 8.0 和 8.0 → 8.0。还原失败时整批回滚。
+
+![配置备份与还原界面](zabbix_backup_restore/images/1.png)
+
+[中文文档](./zabbix_backup_restore/README.md) · [English](./zabbix_backup_restore/README_en.md)
 
 ## 安装说明
 
