@@ -2,6 +2,11 @@
 
 [English](README_en.md)
 
+## 自2026年11月15日起
+
+![本项目被访问次数](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
+
+
 ## ✨ 版本兼容性
 
 不同模块的适用版本和部署要求不同，请以各模块 README 的兼容性说明为准。

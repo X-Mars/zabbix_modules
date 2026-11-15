@@ -2,6 +2,10 @@
 
 [中文](README.md)
 
+## Starting from November 15th, 2026
+
+![本项目被访问次数](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
+
 ## ✨ Version Compatibility
 
 Supported Zabbix versions and deployment requirements vary by module. See the compatibility section in each module's README.
