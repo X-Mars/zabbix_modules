@@ -1,0 +1,24 @@
+{
+  "manifest_version": 2.0,
+  "id": "zabbix-database-export",
+  "name": "Zabbix Database Export",
+  "author": "火星小刘",
+  "url": "https://github.com/X-Mars/zabbix_modules",
+  "version": "3.0.4",
+  "namespace": "ZabbixDatabaseExport",
+  "description": "Export Zabbix MySQL, MariaDB or PostgreSQL structures and data as SQL. / 导出 Zabbix MySQL、MariaDB 或 PostgreSQL 数据库结构和数据。",
+  "actions": {
+    "databaseexport": {
+      "class": "DatabaseExport",
+      "view": "databaseexport"
+    }
+  },
+  "assets": {
+    "css": [
+      "backup.css"
+    ],
+    "js": [
+      "backup.js"
+    ]
+  }
+}

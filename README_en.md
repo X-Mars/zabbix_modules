@@ -35,7 +35,7 @@ This collection contains independent modules that extend the Zabbix monitoring s
 | 11 | [Zabbix Auto Topology Map](./zabbix_auto_topology_map/README_en.md) | `1.0.37` | Discover network links from LLDP, CDP, and EDP neighbor data over SNMP and generate editable Zabbix topology maps. |
 | 12 | [Zabbix Import/Export](./zabbix_export_import/README_en.md) | `1.3.1` | Transfer hosts, monitoring templates, and host-level items via CSV or JSON, with import previews and options for handling duplicates. |
 | 13 | [Zabbix Rebrand Logo](./zabbix_rebrand_logo/README_en.md) | `1.1.0` | Replace the login and sidebar logos and browser favicon, and customize the server name, footer, and help link. |
-| 14 | [Zabbix MySQL Backup](./zabbix_backup_mysql/README_en.md) | `2.0.3` | Export Zabbix MySQL or MariaDB table structures and data as SQL, with options to download the file or save it on the server. |
+| 14 | [Zabbix Database Export](./zabbix_database_export/README_en.md) | `3.0.4` | Detect MySQL, MariaDB, or PostgreSQL, display the database version, and export structures and data to a SQL download or server file. |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README_en.md) | `1.0.0-beta` | Draw neighbor topology from Zabbix LLDP discovery items, filter by host group or host, and inspect link ports. |
 | 16 | [Zabbix Backup and Restore](./zabbix_backup_restore/README_en.md) | `1.1.0` | Export Zabbix configuration such as hosts, templates, users, and permissions to YAML by category, then preview and restore it on a target instance. |
 
@@ -306,18 +306,20 @@ Customize the Zabbix frontend's branding under **Administration → Zabbix Rebra
 
 **Compatibility** — Verified on Zabbix 7.0 and 8.0.
 
-### 14. Zabbix MySQL Backup
+### 14. Zabbix Database Export
 
-Zabbix Super admins can export the current Zabbix MySQL or MariaDB database as a SQL file from **Administration → MySQL Backup**.
+Zabbix Super admins can export the current Zabbix MySQL, MariaDB, or PostgreSQL database as a SQL file from **Administration → Database export**. The module detects the database type and displays its version.
 
 - View estimated table sizes, filter by name, and select tables in bulk.
-- Export table structure and data, structure only, or data only. The SQL retains the table creation statements for unselected tables.
+- Export table structure and data, structure only, or data only. Unselected tables retain their creation statements. An option excludes data from tables whose names start with `history`.
 - Download in the browser or save on the server. When browser download is selected, SQL files over 500 MB are saved automatically to the specified directory, which defaults to `/tmp/zabbix`.
-- Use the interface in Chinese or English. Filenames use the current user's time zone.
+- Use the interface in Chinese or English. Filenames use the current user's time zone and include the database type.
 
-![1](zabbix_backup_mysql/images/1.png)
+Filename formats are `zabbix_database_backup_mysql_yyyy-mm-dd_hh-mm-ss.sql`, `zabbix_database_backup_mariadb_yyyy-mm-dd_hh-mm-ss.sql`, and `zabbix_database_backup_postgresql_yyyy-mm-dd_hh-mm-ss.sql`.
 
-Supports Zabbix 7.0 and 8.0, verified on 7.0.32 and 8.0.0. [Chinese documentation](./zabbix_backup_mysql/README.md) · [English documentation](./zabbix_backup_mysql/README_en.md)
+![1](zabbix_database_export/images/1.png)
+
+Supports Zabbix 7.0 and 8.0, verified on 7.0.32 and 8.0.0. [Chinese documentation](./zabbix_database_export/README.md) · [English documentation](./zabbix_database_export/README_en.md)
 
 ### 15. Zabbix LLDP Topology
 
@@ -465,7 +467,7 @@ Refresh the page and look for the modules in the corresponding menus.
 - **Inventory → IPAM** (IP management, address details, and task management)
 - **Dashboard → Edit → Add widget → Zabbix Switch Visual** (switch-port visualization)
 - **Monitoring → Auto Topology Map** (network discovery and topology editing)
-- **Administration → MySQL Backup** (database SQL export for Super admins)
+- **Administration → Database export** (database SQL export for Super admins)
 
 ### Install an Individual Module
 

@@ -198,3 +198,17 @@ main:has(> .zbx-sql-backup) {
     .zbx-sql-backup .zb-layout { grid-template-columns: minmax(0, 1fr); }
     .zbx-sql-backup .zb-table-scroll { flex: 0 0 auto; height: clamp(240px, 50vh, 420px); }
 }
+
+.zbx-sql-backup .zb-database {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--zb-line);
+    border-radius: 4px;
+    background: var(--zb-panel);
+    color: var(--zb-muted);
+}
+
+.zbx-sql-backup .zb-database strong { color: var(--zb-text); }

@@ -1,13 +1,21 @@
 <?php
 
-namespace Modules\ZabbixBackupMysql\Lib;
+namespace Modules\ZabbixDatabaseExport\Lib;
 
 final class LanguageManager {
     private const DEFAULT_LANGUAGE = 'en_US';
 
     private const TRANSLATIONS = [
         'zh_CN' => [
-            'MySQL backup' => 'MySQL 备份',
+            'Install a pg_dump client compatible with the PostgreSQL server version.' => '请安装与 PostgreSQL 服务器版本兼容的 pg_dump 客户端。',
+            'Database export' => '数据库导出',
+            'Database type' => '数据库类型',
+            'Database version' => '数据库版本',
+            'MySQL, MariaDB or PostgreSQL is required.' => '本模块需要 MySQL、MariaDB 或 PostgreSQL 数据库。',
+            'The PostgreSQL export failed.' => 'PostgreSQL 导出失败。',
+            'PostgreSQL export requires proc_open and a compatible pg_dump client.' => 'PostgreSQL 导出需要启用 proc_open 并安装兼容的 pg_dump 客户端。',
+            'PostgreSQL password files cannot contain line breaks.' => 'PostgreSQL 密码文件不支持换行字符。',
+            'pg_dump failed. Check its version, database access and server logs.' => 'pg_dump 执行失败，请检查客户端版本、数据库访问权限及服务器日志。',
             'Database tables' => '数据库表',
             'Table name' => '表名',
             'Engine' => '存储引擎',
@@ -36,7 +44,6 @@ final class LanguageManager {
             'Export SQL' => '导出 SQL',
             'Backup saved on the server' => '备份已保存到服务器',
             'Backup exceeded 500 MB and was saved on the server' => '备份大于 500 MB，已自动保存到服务器',
-            'MySQL or MariaDB is required.' => '本模块需要 MySQL 或 MariaDB 数据库。',
             'The database export failed.' => '数据库导出失败。',
             'The database export failed (MySQL error %d).' => '数据库导出失败（MySQL 错误 %d）。',
             'Choose an export mode.' => '请选择导出模式。',
@@ -52,7 +59,15 @@ final class LanguageManager {
             'Could not create a temporary backup file.' => '无法创建备份临时文件。',
         ],
         'en_US' => [
-            'MySQL backup' => 'MySQL backup',
+            'Install a pg_dump client compatible with the PostgreSQL server version.' => 'Install a pg_dump client compatible with the PostgreSQL server version.',
+            'Database export' => 'Database export',
+            'Database type' => 'Database type',
+            'Database version' => 'Database version',
+            'MySQL, MariaDB or PostgreSQL is required.' => 'MySQL, MariaDB or PostgreSQL is required.',
+            'The PostgreSQL export failed.' => 'The PostgreSQL export failed.',
+            'PostgreSQL export requires proc_open and a compatible pg_dump client.' => 'PostgreSQL export requires proc_open and a compatible pg_dump client.',
+            'PostgreSQL password files cannot contain line breaks.' => 'PostgreSQL password files cannot contain line breaks.',
+            'pg_dump failed. Check its version, database access and server logs.' => 'pg_dump failed. Check its version, database access and server logs.',
             'Database tables' => 'Database tables',
             'Table name' => 'Table name',
             'Engine' => 'Engine',
@@ -81,7 +96,6 @@ final class LanguageManager {
             'Export SQL' => 'Export SQL',
             'Backup saved on the server' => 'Backup saved on the server',
             'Backup exceeded 500 MB and was saved on the server' => 'Backup exceeded 500 MB and was saved on the server',
-            'MySQL or MariaDB is required.' => 'MySQL or MariaDB is required.',
             'The database export failed.' => 'The database export failed.',
             'The database export failed (MySQL error %d).' => 'The database export failed (MySQL error %d).',
             'Choose an export mode.' => 'Choose an export mode.',

@@ -1,7 +1,7 @@
 <?php
 
-use Modules\ZabbixBackupMysql\Lib\LanguageManager;
-use Modules\ZabbixBackupMysql\Lib\SqlExport;
+use Modules\ZabbixDatabaseExport\Lib\LanguageManager;
+use Modules\ZabbixDatabaseExport\Lib\SqlExport;
 
 $t = [LanguageManager::class, 't'];
 $eligibleTables = $data['exclude_history'] ? array_filter($data['tables'], static function (array $table): bool {
@@ -23,6 +23,12 @@ $format = static function ($value): string {
 ob_start();
 ?>
 <div class="zbx-sql-backup">
+    <?php if ($data['database'] !== null): ?>
+        <div class="zb-database">
+            <span><?= $escape($t('Database type')) ?> <strong><?= $escape($data['database']['type']) ?></strong></span>
+            <span><?= $escape($t('Database version')) ?> <strong><?= $escape($data['database']['version']) ?></strong></span>
+        </div>
+    <?php endif; ?>
     <?php if ($data['error'] !== ''): ?>
         <div class="zb-alert zb-error" role="alert"><?= $escape($data['error']) ?></div>
     <?php endif; ?>
@@ -34,7 +40,7 @@ ob_start();
         </div>
     <?php endif; ?>
     <?php if ($data['can_export']): ?>
-        <form id="zb-export" class="zb-layout" action="zabbix.php?action=backupmysql" method="post">
+        <form id="zb-export" class="zb-layout" action="zabbix.php?action=databaseexport" method="post">
             <input type="hidden" name="<?= $escape(CSRF_TOKEN_NAME) ?>" value="<?= $escape($data['token']) ?>">
             <section class="zb-card" aria-labelledby="zb-tables-heading">
                 <header class="zb-card-header">
@@ -126,4 +132,4 @@ $markup = ob_get_clean();
 // CHtmlPage accepts a CObject containing markup rendered and escaped above.
 $content = new CObject();
 $content->addItem($markup);
-(new CHtmlPage())->setTitle($t('MySQL backup'))->addItem($content)->show();
+(new CHtmlPage())->setTitle($t('Database export'))->addItem($content)->show();
