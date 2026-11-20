@@ -1,6 +1,6 @@
 <?php
 
-use Modules\ZabbixBackupMysql\Lib\{BackupFile, SqlExport};
+use Modules\ZabbixDatabaseExport\Lib\{BackupFile, SqlExport};
 
 require_once __DIR__ . '/../lib/BackupFile.php';
 require_once __DIR__ . '/../lib/SqlExport.php';

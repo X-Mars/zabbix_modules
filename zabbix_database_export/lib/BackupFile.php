@@ -1,13 +1,15 @@
 <?php
 
-namespace Modules\ZabbixBackupMysql\Lib;
+namespace Modules\ZabbixDatabaseExport\Lib;
 
 final class BackupFile {
     public const DOWNLOAD_LIMIT = 500000000;
     public const DEFAULT_DIRECTORY = '/tmp/zabbix';
 
-    public static function filename(): string {
-        return 'zabbix_backup_' . date('Y-m-d_H-i-s') . '.sql';
+    public static function filename(string $databaseType = 'mysql'): string {
+        $engines = ['mysql' => 'mysql', 'mariadb' => 'mariadb', 'postgresql' => 'postgresql'];
+        $engine = $engines[strtolower($databaseType)] ?? 'mysql';
+        return 'zabbix_database_backup_' . $engine . '_' . date('Y-m-d_H-i-s') . '.sql';
     }
 
     public static function shouldSave(string $destination, int $bytes): bool {

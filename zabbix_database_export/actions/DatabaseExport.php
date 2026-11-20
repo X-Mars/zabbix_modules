@@ -1,14 +1,14 @@
 <?php
 
-namespace Modules\ZabbixBackupMysql\Actions;
+namespace Modules\ZabbixDatabaseExport\Actions;
 
-use Modules\ZabbixBackupMysql\Lib\{Access, BackupFile, SqlExport, LanguageManager};
+use Modules\ZabbixDatabaseExport\Lib\{Access, BackupFile, SqlExport, LanguageManager};
 
 foreach (['Access', 'BackupFile', 'SqlExport', 'LanguageManager'] as $class) {
     require_once dirname(__DIR__) . '/lib/' . $class . '.php';
 }
 
-final class BackupMysql extends \CController {
+final class DatabaseExport extends \CController {
     protected function init(): void {
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
             $this->disableCsrfValidation();
@@ -29,7 +29,7 @@ final class BackupMysql extends \CController {
 
     protected function doAction(): void {
         $data = [
-            'tables' => [], 'error' => '', 'saved' => null, 'can_export' => false,
+            'database' => null, 'tables' => [], 'error' => '', 'saved' => null, 'can_export' => false,
             'token' => \CCsrfTokenHelper::get($this->getAction()),
             'scope' => 'all', 'mode' => 'both', 'destination' => 'download',
             'selected' => [], 'exclude_history' => false, 'directory' => BackupFile::DEFAULT_DIRECTORY
@@ -37,6 +37,7 @@ final class BackupMysql extends \CController {
 
         try {
             $database = SqlExport::frontend();
+            $data['database'] = $database->info();
             $data['tables'] = $database->tables();
             $data['can_export'] = $data['tables'] !== [];
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,7 +51,7 @@ final class BackupMysql extends \CController {
         }
 
         $response = new \CControllerResponseData($data);
-        $response->setTitle(LanguageManager::t('MySQL backup'));
+        $response->setTitle(LanguageManager::t('Database export'));
         $this->setResponse($response);
     }
 
@@ -78,9 +79,9 @@ final class BackupMysql extends \CController {
         return $data;
     }
 
-    private function export(SqlExport $database, array $data): ?array {
+    private function export($database, array $data): ?array {
         @set_time_limit(0);
-        $filename = BackupFile::filename();
+        $filename = BackupFile::filename($data['database']['type']);
         $file = tmpfile();
         if ($file === false) {
             throw new \RuntimeException('Could not create a temporary backup file.');

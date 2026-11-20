@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\ZabbixBackupMysql\Lib;
+namespace Modules\ZabbixDatabaseExport\Lib;
 
 final class Access {
     public static function allowed(): bool {

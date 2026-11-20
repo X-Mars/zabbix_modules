@@ -35,7 +35,7 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 | 11 | [Zabbix Auto Topology Map](./zabbix_auto_topology_map/README.md) | `1.0.37` | 通过 SNMP 读取 LLDP、CDP 和 EDP 邻居信息，自动发现网络链路并生成可编辑的 Zabbix 拓扑图。 |
 | 12 | [Zabbix 导入导出](./zabbix_export_import/README.md) | `1.3.1` | 通过 CSV 或 JSON 迁移主机、监控模板和主机本地监控项，支持导入预览和重复项处理。 |
 | 13 | [Zabbix Rebrand Logo（品牌设置）](./zabbix_rebrand_logo/README.md) | `1.1.0` | 更换登录页和侧边栏标志及浏览器图标，并自定义服务器名称、页脚和帮助链接。 |
-| 14 | [Zabbix MySQL Backup（数据库备份）](./zabbix_backup_mysql/README.md) | `2.0.3` | 将 Zabbix 的 MySQL 或 MariaDB 表结构和数据导出为 SQL 文件，支持浏览器下载或保存到服务器。 |
+| 14 | [Zabbix Database Export（数据库导出）](./zabbix_database_export/README.md) | `3.0.4` | 自动识别 MySQL、MariaDB 或 PostgreSQL，显示数据库版本并导出表结构和数据，支持下载或服务器保存。 |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README.md) | `1.0.0-beta` | 根据 Zabbix 的 LLDP 发现监控项绘制设备邻居拓扑，支持按主机组或主机筛选和查看链路端口。 |
 | 16 | [Zabbix Backup and Restore（配置备份与还原）](./zabbix_backup_restore/README.md) | `1.1.0` | 按类别将主机、模板、用户和权限等 Zabbix 配置导出为 YAML，支持在目标实例预览并还原。 |
 
@@ -306,18 +306,20 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 
 **兼容性**：已在 Zabbix 7.0 和 8.0 环境验证。
 
-### 14. Zabbix MySQL Backup（数据库备份）
+### 14. Zabbix Database Export（数据库导出）
 
-Zabbix 超级管理员可在「管理 → MySQL 备份」将当前 Zabbix 的 MySQL 或 MariaDB 数据库导出为 SQL 文件。
+Zabbix 超级管理员可在「管理 → 数据库导出」将当前 Zabbix 的 MySQL、MariaDB 或 PostgreSQL 数据库导出为 SQL 文件，模块自动识别类型并显示数据库版本。
 
 - 查看各表的预估大小，按表名筛选并批量选择。
-- 支持导出表结构和数据、仅结构或仅数据。未选中的表保留建表语句。
+- 支持导出表结构和数据、仅结构或仅数据。未选中的表保留建表语句，可勾选排除 `history` 开头的表数据。
 - 支持浏览器下载和服务器保存。选择浏览器下载时，超过 500 MB 的 SQL 文件自动保存到指定目录，默认为 `/tmp/zabbix`。
-- 支持中英文界面，文件名使用当前用户的时区。
+- 支持中英文界面，文件名使用当前用户的时区，并包含数据库类型。
   
-![1](zabbix_backup_mysql/images/1.png)
+文件名分别为 `zabbix_database_backup_mysql_yyyy-mm-dd_hh-mm-ss.sql`、`zabbix_database_backup_mariadb_yyyy-mm-dd_hh-mm-ss.sql` 和 `zabbix_database_backup_postgresql_yyyy-mm-dd_hh-mm-ss.sql`。
 
-支持 Zabbix 7.0 和 8.0，已在 7.0.32 和 8.0.0 验证。 [中文文档](./zabbix_backup_mysql/README.md) · [English](./zabbix_backup_mysql/README_en.md)
+![1](zabbix_database_export/images/1.png)
+
+支持 Zabbix 7.0 和 8.0，已在 7.0.32 和 8.0.0 验证。 [中文文档](./zabbix_database_export/README.md) · [English](./zabbix_database_export/README_en.md)
 
 ### 15. Zabbix LLDP Topology
 
@@ -465,7 +467,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/mo
 - **Inventory → IPAM** (IP 管理 / IP 详情 / 任务管理)
 - **仪表盘 → 编辑 → 添加组件 → Zabbix Switch Visual**（交换机端口可视化）
 - **监测 → 自动拓扑图**（网络设备自动发现与拓扑图编辑）
-- **管理 → MySQL 备份**（数据库 SQL 导出，仅超级管理员）
+- **管理 → 数据库导出**（数据库 SQL 导出，仅超级管理员）
 
 ### 单独安装模块
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\ZabbixBackupMysql\Lib;
+namespace Modules\ZabbixDatabaseExport\Lib;
 
 final class SqlExport {
     private $db;
@@ -9,12 +9,22 @@ final class SqlExport {
         $this->db = $db;
     }
 
-    public static function frontend(): self {
+    public static function frontend() {
         global $DB;
-        if (!(($DB['DB'] ?? null) instanceof \mysqli)) {
-            throw new \RuntimeException('MySQL or MariaDB is required.');
+        if (($DB['TYPE'] ?? '') === 'POSTGRESQL' && function_exists('pg_connection_status')
+                && isset($DB['DB']) && pg_connection_status($DB['DB']) === PGSQL_CONNECTION_OK) {
+            require_once __DIR__ . '/PostgresqlExport.php';
+            return new PostgresqlExport($DB['DB'], $DB);
         }
-        return new self($DB['DB']);
+        if (($DB['DB'] ?? null) instanceof \mysqli) {
+            return new self($DB['DB']);
+        }
+        throw new \RuntimeException('MySQL, MariaDB or PostgreSQL is required.');
+    }
+
+    public function info(): array {
+        $version = $this->query('SELECT VERSION()')->fetch_row()[0];
+        return ['type' => stripos($version, 'MariaDB') !== false ? 'MariaDB' : 'MySQL', 'version' => $version];
     }
 
     private static function identifier(string $name): string {
