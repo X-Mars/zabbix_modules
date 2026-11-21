@@ -2,8 +2,10 @@
 
 [English](README_en.md)
 
-<img src="images/wechat.jpg" width="10%" alt="wechat">
-<img src="images/gongzhonghao.jpg" width="13%" alt="gongzhonghao">
+<div>
+  <img src="images/wechat.jpg" width="20%" alt="wechat">
+  <img src="images/gongzhonghao.jpg" width="26%" alt="gongzhonghao">
+</div>
 
 ## 自2026年11月15日起
 

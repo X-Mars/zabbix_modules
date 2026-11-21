@@ -104,11 +104,17 @@ final class References {
 		}
 		else {
 			[$service, $id, $field] = self::TARGETS[$type] ?? Catalog::RECORDS[$type];
+			if ($type === 'proxies' && version_compare(ZABBIX_VERSION, '6.4', '<')) {
+				$field = 'host';
+			}
 			$options = ['output' => [$id, $field]];
 			if ($type === 'scripts') {
 				$options['output'][] = 'menu_path';
 			}
 			foreach ($this->api->call($service, 'get', $options) as $row) {
+				if ($type === 'proxies' && $field === 'host') {
+					$row['name'] = $row['host'];
+				}
 				$identity = self::identity($type, $row);
 				if (self::validIdentity($identity)) {
 					$by_id[(string) $row[$id]] = $identity;

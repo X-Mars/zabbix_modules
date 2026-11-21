@@ -65,9 +65,9 @@ final class BackupService {
 			]));
 		}
 
-		foreach (array_intersect_key(Catalog::RECORDS, array_flip($selection)) as $type => [$api, , , $fields, $params]) {
+		foreach (array_intersect_key(Catalog::records($version), array_flip($selection)) as $type => [$api, , , $fields, $params]) {
 			$output = explode(' ', $fields);
-			if ($type === 'users') {
+			if ($type === 'users' && version_compare($version, '6.4', '>=')) {
 				$output[] = 'provisioned';
 			}
 			elseif ($type === 'proxies' && defined('PROXY_APM_DATA_COLLECTION_DISABLED')) {
@@ -87,7 +87,7 @@ final class BackupService {
 					$backup['omissions']['secret_macros']++;
 					unset($row['value']);
 				}
-				if ($type === 'users' && (int) $row['provisioned'] === 1) {
+				if ($type === 'users' && (int) ($row['provisioned'] ?? 0) === 1) {
 					$backup['omissions']['provisioned_users']++;
 					continue;
 				}
@@ -207,9 +207,13 @@ final class BackupService {
 			return $media_types;
 		}
 
+		$legacy = version_compare(ZABBIX_VERSION, '6.4', '<');
 		$export = $this->api->call('Configuration', 'export', [
-			'format' => 'raw', 'options' => ['mediaTypes' => array_column($matches, 'mediatypeid')]
+			'format' => $legacy ? 'json' : 'raw', 'options' => ['mediaTypes' => array_column($matches, 'mediatypeid')]
 		]);
+		if ($legacy) {
+			$export = json_decode($export, true, 512, JSON_THROW_ON_ERROR);
+		}
 		$existing = array_column($export['zabbix_export']['media_types'] ?? [], null, 'name');
 		return array_values(array_filter($media_types, static function (array $media) use ($existing): bool {
 			return ($existing[$media['name'] ?? ''] ?? null) != $media;
@@ -252,14 +256,14 @@ final class BackupService {
 		elseif ($type === 'roles') {
 			$options['output'][] = 'readonly';
 		}
-		elseif ($type === 'users') {
+		elseif ($type === 'users' && version_compare(ZABBIX_VERSION, '6.4', '>=')) {
 			$options['output'][] = 'provisioned';
 		}
 		elseif ($type === 'network_discovery') {
 			$options['selectDChecks'] = 'extend';
 		}
 		elseif ($type === 'actions' && $update) {
-			$options['output'] = array_merge([$id], explode(' ', Catalog::RECORDS['actions'][3]));
+			$options['output'] = array_merge([$id], explode(' ', Catalog::records(ZABBIX_VERSION)['actions'][3]));
 			$options += Catalog::RECORDS['actions'][4];
 		}
 
@@ -358,7 +362,7 @@ final class BackupService {
 	private function protectedObject(string $type, array $row): bool {
 		return ($type === 'roles' && ((int) $row['readonly'] === 1
 				|| (string) $row['roleid'] === (string) \CWebUser::$data['roleid']))
-			|| ($type === 'users' && ($row['username'] === ZBX_GUEST_USER || (int) $row['provisioned'] === 1
+			|| ($type === 'users' && ($row['username'] === ZBX_GUEST_USER || (int) ($row['provisioned'] ?? 0) === 1
 				|| (string) $row['userid'] === (string) \CWebUser::$data['userid']));
 	}
 }

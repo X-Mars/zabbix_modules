@@ -74,7 +74,7 @@ final class LanguageManager {
 		'Could not write the temporary backup file.' => '无法写入临时备份文件。',
 		'The YAML backup is malformed or uses unsupported syntax.' => 'YAML 备份格式错误或使用了不支持的语法。',
 		'This file is not a supported module backup.' => '此文件不是受支持的模块备份。',
-		'This module supports Zabbix 7.0 and 8.0.' => '此模块支持 Zabbix 7.0 和 8.0。',
+		'This module supports Zabbix 6.0, 7.0 and 8.0.' => '此模块支持 Zabbix 6.0、7.0 和 8.0。',
 		'This backup requires a newer Zabbix version.' => '此备份要求更高版本的 Zabbix。',
 		'Preview this file and restore option again before restoring.' => '执行还原前，请重新预览此文件及还原选项。',
 		'Missing or ambiguous reference to %s (%s).' => '%s 引用不存在或不唯一（%s）。',

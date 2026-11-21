@@ -55,7 +55,7 @@ final class BackupRestore extends \CController {
 
 		try {
 			if (!Bundle::supports($version)) {
-				throw new RuntimeException(LanguageManager::t('This module supports Zabbix 7.0 and 8.0.'));
+				throw new RuntimeException(LanguageManager::t('This module supports Zabbix 6.0, 7.0 and 8.0.'));
 			}
 
 			$service = new BackupService(new Api());

@@ -92,18 +92,35 @@ final class Catalog {
 	public const LATE_NATIVE = ['images', 'maps', 'dashboards'];
 
 	public static function groups(string $version): array {
-		if (version_compare($version, '6.4', '<')) {
-			return ['Monitoring' => [
-				'host_groups' => 'Host groups', 'templates' => 'Templates', 'hosts' => 'Hosts',
-				'media_types' => 'Media types', 'images' => 'Images', 'maps' => 'Maps'
-			]];
-		}
 		$groups = self::GROUPS;
+		if (version_compare($version, '6.4', '<')) {
+			$groups['Monitoring'] = [
+				'host_groups' => 'Host groups', 'templates' => 'Templates', 'hosts' => 'Hosts',
+				'images' => 'Images', 'maps' => 'Maps'
+			];
+		}
 		if (substr($version, 0, 3) !== '8.0') {
 			unset($groups['Monitoring']['dashboards']);
 		}
 
 		return $groups;
+	}
+
+	public static function records(string $version): array {
+		$records = self::RECORDS;
+		if (version_compare($version, '6.4', '<')) {
+			$records['user_groups'][3] = 'name gui_access users_status debug_mode';
+			$records['user_groups'][4] = ['selectRights' => 'extend', 'selectTagFilters' => 'extend'];
+			$records['scripts'][3] = 'name command host_access usrgrpid groupid description confirmation type '
+				.'execute_on timeout scope menu_path port authtype username password publickey privatekey';
+			$records['actions'][3] = 'name eventsource status esc_period pause_suppressed notify_if_canceled';
+		}
+		return $records;
+	}
+
+	public static function conditionType(string $name): int {
+		$constant = 'CONDITION_TYPE_'.$name;
+		return constant(defined('ZBX_'.$constant) ? 'ZBX_'.$constant : $constant);
 	}
 
 	public static function labels(string $version): array {
