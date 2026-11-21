@@ -1,8 +1,13 @@
+.wrapper > main {
+    min-width: 0;
+}
+
 .ipam {
-    width: calc(100vw - 215px);
-    max-width: none;
-    margin-left: 0;
-    margin-right: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: 8px 0;
+    padding: 0 8px;
 }
 
 .ipam-head,
@@ -12,20 +17,120 @@
     min-width: 0;
 }
 
+.ipam .ipam-head {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.ipam-head > .ipam-toolbar {
+    flex: 1 1 100%;
+    width: 100%;
+    margin: 0;
+    gap: 10px;
+    padding: 10px;
+}
+
 .ipam-head-actions {
     flex: 0 0 auto;
+    min-width: 0;
     flex-wrap: wrap;
     justify-content: flex-end;
+    margin-left: auto;
+    max-width: 100%;
 }
 
 .ipam-toolbar label {
-    flex: 1 1 180px;
-    min-width: 150px;
+    flex: 1 1 140px;
+    min-width: 120px;
 }
 
 .ipam-toolbar label:first-of-type {
-    flex: 2 1 260px;
-    min-width: 220px;
+    flex: 2 1 200px;
+    min-width: 180px;
+}
+
+.ipam-toolbar input,
+.ipam-toolbar select {
+    width: 100%;
+    min-width: 0;
+}
+
+.ipam-help,
+.task-summary {
+    margin-bottom: 10px;
+}
+
+.ipam-detail-panel {
+    padding: 12px;
+    border: 1px solid var(--ipam-border);
+    border-radius: 7px;
+    background: #fff;
+}
+
+.ipam-detail-view-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.ipam-detail-view-head .ipam-legend {
+    flex-wrap: wrap;
+    padding: 0;
+}
+
+.ipam-view-toggle {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.ipam-detail-view[hidden] {
+    display: none;
+}
+
+.ipam-matrix-group + .ipam-matrix-group {
+    margin-top: 18px;
+}
+
+.ipam-matrix-group h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.ipam-matrix-group h3 span {
+    margin-left: 8px;
+    color: var(--ipam-muted);
+    font-weight: 400;
+}
+
+.ipam-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+    gap: 5px;
+}
+
+.ipam-detail-grid .ip-cell {
+    aspect-ratio: 1;
+    min-height: 0;
+    color: #fff;
+}
+
+.ipam-detail-grid .ip-cell strong {
+    font-size: 13px;
+}
+
+.ipam-detail-grid .ip-cell.is-linked:hover,
+.ipam-detail-grid .ip-cell.is-linked:focus-visible {
+    outline: 2px solid var(--ipam-blue);
+    outline-offset: 1px;
 }
 
 .ipam-table {
@@ -134,7 +239,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 14px 2px;
+    padding: 8px 2px;
     color: var(--ipam-muted);
 }
 
@@ -351,7 +456,24 @@
 
 @media (max-width: 760px) {
     .ipam {
-        width: calc(100vw - 16px);
+        width: 100%;
+    }
+
+    .ipam-head > .ipam-toolbar {
+        flex: 0 1 auto;
+        width: 100%;
+    }
+
+    .ipam-toolbar label,
+    .ipam-toolbar label:first-of-type {
+        min-width: 0;
+        flex-basis: 100%;
+    }
+
+    .ipam-toolbar input,
+    .ipam-toolbar select {
+        width: 100%;
+        min-width: 0;
     }
 
     .ipam-table {

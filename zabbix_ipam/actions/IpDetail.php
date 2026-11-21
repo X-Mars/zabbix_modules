@@ -30,6 +30,7 @@ class IpDetail extends CController {
             'rangeid' => 'string',
             'status' => 'in all,alive,down,unscanned',
             'associated' => 'in all,yes,no',
+            'view' => 'in matrix,report',
             'page' => 'int32',
             'per_page' => 'in 20,50,100,200'
         ]);
@@ -45,6 +46,7 @@ class IpDetail extends CController {
         $range_id = $this->getInput('rangeid', '');
         $status = $this->getInput('status', 'all');
         $associated = $this->getInput('associated', 'all');
+        $view = $this->getInput('view', 'matrix');
         $search = mb_strtolower(trim($this->getInput('search', '')));
         $per_page = (int) $this->getInput('per_page', 50);
         $page = max(1, (int) $this->getInput('page', 1));
@@ -60,6 +62,7 @@ class IpDetail extends CController {
 
         $host_map = HostMatcher::byIp();
         $rows = [];
+        $matrix_ranges = [];
         $total = 0;
 
         foreach ($ranges as $range) {
@@ -100,6 +103,21 @@ class IpDetail extends CController {
                     continue;
                 }
 
+                if ($view === 'matrix') {
+                    if (!isset($matrix_ranges[$range['id']])) {
+                        $matrix_ranges[$range['id']] = [
+                            'name' => $range['name'],
+                            'range' => $range['range'],
+                            'ips' => []
+                        ];
+                    }
+                    $matrix_ranges[$range['id']]['ips'][] = [
+                        'ip' => $ip,
+                        'state' => $state,
+                        'host_url' => $hosts[0]['url'] ?? ''
+                    ];
+                }
+
                 if ($total >= $offset && count($rows) < $per_page) {
                     $rows[] = [
                         'ip' => $ip,
@@ -122,6 +140,8 @@ class IpDetail extends CController {
         $response = new CControllerResponseData([
             'title' => LanguageManager::t('IP Details'),
             'rows' => $rows,
+            'matrix_ranges' => $matrix_ranges,
+            'view' => $view,
             'ranges' => $ranges,
             'filters' => [
                 'search' => $search,
@@ -136,7 +156,7 @@ class IpDetail extends CController {
                 'per_page' => $per_page
             ]
         ]);
-        $response->setTitle('IP details');
+        $response->setTitle(LanguageManager::t('IP Details'));
         $this->setResponse($response);
     }
 }

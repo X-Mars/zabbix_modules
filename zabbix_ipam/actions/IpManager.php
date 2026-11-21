@@ -103,7 +103,7 @@ class IpManager extends CController {
             ],
             'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total_rows, 'per_page' => $per_page]
         ]);
-        $response->setTitle('IP management');
+        $response->setTitle(LanguageManager::t('IP Management'));
         $this->setResponse($response);
     }
 }
