@@ -2,7 +2,8 @@
 
 [中文](README.md)
 
-![WeChat](images/wechat.jpg)![公众号](images/gongzhonghao.jpg)
+<img src="images/wechat.jpg" width="10%" alt="wechat">
+<img src="images/gongzhonghao.jpg" width="13%" alt="gongzhonghao">
 
 ## Starting from November 15th, 2026
 
