@@ -44,7 +44,7 @@ final class Bundle {
 			}
 		}
 		foreach ($data['records'] as $type => $rows) {
-			if (version_compare($data['source_version'], '6.4', '<') && $rows) {
+			if ($rows && !isset(Catalog::labels($data['source_version'])[$type])) {
 				throw self::invalid();
 			}
 			self::checkRows($rows);

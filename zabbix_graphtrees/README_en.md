@@ -27,11 +27,11 @@ This is a Zabbix frontend module that provides tree-structured resource browsing
   - Filter items by tags and tag values
   - Multi-select dropdown for flexible chart selection
 - **Chart Display**:
-  - SVG line charts for real-time monitoring data
-  - Synchronized tooltip display across multiple charts
+  - Native Zabbix charts for pre-configured and auto-generated graphs
   - Full-screen chart zoom view
-  - Auto-refresh (5/10/20/30/60 second intervals)
-  - Multiple time range selections (1 hour to 30 days)
+  - Auto-refresh (30/60/120/300 second intervals)
+  - Quick time ranges from the last 10 minutes to 30 days, plus manual start and end times
+  - An export icon at the top right of each chart downloads a high-resolution PNG (2400×600 plot area)
 - **Internationalization**: Support for Chinese and English interfaces
 - **Responsive Design**: Adapts to different screen sizes
 - **Modern Interface**: Clean and concise design style
@@ -90,6 +90,14 @@ For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/do
 ## Module Configuration
 
 Select host groups and hosts, filter items by tags, and set the chart time range and automatic refresh interval.
+
+Choose **Custom Range**, enter a start and end time. Changes automatically validate and refresh the charts. Times use the Zabbix user time zone. The start must precede the end. Both the chart grid and any open zoom view update together, and refreshes retain the applied custom range.
+
+Before applying, the server validates the range with the native Zabbix time parser and maximum-period setting. Invalid, too-short, or excessive ranges show an error and retain the last applied range. Switching to a preset also prevents an older validation response from overriding it.
+
+Click the export icon at the top right of any chart to generate and download a high-resolution PNG using its applied time range. Both pre-configured and auto-generated graphs support export. Filenames include the host, chart name, and time range.
+
+Exports verify PNG decoding and actual dimensions, rejecting login pages, corrupt images, and small error images returned by Zabbix. See the [1.1.0 development-environment test report](tests/README.md) for results and repeatable browser scripts.
 
 ## License
 

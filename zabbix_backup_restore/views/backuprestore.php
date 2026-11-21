@@ -18,7 +18,7 @@ ob_start();
 		data-upload-error="<?= $t('Upload a valid YAML backup file.') ?>"
 		data-size-error="<?= $t('The backup exceeds the upload size limit.') ?>">
 	<?php if (!$data['groups']): ?>
-		<div class="zbr-alert zbr-error" role="alert"><?= $t('This module supports Zabbix 7.0 and 8.0.') ?></div>
+		<div class="zbr-alert zbr-error" role="alert"><?= $t('This module supports Zabbix 6.0, 7.0 and 8.0.') ?></div>
 	<?php else: ?>
 		<div class="zbr-alert zbr-warning">
 			<?= $t('Backup files may contain credentials and commands. Store them securely and restore only trusted files.') ?>

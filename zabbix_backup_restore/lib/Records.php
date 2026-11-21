@@ -49,7 +49,8 @@ final class Records {
 	}
 
 	public function normalize(string $type, array $row, bool $export, bool $upgrade = false): array {
-		$data = self::fields($row, Catalog::RECORDS[$type][3]);
+		$legacy = version_compare(ZABBIX_VERSION, '6.4', '<');
+		$data = self::fields($row, Catalog::records(ZABBIX_VERSION)[$type][3]);
 
 		switch ($type) {
 			case 'regular_expressions':
@@ -105,10 +106,31 @@ final class Records {
 						true)) {
 					unset($data['userdirectoryid']);
 				}
-				$data['hostgroup_rights'] = $this->links($row, 'hostgroup_rights', 'id', 'host_groups',
-					$export, 'permission');
-				$data['templategroup_rights'] = $this->links($row, 'templategroup_rights', 'id', 'template_groups',
-					$export, 'permission');
+				if ($legacy) {
+					$data['rights'] = $this->links($row, 'rights', 'id', 'host_groups', $export, 'permission');
+				}
+				else {
+					$data['hostgroup_rights'] = $this->links($row, 'hostgroup_rights', 'id', 'host_groups',
+						$export, 'permission');
+					$data['templategroup_rights'] = $this->links($row, 'templategroup_rights', 'id', 'template_groups',
+						$export, 'permission');
+					if (!$export && isset($row['rights'])) {
+						foreach ($row['rights'] as $right) {
+							$found = false;
+							foreach (['host_groups' => 'hostgroup_rights', 'template_groups' => 'templategroup_rights']
+									as $group_type => $field) {
+								if ($this->references->has($group_type, $right['id'])) {
+									$data[$field][] = ['id' => $this->references->convert($group_type, $right['id'], false),
+										'permission' => $right['permission']];
+									$found = true;
+								}
+							}
+							if (!$found) {
+								$this->references->convert('host_groups', $right['id'], false);
+							}
+						}
+					}
+				}
 				$data['tag_filters'] = $this->links($row, 'tag_filters', 'groupid', 'host_groups', $export, 'tag value');
 				if (defined('PROXY_MODE_ALLOW')) {
 					$data += self::fields($row, 'proxy_mode proxy_group_mode');
@@ -136,6 +158,23 @@ final class Records {
 				$data = $this->reference($data, 'usrgrpid', 'user_groups', $export, true);
 				$data = $this->reference($data, 'groupid', 'host_groups', $export, true);
 				$data['parameters'] = $this->rows($row, 'parameters', 'name value');
+				if ($legacy && !$export) {
+					$fields = 'name type scope command groupid description';
+					if ((int) ($data['scope'] ?? -1) !== ZBX_SCRIPT_SCOPE_ACTION) {
+						$fields .= ' menu_path usrgrpid host_access confirmation';
+					}
+					$type_fields = [
+						ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT => 'execute_on',
+						ZBX_SCRIPT_TYPE_SSH => 'port authtype username password',
+						ZBX_SCRIPT_TYPE_TELNET => 'port username password',
+						ZBX_SCRIPT_TYPE_WEBHOOK => 'timeout parameters'
+					];
+					if ((int) ($data['type'] ?? -1) === ZBX_SCRIPT_TYPE_SSH
+							&& (int) ($data['authtype'] ?? -1) === ITEM_AUTHTYPE_PUBLICKEY) {
+						$fields .= ' publickey privatekey';
+					}
+					$data = self::fields($data, $fields.' '.($type_fields[(int) ($data['type'] ?? -1)] ?? ''));
+				}
 				break;
 
 			case 'network_discovery':
@@ -248,20 +287,20 @@ final class Records {
 
 				$type = (int) ($condition['conditiontype'] ?? -1);
 				$references = [
-					ZBX_CONDITION_TYPE_HOST_GROUP => 'host_groups',
-					ZBX_CONDITION_TYPE_HOST => 'hosts',
-					ZBX_CONDITION_TYPE_TEMPLATE => 'templates',
-					ZBX_CONDITION_TYPE_TRIGGER => 'triggers',
-					ZBX_CONDITION_TYPE_DRULE => 'network_discovery',
-					ZBX_CONDITION_TYPE_DCHECK => 'discovery_checks',
-					ZBX_CONDITION_TYPE_PROXY => 'proxies',
-					ZBX_CONDITION_TYPE_SERVICE => 'services'
+					Catalog::conditionType('HOST_GROUP') => 'host_groups',
+					Catalog::conditionType('HOST') => 'hosts',
+					Catalog::conditionType('TEMPLATE') => 'templates',
+					Catalog::conditionType('TRIGGER') => 'triggers',
+					Catalog::conditionType('DRULE') => 'network_discovery',
+					Catalog::conditionType('DCHECK') => 'discovery_checks',
+					Catalog::conditionType('PROXY') => 'proxies',
+					Catalog::conditionType('SERVICE') => 'services'
 				];
 				if (defined('ZBX_CONDITION_TYPE_PROXY_GROUP')) {
 					$references[ZBX_CONDITION_TYPE_PROXY_GROUP] = 'proxy_groups';
 				}
 				$reference = $references[$type] ?? null;
-				if ($type !== ZBX_CONDITION_TYPE_EVENT_TAG_VALUE) {
+				if ($type !== Catalog::conditionType('EVENT_TAG_VALUE')) {
 					unset($condition['value2']);
 				}
 				return $reference === null ? $condition : $this->reference($condition, 'value', $reference, $export);

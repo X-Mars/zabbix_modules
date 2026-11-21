@@ -53,7 +53,18 @@ class LanguageManager {
             'Apply' => '应用',
             'Cancel' => '取消',
             'Quick Select' => '快速选择',
-            'Custom Range' => '自定义范围'
+            'Custom Range' => '自定义范围',
+            'Start time' => '开始时间',
+            'End time' => '结束时间',
+            'Time zone' => '时区',
+            'Select a valid start and end time.' => '请选择有效的开始和结束时间。',
+            'Start time must be earlier than end time.' => '开始时间必须早于结束时间。',
+            'Export image' => '导出图片',
+            'Exporting...' => '正在导出...',
+            'Failed to export image. Please try again.' => '导出图片失败，请重试。',
+            'Time range must be at least one minute.' => '时间范围不能少于一分钟。',
+            'Time range exceeds the maximum allowed by Zabbix.' => '时间范围超过 Zabbix 允许的最大跨度。',
+            'Failed to validate time range. Please try again.' => '时间范围校验失败，请重试。'
         ],
         'en_US' => [
             'Graph Trees' => 'Graph Trees',
@@ -97,7 +108,18 @@ class LanguageManager {
             'Apply' => 'Apply',
             'Cancel' => 'Cancel',
             'Quick Select' => 'Quick Select',
-            'Custom Range' => 'Custom Range'
+            'Custom Range' => 'Custom Range',
+            'Start time' => 'Start time',
+            'End time' => 'End time',
+            'Time zone' => 'Time zone',
+            'Select a valid start and end time.' => 'Select a valid start and end time.',
+            'Start time must be earlier than end time.' => 'Start time must be earlier than end time.',
+            'Export image' => 'Export image',
+            'Exporting...' => 'Exporting...',
+            'Failed to export image. Please try again.' => 'Failed to export image. Please try again.',
+            'Time range must be at least one minute.' => 'Time range must be at least one minute.',
+            'Time range exceeds the maximum allowed by Zabbix.' => 'Time range exceeds the maximum allowed by Zabbix.',
+            'Failed to validate time range. Please try again.' => 'Failed to validate time range. Please try again.'
         ]
     ];
     
