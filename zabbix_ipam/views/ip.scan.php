@@ -65,7 +65,7 @@ if ($data['selected'] !== '') {
 }
 $pagination = ViewPagination::render('ip.scan', $data['pagination'], $pagination_filters);
 
-$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.0">'
+$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.1">'
     .'<div class="ipam" '.$root_attributes.'><header class="ipam-head">'
     .'<form class="ipam-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.scan"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
     .'<label><span>'.$t('Search').'</span><input name="search" value="'.$e($data['filters']['search']).'" placeholder="'.$t('Search task ID or range name').'"></label>'
@@ -76,6 +76,6 @@ $html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=
     .'<div><strong>'.$counts['running'].'</strong><span>'.$t('Running').'</span></div><div><strong>'.$counts['completed'].'</strong><span>'.$t('Completed').'</span></div><div><strong>'.$counts['failed'].'</strong><span>'.$t('Failed').'</span></div></div>'
     .'<div class="ipam-table-wrap"><table class="ipam-table ipam-task-table"><thead><tr><th>'.$t('No.').'</th><th>'.$t('Task ID').'</th><th>'.$t('IP range name').'</th><th>'.$t('Status').'</th><th>'.$t('Progress').'</th><th>'.$t('Alive').'</th><th>'.$t('Shards').'</th><th>'.$t('Created').'</th><th>'.$t('Actions').'</th></tr></thead>'
     .'<tbody>'.($rows ?: '<tr><td colspan="9" class="ipam-empty">'.$t('No scan tasks found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div>'
-    .'<div class="ipam-toast" id="ipam-toast" hidden></div><script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.5.0"></script>';
+    .'<div class="ipam-toast" id="ipam-toast" hidden></div><script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.6.1"></script>';
 
 ViewRenderer::render($data['title'], $html);

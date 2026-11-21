@@ -66,7 +66,7 @@ foreach ($data['rows'] as $row) {
 
 $pagination = ViewPagination::render('ip.manager', $data['pagination'], $data['filters']);
 
-$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.0">'
+$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.1">'
     .'<div class="ipam" data-confirm-delete="'.$e($t('Delete this IP range?')).'" data-loading="'.$e($t('Loading...')).'" data-request-failed="'.$e($t('Request failed.')).'">'
     .'<header class="ipam-head">'
     .'<form class="ipam-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.manager"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
@@ -90,6 +90,6 @@ $html .= '<div class="ipam-modal" id="range-modal" hidden><div class="ipam-modal
 $html .= '<div class="ipam-modal" id="matrix-modal" hidden><div class="ipam-modal-backdrop" data-close></div><section class="ipam-dialog ipam-dialog-wide" role="dialog" aria-modal="true">'
     .'<header><div><h2>'.$t('IP availability matrix').'</h2><p id="matrix-subtitle"></p></div><button class="btn-alt ipam-close" data-close aria-label="'.$t('Close').'">×</button></header>'
     .'<div class="ipam-legend"><span><i class="alive"></i>'.$t('Alive').'</span><span><i class="dead"></i>'.$t('Unreachable / not scanned').'</span></div><div class="ipam-grid" id="ip-grid"></div></section></div>'
-    .'<div class="ipam-toast" id="ipam-toast" hidden></div><script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.5.0"></script>';
+    .'<div class="ipam-toast" id="ipam-toast" hidden></div><script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.6.1"></script>';
 
 ViewRenderer::render($data['title'], $html);
