@@ -86,7 +86,7 @@ class IpScan extends CController {
             'filters' => ['rangeid' => $range_id, 'status' => $status, 'search' => $search],
             'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total_rows, 'per_page' => $per_page]
         ]);
-        $response->setTitle('Scan tasks');
+        $response->setTitle(LanguageManager::t('Task Management'));
         $this->setResponse($response);
     }
 }

@@ -19,8 +19,8 @@ class Module extends ModuleBase {
             if (class_exists('APP') && method_exists('APP', 'Component') && class_exists('CMenuItem')) {
                 $menu = \APP::Component()->get('menu.main')->findOrAdd(_('Inventory'))->getSubmenu();
                 $menu->add((new \CMenuItem(LanguageManager::t('IPAM')))->setSubMenu(new \CMenu([
-                    (new \CMenuItem(LanguageManager::t('IP Management')))->setAction('ip.manager'),
                     (new \CMenuItem(LanguageManager::t('IP Details')))->setAction('ip.detail'),
+                    (new \CMenuItem(LanguageManager::t('IP Management')))->setAction('ip.manager'),
                     (new \CMenuItem(LanguageManager::t('Task Management')))->setAction('ip.scan')
                 ])));
             }

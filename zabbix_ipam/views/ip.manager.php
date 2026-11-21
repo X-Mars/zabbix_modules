@@ -66,16 +66,16 @@ foreach ($data['rows'] as $row) {
 
 $pagination = ViewPagination::render('ip.manager', $data['pagination'], $data['filters']);
 
-$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.5.0">'
+$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.0">'
     .'<div class="ipam" data-confirm-delete="'.$e($t('Delete this IP range?')).'" data-loading="'.$e($t('Loading...')).'" data-request-failed="'.$e($t('Request failed.')).'">'
-    .'<header class="ipam-head"><div><h1>'.$t('IPAM').'</h1><p>'.$t('Manage IPv4 ranges and run ICMP-only availability scans.').'</p></div>'
-    .'<div class="ipam-head-actions"><a class="btn-alt" href="zabbix.php?action=ip.detail">'.$t('IP Details').'</a><a class="btn-alt" href="zabbix.php?action=ip.scan">'.$t('Task Management').'</a><button class="btn-alt js-add">'.$t('Add IP range').'</button></div></header>'
-    .'<div class="ipam-help"><strong>'.$t('Quick guide').'</strong><span>'.$t('Add a range, start an ICMP scan, then click the IP count to view the availability matrix. Green means alive; gray means unreachable or not scanned.').'</span></div>'
+    .'<header class="ipam-head">'
     .'<form class="ipam-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.manager"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
     .'<label><span>'.$t('Search').'</span><input name="search" value="'.$e($data['filters']['search']).'" placeholder="'.$t('Search name or CIDR').'"></label>'
     .'<label><span>'.$t('IP range').'</span><select name="rangeid">'.$range_options.'</select></label>'
     .'<label><span>'.$t('Enabled status').'</span><select name="enabled_status">'.$enabled_options.'</select></label>'
-    .'<label><span>'.$t('Scan status').'</span><select name="scan_status">'.$scan_options.'</select></label></form>'
+    .'<label><span>'.$t('Scan status').'</span><select name="scan_status">'.$scan_options.'</select></label>'
+    .'<div class="ipam-head-actions"><a class="btn-alt" href="zabbix.php?action=ip.detail">'.$t('IP Details').'</a><a class="btn-alt" href="zabbix.php?action=ip.scan">'.$t('Task Management').'</a><button type="button" class="btn-alt js-add">'.$t('Add IP range').'</button></div></form></header>'
+    .'<div class="ipam-help"><strong>'.$t('Quick guide').'</strong><span>'.$t('Add a range, start an ICMP scan, then click the IP count to view the availability matrix. Green means alive; gray means unreachable or not scanned.').'</span></div>'
     .'<div class="ipam-table-wrap"><table class="ipam-table ipam-range-table"><thead><tr><th>'.$t('No.').'</th><th>'.$t('IP range name').'</th><th>'.$t('IP range').'</th><th>'.$t('Alive IPs / Total').'</th><th>'.$t('Enabled status').'</th><th>'.$t('Scan status').'</th><th>'.$t('Last scan time').'</th><th>'.$t('Actions').'</th></tr></thead>'
     .'<tbody>'.($rows ?: '<tr><td colspan="8" class="ipam-empty">'.$t('No IP ranges found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div>';
 

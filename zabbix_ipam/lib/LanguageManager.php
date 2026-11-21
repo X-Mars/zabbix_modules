@@ -9,6 +9,8 @@ class LanguageManager {
         'IPAM' => 'IP 管理',
         'IP Management' => 'IP 管理',
         'IP Details' => 'IP 详情',
+        'Report' => '报表',
+        'IP matrix' => 'IP 矩阵',
         'Task Management' => '任务管理',
         'Manage IPv4 ranges and run ICMP-only availability scans.' => '集中管理 IPv4 地址段并执行仅 ICMP 的存活扫描。',
         'Track ICMP scan progress and review completed background tasks.' => '跟踪 ICMP 扫描进度并查看后台任务结果。',
