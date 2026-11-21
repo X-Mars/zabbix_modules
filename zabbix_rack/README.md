@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -86,6 +83,26 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 
 ## 注意事项
 
+### 保存权限与 SELinux（2026-11-21 修复）
+
+机房/机柜写入的是 **Web 前端服务器** 上的 `data/config.json`，并非 Zabbix Server 的目录。SELinux Enforcing 时，`usr_t` 标签会阻止 PHP-FPM 写入，即使文件已是 777。应按 Web PHP 进程账号（测试环境为 apache）设置归属和持久写标签：
+
+```bash
+# Tested Zabbix 8 frontend; adjust the path and PHP pool user for your installation.
+dnf install policycoreutils-python-utils
+mkdir -p /usr/share/zabbix/ui/modules/zabbix_rack/data
+chown -R apache:apache /usr/share/zabbix/ui/modules/zabbix_rack/data
+chmod 750 /usr/share/zabbix/ui/modules/zabbix_rack/data
+# If config.json already exists:
+chmod 600 /usr/share/zabbix/ui/modules/zabbix_rack/data/config.json
+semanage fcontext -a -t httpd_sys_rw_content_t '/usr/share/zabbix/ui/modules/zabbix_rack/data(/.*)?'
+restorecon -RFv /usr/share/zabbix/ui/modules/zabbix_rack/data
+```
+
+若规则已存在，使用 `semanage fcontext -m` 更新。不要使用 chmod 777 或关闭 SELinux；写标签仅限 data 目录。
+
+代码已改为临时文件写入后原子替换，失败保留旧文件及缓存，并将错误写入 PHP/Web 日志，避免 warning 破坏 AJAX JSON。已通过 Chromium 新增、刷新持久化、编辑、删除闭环，临时机房已清理；失败保护回归使用独立临时目录。
+
 - **性能考虑**：对于大型环境，建议适当限制查询结果数量。
 - **数据准确性**：显示的信息基于Zabbix数据库的当前状态。
 - **权限要求**：用户需要适当权限访问机柜视图。机柜视图按机房配置的 Zabbix 用户组/用户过滤可见范围；**Super Admin** 可查看全部机房。**机柜配置**页面仅 **Super Admin** 可访问。
@@ -122,6 +139,15 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 - 分配到正面时不写入 `rack_side` 标签（兼容旧数据）
 - 分配到背面时写入 `rack_side=back`
 
+1. 删除机房会同时删除该机房下的所有机柜配置
+2. 从机柜移除主机只会删除主机上的机柜相关标签，不会删除主机本身
+3. 分配主机时会自动检测 U 位冲突
+4. 建议定期备份 `data/config.json` 文件
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
 ## 开发
 
 插件基于Zabbix模块框架开发。文件结构：
@@ -141,17 +167,12 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_rack/manifest
 
 如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
 
+## 模块配置
+
+### 界面主题
+
+机柜视图和配置页面采用 Element Plus 风格，使用本地 CSS 和 JavaScript，无需 Vue 或外部 CDN。保留原生 select、现有表单校验及六级告警区分。升级时请同时复制 views 和 assets 目录；共享主题位于 assets/css/element.css，消息和确认框位于 assets/js/element.js。
+
 ## 许可证
 
 本项目遵循Zabbix的许可证。详情请见[Zabbix许可证](https://www.zabbix.com/license)。
-
-## 注意事项
-
-1. 删除机房会同时删除该机房下的所有机柜配置
-2. 从机柜移除主机只会删除主机上的机柜相关标签，不会删除主机本身
-3. 分配主机时会自动检测 U 位冲突
-4. 建议定期备份 `data/config.json` 文件
-
-## 界面主题
-
-机柜视图和配置页面采用 Element Plus 风格，使用本地 CSS 和 JavaScript，无需 Vue 或外部 CDN。保留原生 select、现有表单校验及六级告警区分。升级时请同时复制 views 和 assets 目录；共享主题位于 assets/css/element.css，消息和确认框位于 assets/js/element.js。

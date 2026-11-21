@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -72,6 +69,10 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 - **数据准确性**：显示的信息基于Zabbix数据库的当前状态。
 - **监控项依赖**：图形展示依赖于相应的监控项配置。
 
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
 ## 开发
 
 插件基于Zabbix模块框架开发。文件结构：
@@ -86,6 +87,10 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 - `lib/ZabbixVersion.php`：版本兼容工具
 
 如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
+
+## 模块配置
+
+选择主机组与主机，按标签筛选监控项，再设置图表时间范围和自动刷新周期。
 
 ## 许可证
 

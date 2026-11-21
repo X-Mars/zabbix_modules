@@ -1,4 +1,15 @@
 /* Scoped palette and layout for the Branding settings page. */
+.rebrand-page #server_name_mode input[type="radio"] + label {
+	background: var(--rebrand-bg);
+	color: var(--rebrand-text);
+}
+
+.rebrand-page #server_name_mode input[type="radio"]:checked + label {
+	background: var(--rebrand-accent);
+	border-color: var(--rebrand-accent);
+	color: #fff;
+}
+
 .wrapper > main:has(> .rebrand-page) {
 	display: flex;
 	flex: 1;

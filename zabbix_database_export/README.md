@@ -2,16 +2,17 @@
 
 [English](README_en.md)
 
-当前版本为 **3.0.4**，模块目录为 `zabbix_database_export`。
+## ✨ 版本兼容性
 
-## 版本兼容性
-
-- Zabbix 7.0.x（已在 7.0.32 验证）
-- Zabbix 8.0.x（已在 8.0.0 验证）
-
-支持使用 MySQL、MariaDB 或 PostgreSQL 的 Zabbix 前端，自动识别数据库类型并在页面显示实际版本。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
+
+当前版本为 **3.0.4**，模块目录为 `zabbix_database_export`。
 
 这是一个从 Zabbix Web 导出数据库备份的前端模块。它复用前端当前的数据库连接，将数据库基础表的结构和数据导出为 SQL 文件。模块入口位于 **管理 → 数据库导出**，仅 Zabbix 超级管理员可使用。
 
@@ -37,13 +38,45 @@
 | 7.0 | `/usr/share/zabbix/modules/zabbix_database_export/` |
 | 8.0 | `/usr/share/zabbix/ui/modules/zabbix_database_export/` |
 
+### ⚠️ 修改 manifest.json 文件
+
+Zabbix 6.0 将模块清单版本改为 1.0；7.0/8.0 保持 2.0。
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_database_export/manifest.json
+```
+
 ### 启用模块
 
 1. 使用超级管理员账号进入 **管理 → 一般 → 模块**（**Administration → General → Modules**）。
 2. 选择 **扫描目录**（**Scan directory**），启用 **Zabbix Database Export**。
 3. 刷新页面并打开 **管理 → 数据库导出**。
 
-## 使用方法
+## 注意事项
+
+- **备份内容**。完整备份包含用户和凭据。MySQL/MariaDB SQL 使用 `CREATE TABLE` 和带列名的 `INSERT`。PostgreSQL 使用原生 `pg_dump` 生成 SQL 和 `COPY` 数据，包含索引、约束和序列。导入「仅数据」模式生成的文件时，选中的表需要已有兼容结构，未选中的表需要能在目标库创建。
+- **数据一致性**。InnoDB 数据在同一事务快照下读取。PostgreSQL 的结构和数据导出共用同一个事务快照。
+- **PostgreSQL 环境**。PHP 需要启用 `pgsql` 扩展和 `proc_open`，前端服务器需安装与数据库服务器兼容的 `pg_dump`。模块复用前端配置的连接和 TLS 参数，临时密码文件权限为 `0600`，完成后删除。
+- **SQL 回读**。PostgreSQL 文件使用 `psql -v ON_ERROR_STOP=1 -d 目标库 -f 备份.sql` 导入。SQL 使用源数据库方言，目标需要兼容的数据库类型及扩展。
+- **大文件**。模块先在 PHP 临时目录生成完整文件。保存到服务器还需要目标目录有足够的磁盘空间。导出耗时受 Web 服务器、代理和 PHP-FPM 的超时设置影响。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
+## 开发
+
+- `manifest.json`、`Module.php` — 模块注册和菜单入口
+- `actions/DatabaseExport.php`、`views/databaseexport.php` — 请求处理与页面渲染
+- `lib/SqlExport.php`、`lib/PostgresqlExport.php`、`lib/BackupFile.php` — SQL 导出与文件保存
+- `lib/LanguageManager.php`、`assets/` — 界面翻译与前端资源
+- `tests/checks.php` — SQL 导出与 500 MB 边界回归检查
+
+PostgreSQL 回归检查位于 `tests/postgresql.php`，覆盖选表、排除历史数据、序列、二进制、JSON 和生成列。
+
+## 模块配置
+
+### 使用方法
 
 1. 在 **导出范围** 中选择全部表或选中的表。可用搜索框缩小范围，用表头复选框选择筛选出的全部表。
    勾选 **排除历史记录** 后，所有以 `history` 开头的表均仅导出结构。
@@ -57,7 +90,7 @@
 
 3. 选择 **浏览器下载** 或 **保存到服务器**，填写服务器目录并点击 **导出 SQL**。保存到服务器后，页面会显示绝对路径和文件大小。
 
-### 导出文件名
+#### 导出文件名
 
 浏览器下载、手动保存和超过 500 MB 后自动保存均使用以下格式。时间为当前 Zabbix 用户的时区时间。
 
@@ -67,7 +100,7 @@
 | MariaDB | `zabbix_database_backup_mariadb_yyyy-mm-dd_hh-mm-ss.sql` |
 | PostgreSQL | `zabbix_database_backup_postgresql_yyyy-mm-dd_hh-mm-ss.sql` |
 
-### 配置服务器备份目录
+#### 配置服务器备份目录
 
 默认目录为 `/tmp/zabbix`。该目录不存在时，模块会尝试创建。要允许其他位置，可在模块部署目录添加 `config.local.php`：
 
@@ -78,20 +111,6 @@ return ['/var/lib/zabbix/database-backups'];
 
 页面可填写配置的目录或其下已有的子目录。备份目录须位于 Web 根目录之外，归 Web 服务账号所有，权限为 `0700`。导出的文件权限为 `0600`，同名文件会保留。容器部署时，目录位于前端容器内，可挂载持久卷。
 
-## 注意事项
+## 许可证
 
-- **备份内容**。完整备份包含用户和凭据。MySQL/MariaDB SQL 使用 `CREATE TABLE` 和带列名的 `INSERT`。PostgreSQL 使用原生 `pg_dump` 生成 SQL 和 `COPY` 数据，包含索引、约束和序列。导入「仅数据」模式生成的文件时，选中的表需要已有兼容结构，未选中的表需要能在目标库创建。
-- **数据一致性**。InnoDB 数据在同一事务快照下读取。PostgreSQL 的结构和数据导出共用同一个事务快照。
-- **PostgreSQL 环境**。PHP 需要启用 `pgsql` 扩展和 `proc_open`，前端服务器需安装与数据库服务器兼容的 `pg_dump`。模块复用前端配置的连接和 TLS 参数，临时密码文件权限为 `0600`，完成后删除。
-- **SQL 回读**。PostgreSQL 文件使用 `psql -v ON_ERROR_STOP=1 -d 目标库 -f 备份.sql` 导入。SQL 使用源数据库方言，目标需要兼容的数据库类型及扩展。
-- **大文件**。模块先在 PHP 临时目录生成完整文件。保存到服务器还需要目标目录有足够的磁盘空间。导出耗时受 Web 服务器、代理和 PHP-FPM 的超时设置影响。
-
-## 开发
-
-- `manifest.json`、`Module.php` — 模块注册和菜单入口
-- `actions/DatabaseExport.php`、`views/databaseexport.php` — 请求处理与页面渲染
-- `lib/SqlExport.php`、`lib/PostgresqlExport.php`、`lib/BackupFile.php` — SQL 导出与文件保存
-- `lib/LanguageManager.php`、`assets/` — 界面翻译与前端资源
-- `tests/checks.php` — SQL 导出与 500 MB 边界回归检查
-
-PostgreSQL 回归检查位于 `tests/postgresql.php`，覆盖选表、排除历史数据、序列、二进制、JSON 和生成列。
+本模块的许可说明见仓库[许可证](../README.md#许可证)。分发时保留相关第三方署名。

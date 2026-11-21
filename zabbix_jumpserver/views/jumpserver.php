@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ConfigManager.php';
@@ -380,7 +383,7 @@ $content = (new CDiv())->addClass('jms-container');
 // 未配置提示
 if (!$isConfigured) {
     $content->addItem(
-        (new CDiv('⚠️ ' . LanguageManager::t('JumpServer is not configured. Please edit data/config.json.')))
+        (new CDiv('⚠️ ' . LanguageManager::t('JumpServer is not configured. Please edit data/config.json.').'\n'.\ZabbixModuleNotice::text('Configuration file: ', '配置文件：').\Modules\ZabbixJumpserver\Lib\ConfigManager::getConfigPath()))
             ->addClass('jms-alert')
     );
 }
@@ -781,8 +784,7 @@ $content->addItem(new CJsScript('<script>
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
                 if (data && data.ok) {
-                    alert((data.message || labels.pushCompleted) + jmsBuildSummary(data.summary));
-                    window.location.reload();
+                    alert((data.message || labels.pushCompleted) + jmsBuildSummary(data.summary)); window.location.reload();
                 } else {
                     alert((data && data.message) ? data.message : labels.pushFailed);
                     if (btn) {
@@ -841,8 +843,7 @@ $content->addItem(new CJsScript('<script>
                         labels.skipped + ": " + (s.skipped || 0),
                         labels.failed + ": " + (s.failed || 0)
                     ];
-                    alert((data.message || labels.fetchCompleted) + " (" + parts.join(", ") + ")");
-                    window.location.reload();
+                    alert((data.message || labels.fetchCompleted) + " (" + parts.join(", ") + ")"); window.location.reload();
                 } else {
                     alert((data && data.message) ? data.message : labels.fetchFailed);
                     if (btn) {

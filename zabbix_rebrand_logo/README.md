@@ -4,10 +4,11 @@
 
 ## ✨ 版本兼容性
 
-- ✅ Zabbix 7.0.32 / PHP 8.0
-- ✅ Zabbix 8.0.0 / PHP 8.4
-
-以上为已验证的组合。其他版本请先在目标环境测试。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -54,11 +55,49 @@ sudo chmod g+w "$CONF_DIR"
 
 PHP-FPM 需要写入图片目录、`local/conf/rebrand/` 和 `local/conf/`，以便保存图片和原子更新 `brand.conf.php`。模块代码应由部署账户维护。启用 SELinux 时，需为这些可写目录配置 `httpd_sys_rw_content_t`，并用 `restorecon` 应用标签。
 
+### ⚠️ 修改 manifest.json 文件
+
+Zabbix 6.0 将模块清单版本改为 1.0；7.0/8.0 保持 2.0。
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_rebrand_logo/manifest.json
+```
+
 ### 启用模块
 
 1. 以超级管理员登录，打开「管理 → 常规 → 模块」。
 2. 点击「扫描目录」，启用 **Zabbix Rebrand Logo**。
 3. 打开「管理 → 品牌 logo 设置」，选择图片、预览或裁剪，然后点击「更新」。
+
+## 注意事项
+
+- 单个文件最多 2 MB，实际还受 PHP 上传限制。保存时，待裁剪或超限的登录页图片会自动导出为符合限制的 PNG。
+- 需要保留 GIF 动画时，请上传符合大小限制的原图，并跳过裁剪。浏览器图标建议使用 ICO。
+- 更换图片后，如仍显示旧图，尝试强制刷新页面。浏览器图标也可以在隐私窗口中核对。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
+## 开发
+
+- `manifest.json` 和 `Module.php`：模块声明及菜单注册。
+- `actions/`：读取、校验和保存设置及图片。
+- `views/` 和 `assets/css/`：设置界面、图片预览与裁剪。
+- `install/login-view.php`：可选的登录页尺寸适配。
+- `lib/`：语言、尺寸和服务器名称相关逻辑。
+
+在 PHP 8.1 或更高版本的命令行中运行服务器名称回归测试：
+
+```bash
+php zabbix_rebrand_logo/tests/ServerNameOverrideTest.php
+```
+
+### 致谢
+
+感谢 [Keberneth](https://github.com/Keberneth) 创建并公开分享 [Zabbix Branding 模块](https://github.com/Keberneth/Zabbix-Modules/tree/main/Branding)。本项目基于该模块修改。
+
+## 模块配置
 
 ### 启用登录页尺寸滑块（可选）
 
@@ -93,26 +132,6 @@ fi
 
 当前模块 ID 为 `zabbix-rebrand-logo`，持久化目录仍为 `local/conf/rebrand/`。
 
-## 注意事项
+## 许可证
 
-- 单个文件最多 2 MB，实际还受 PHP 上传限制。保存时，待裁剪或超限的登录页图片会自动导出为符合限制的 PNG。
-- 需要保留 GIF 动画时，请上传符合大小限制的原图，并跳过裁剪。浏览器图标建议使用 ICO。
-- 更换图片后，如仍显示旧图，尝试强制刷新页面。浏览器图标也可以在隐私窗口中核对。
-
-## 开发
-
-- `manifest.json` 和 `Module.php`：模块声明及菜单注册。
-- `actions/`：读取、校验和保存设置及图片。
-- `views/` 和 `assets/css/`：设置界面、图片预览与裁剪。
-- `install/login-view.php`：可选的登录页尺寸适配。
-- `lib/`：语言、尺寸和服务器名称相关逻辑。
-
-在 PHP 8.1 或更高版本的命令行中运行服务器名称回归测试：
-
-```bash
-php zabbix_rebrand_logo/tests/ServerNameOverrideTest.php
-```
-
-## 致谢
-
-感谢 [Keberneth](https://github.com/Keberneth) 创建并公开分享 [Zabbix Branding 模块](https://github.com/Keberneth/Zabbix-Modules/tree/main/Branding)。本项目基于该模块修改。
+本模块的许可说明见仓库[许可证](../README.md#许可证)。分发时保留相关第三方署名。

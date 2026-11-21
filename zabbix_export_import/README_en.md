@@ -2,16 +2,13 @@
 
 [中文](README.md)
 
-## ✨ Version compatibility
+## ✨ Version Compatibility
 
-| Environment | Verification |
-|---|---|
-| Zabbix 7.0.32 / PHP 8.3.36 | Actual deployment, PHP tests, HTTP/API tests and browser checks; see the test report below |
-| 7.4 | Implemented against official APIs/module mechanisms; no separate runtime verification |
-| 6.0 | Includes manifest preparation, Core base class, native SID, old proxy mapping and native form fallbacks; no separate runtime verification |
-| 8.0 | Compatibility not claimed |
-
-Requires PHP 7.4 or later.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -38,11 +35,11 @@ A native frontend module under **Inventory → Zabbix Import/Export** with exact
 
 ## Installation
 
-### 1. Deploy files
+### Install Module
 
 Deploy this directory as `<frontend>/modules/zabbix_export_import`, readable by the web service account.
 
-### 2. Prepare the manifest
+### ⚠️ Modify manifest.json
 
 This example uses `/usr/share/zabbix`. If your frontend is under `/usr/share/zabbix/ui`, use that path in both places.
 
@@ -50,13 +47,45 @@ This example uses `/usr/share/zabbix`. If your frontend is under `/usr/share/zab
 php /usr/share/zabbix/modules/zabbix_export_import/tools/prepare.php /usr/share/zabbix
 ```
 
+### Enable Module
+
+As a Super admin, open **Administration → General → Modules**, click **Scan directory**, and enable **Zabbix Export Import**.
+
+## Notes
+
+Reads and exports use current API permissions. Imports require Admin and native target write permissions; creating template groups or approving executable content requires Super admin. Every write resolves target objects again and is subject to the API's write permission checks. POST retains native CSRF/SID validation.
+
+Limits are 10 MiB, 10000 records, JSON depth 32 and 256 KiB per field. Hosts are queried in batches of 100; import confirmations process 25 rows. Oversized exports report an error rather than silently truncating to a page. Export data is assembled in bounded memory; unlimited streaming export is not provided.
+
+Password/token/PSK/private-key fields, sensitive headers and secret configuration keys are omitted and marked with `_redacted`. Such records cannot be imported until an administrator securely supplies the missing values and removes that marker before a new preview. Embedded secrets in arbitrary scripts or custom keys cannot be perfectly recognized from names alone; follow your local data-handling rules when reviewing exports.
+
+Preview files use 0600 permissions inside a 0700 temporary directory and exclusive locking during confirmation. Audit entries contain user, timestamp, type, object hash, row and result, not uploaded documents or credentials. Result reports may contain object names and native API error details.
+
+Use the template page to migrate template definitions, value maps and discovery rules/prototypes before restoring dependent hosts. Host macros, TLS private keys and secret values are excluded. Missing prerequisites are reported. Visible-name conflicts obey the target Zabbix uniqueness rules.
+
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
+
+## Development
+
+See [Development notes](DEVELOPMENT.md), the [security review](SECURITY.md), and the [cross-server test report](CROSS_SERVER_TEST_REPORT.md). If you have the local test directory, run the CLI checks from the module directory:
+
+```sh
+find . -name '*.php' -exec php -l {} \;
+php tests/serializers.php
+php tests/transfer_security.php
+```
+
+## Module Configuration
+
 ### 3. Enable or upgrade
 
 Scan and enable **Zabbix Import/Export** under Administration → General → Modules. The preparation command selects manifest version 1 for 6.0 and version 2 for 7.0 and 8.0. To upgrade, replace the module files and rerun the preparation command.
 
 The JSON item value type requires Zabbix 8.0. Template import follows the target's native configuration format. Zabbix 7.0 cannot import native templates in the 8.0 format.
 
-## Usage
+### Usage
 
 The three pages use scoped Element Plus-inspired cards, compact host-group/name filters and an export toolbar above the table. All hosts is the default and includes every authorized enabled/disabled host. Parent groups include descendants. Old invisible profile filters are not restored. Items default to every origin, with name/source filters; inherited and discovered records remain read-only. Import settings open in a side drawer and only show options relevant to the current page. No Vue or CDN assets are loaded. Explicit legacy export requests retain advanced API filter support.
 
@@ -68,7 +97,7 @@ The default strategy creates missing objects and skips existing objects. Updatin
 
 Missing host groups can stop a row, be skipped, or be created by a Super admin. Missing templates can be mapped, skipped or stop the row; empty substitute templates are never created. Existing template links, interfaces, tags and inventory are preserved unless the corresponding replacement option is selected.
 
-### Portable relationships
+#### Portable relationships
 
 Hosts match by technical `host`; items by `(target host, key_)`; templates by technical `host`; groups, proxies, proxy groups and value maps by their relevant names. Source integer IDs are never applied as target IDs. Interface references match exact type and endpoint when possible, then the unique main interface of the required type.
 
@@ -76,11 +105,11 @@ Host imports resolve groups/templates/proxies/interfaces, create or update the h
 
 Template transfer uses native Zabbix configuration export/import and preserves monitoring entities. Missing template groups are rejected unless a Super admin explicitly chooses to create them. Template UUID/name conflicts and unrelated top-level objects are rejected.
 
-### Language selection
+#### Language selection
 
 The UI resolves the signed-in Zabbix user's language, falling back to the system default when the profile uses Default. Simplified Chinese and English catalogs live in `locales`; additional Zabbix locale catalogs can be added. Shared strings delegate to Zabbix gettext, with English fallback for untranslated module strings. Browser language is not used to override the profile.
 
-### Format
+#### Format
 
 This is a custom portable format, not Zabbix `configuration.import`. See [schemas/transfer.schema.json](schemas/transfer.schema.json) and the six two-record [examples](examples).
 
@@ -100,24 +129,6 @@ Required fields:
 
 Item sources are `local`, `template` and `discovery`. Template and discovery references contain their source names/keys. Optional `source_hostid`, `source_itemid` and `_debug` fields are diagnostic only. Unsupported fields and types are reported rather than silently accepted as successful migrations.
 
-## Notes
+## License
 
-Reads and exports use current API permissions. Imports require Admin and native target write permissions; creating template groups or approving executable content requires Super admin. Every write resolves target objects again and is subject to the API's write permission checks. POST retains native CSRF/SID validation.
-
-Limits are 10 MiB, 10000 records, JSON depth 32 and 256 KiB per field. Hosts are queried in batches of 100; import confirmations process 25 rows. Oversized exports report an error rather than silently truncating to a page. Export data is assembled in bounded memory; unlimited streaming export is not provided.
-
-Password/token/PSK/private-key fields, sensitive headers and secret configuration keys are omitted and marked with `_redacted`. Such records cannot be imported until an administrator securely supplies the missing values and removes that marker before a new preview. Embedded secrets in arbitrary scripts or custom keys cannot be perfectly recognized from names alone; follow your local data-handling rules when reviewing exports.
-
-Preview files use 0600 permissions inside a 0700 temporary directory and exclusive locking during confirmation. Audit entries contain user, timestamp, type, object hash, row and result, not uploaded documents or credentials. Result reports may contain object names and native API error details.
-
-Use the template page to migrate template definitions, value maps and discovery rules/prototypes before restoring dependent hosts. Host macros, TLS private keys and secret values are excluded. Missing prerequisites are reported. Visible-name conflicts obey the target Zabbix uniqueness rules.
-
-## Development
-
-See [Development notes](DEVELOPMENT.md), the [security review](SECURITY.md), and the [cross-server test report](CROSS_SERVER_TEST_REPORT.md). If you have the local test directory, run the CLI checks from the module directory:
-
-```sh
-find . -name '*.php' -exec php -l {} \;
-php tests/serializers.php
-php tests/transfer_security.php
-```
+See the repository [license terms](../README_en.md#license). Preserve third-party attribution when redistributing.

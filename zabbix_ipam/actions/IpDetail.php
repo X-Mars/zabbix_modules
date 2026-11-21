@@ -119,7 +119,7 @@ class IpDetail extends CController {
         $pages = max(1, (int) ceil($total / $per_page));
         $page = min($page, $pages);
 
-        $this->setResponse(new CControllerResponseData([
+        $response = new CControllerResponseData([
             'title' => LanguageManager::t('IP Details'),
             'rows' => $rows,
             'ranges' => $ranges,
@@ -135,6 +135,8 @@ class IpDetail extends CController {
                 'total' => $total,
                 'per_page' => $per_page
             ]
-        ]));
+        ]);
+        $response->setTitle('IP details');
+        $this->setResponse($response);
     }
 }

@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -40,7 +37,66 @@
 - **资产 ID 持久化**：JumpServer 资产 ID 以 Zabbix 主机标记（`jumpserver_asset_id`）形式保存
 - **国际化支持**：支持中英文界面
 
-## 配置
+## 安装步骤
+
+### 安装模块
+
+```bash
+# Zabbix 6.0 / 7.0 部署方法
+git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0 部署方法
+git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
+```
+
+### ⚠️ 修改 manifest.json 文件
+
+```bash
+# ⚠️ 如果使用Zabbix 6.0，修改manifest_version
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
+```
+
+### 启用模块
+
+1. 转到 **Administration → General → Modules**。
+2. 点击 **Scan directory** 按钮扫描新模块。
+3. 找到 "Zabbix JumpServer" 模块，点击启用模块。
+4. 刷新页面，模块将在 **资产记录** 菜单下显示为 "JumpServer"。
+
+## 注意事项
+
+- **依赖网络**：Zabbix Web 服务器需能访问 JumpServer 地址。
+- **权限要求**：查看页面需要普通用户权限；执行推送、获取资产 ID 需要 Zabbix 管理员（Admin）权限。
+- **平台识别**：主机平台依赖 Zabbix「Operating system」监控项的值，缺失时默认按 Linux 处理。
+- **标记写回**：推送主机后会向 Zabbix 主机写入 `jumpserver_asset_id` 标记，已有的其它标记会被保留。
+- **凭据安全**：`data/config.json` 含敏感凭据，请妥善控制文件权限，避免提交到公开仓库。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
+## 开发
+
+插件基于 Zabbix 模块框架开发。文件结构：
+
+- `manifest.json`：模块配置
+- `Module.php`：菜单注册（资产记录 → JumpServer）
+- `actions/Jumpserver.php`：主页面业务逻辑（筛选、搜索、告警统计、主机表格）
+- `actions/JumpserverPush.php`：推送主机/分组并回写资产 ID
+- `actions/JumpserverFetchIds.php`：从 JumpServer 拉取资产 ID 并按 IP 写回标记
+- `views/jumpserver.php`：页面视图
+- `lib/JumpserverClient.php`：JumpServer API 客户端（HTTP Signature 认证）
+- `lib/ConfigManager.php`：读取 data/config.json 凭据
+- `lib/LanguageManager.php`：国际化语言管理
+- `lib/ViewRenderer.php`：视图渲染工具
+- `lib/ZabbixVersion.php`：版本兼容工具
+- `data/config.json`：JumpServer 连接凭据
+
+如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
+
+## 模块配置
+
+### 配置
 
 模块凭据保存在 `data/config.json` 中：
 
@@ -68,7 +124,7 @@
 
 **获取 AccessKey**：登录 JumpServer → 用户界面 → 个人信息 → API Key（AccessKey），创建后获得 ID 和 Secret。模块使用 HTTP Signature（hmac-sha256）方式认证，参考 [JumpServer REST API 文档](https://docs.jumpserver.org/zh/v4/dev/rest_api/)。
 
-### 自动关联登录账号
+#### 自动关联登录账号
 
 配置 `account_template_id` 后，模块会在**创建** JumpServer 资产时，通过账号模板自动关联登录账号（更新已有资产时不会改动账号）：
 
@@ -82,7 +138,7 @@
 - AccessKey 对应的用户需要具备账号管理（`accounts.add_account`）权限。
 - 账号凭据由模板决定；如需 JumpServer 真正到目标主机上创建/改密系统账号，请在账号模板中开启自动推送并配置特权账号。
 
-### 反向同步资产 ID
+#### 反向同步资产 ID
 
 点击「获取 JumpServer 资产 ID」按钮，模块会：
 
@@ -92,62 +148,9 @@
 
 适用于 JumpServer 上已有资产、但 Zabbix 主机尚未写入资产 ID 标记的场景。
 
-## 安装步骤
-
-### 安装模块
-
-```bash
-# Zabbix 6.0 / 7.0 部署方法
-git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
-
-# Zabbix 7.2+ / 7.4 / 8.0 部署方法
-git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
-```
-
-### ⚠️ 修改 manifest.json 文件
-
-```bash
-# ⚠️ 如果使用Zabbix 6.0，修改manifest_version
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
-```
-
 ### 配置凭据
 
 编辑 `zabbix_jumpserver/data/config.json`，填写 JumpServer 地址与 AccessKey。请确保 Zabbix Web 运行用户对该文件有读取权限。
-
-### 启用模块
-
-1. 转到 **Administration → General → Modules**。
-2. 点击 **Scan directory** 按钮扫描新模块。
-3. 找到 "Zabbix JumpServer" 模块，点击启用模块。
-4. 刷新页面，模块将在 **资产记录** 菜单下显示为 "JumpServer"。
-
-## 注意事项
-
-- **依赖网络**：Zabbix Web 服务器需能访问 JumpServer 地址。
-- **权限要求**：查看页面需要普通用户权限；执行推送、获取资产 ID 需要 Zabbix 管理员（Admin）权限。
-- **平台识别**：主机平台依赖 Zabbix「Operating system」监控项的值，缺失时默认按 Linux 处理。
-- **标记写回**：推送主机后会向 Zabbix 主机写入 `jumpserver_asset_id` 标记，已有的其它标记会被保留。
-- **凭据安全**：`data/config.json` 含敏感凭据，请妥善控制文件权限，避免提交到公开仓库。
-
-## 开发
-
-插件基于 Zabbix 模块框架开发。文件结构：
-
-- `manifest.json`：模块配置
-- `Module.php`：菜单注册（资产记录 → JumpServer）
-- `actions/Jumpserver.php`：主页面业务逻辑（筛选、搜索、告警统计、主机表格）
-- `actions/JumpserverPush.php`：推送主机/分组并回写资产 ID
-- `actions/JumpserverFetchIds.php`：从 JumpServer 拉取资产 ID 并按 IP 写回标记
-- `views/jumpserver.php`：页面视图
-- `lib/JumpserverClient.php`：JumpServer API 客户端（HTTP Signature 认证）
-- `lib/ConfigManager.php`：读取 data/config.json 凭据
-- `lib/LanguageManager.php`：国际化语言管理
-- `lib/ViewRenderer.php`：视图渲染工具
-- `lib/ZabbixVersion.php`：版本兼容工具
-- `data/config.json`：JumpServer 连接凭据
-
-如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
 
 ## 许可证
 

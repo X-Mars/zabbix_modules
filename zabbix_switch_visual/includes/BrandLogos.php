@@ -72,7 +72,7 @@ class BrandLogos {
 	/** Display name => file name, sorted alphabetically (0-based list). */
 	private static function ordered(): array {
 		$names = self::NAMES;
-		uasort($names, static fn(string $a, string $b): int => strcasecmp($a, $b));
+		uasort($names, static function (string $a, string $b): int  { return strcasecmp($a, $b); });
 
 		$ordered = [];
 		foreach ($names as $file => $name) {

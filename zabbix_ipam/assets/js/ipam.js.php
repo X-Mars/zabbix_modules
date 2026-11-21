@@ -7,6 +7,12 @@
         return;
     }
 
+
+    function saveError(message) {
+        var note = document.querySelector(".module-save-hint");
+        return String(message) + (note && String(message).indexOf("getenforce") < 0 ? "\n" + note.getAttribute("data-save-hint") : "");
+    }
+
     const endpoint = 'zabbix.php?action=ip.ajax';
     const call = data => fetch(endpoint, {
         method: 'POST',
@@ -26,6 +32,7 @@
     });
 
     const toast = (message, error = false) => {
+
         const element = document.getElementById('ipam-toast');
         if (!element) {
             return;
@@ -98,7 +105,7 @@
                 location.href = 'zabbix.php?action=ip.manager';
             }
             catch (error) {
-                toast(error.message, true);
+                toast(saveError(error.message), true);
                 save.disabled = false;
             }
             return;
@@ -169,7 +176,7 @@
                 grid.appendChild(fragment);
             }
             catch (error) {
-                grid.innerHTML = '<div class="ipam-empty">'+error.message+'</div>';
+                grid.replaceChildren(); const notice = document.createElement('div'); notice.className = 'ipam-empty'; notice.textContent = error.message; grid.appendChild(notice);
             }
             return;
         }

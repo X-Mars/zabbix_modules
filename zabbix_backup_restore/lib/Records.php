@@ -10,7 +10,7 @@ final class Records {
 		.'snmpv3_authpassphrase snmpv3_privpassphrase uniq snmpv3_authprotocol snmpv3_privprotocol '
 		.'snmpv3_contextname host_source name_source allow_redirect';
 
-	private References $references;
+	/** @var References */ private $references;
 
 	public function __construct(References $references) {
 		$this->references = $references;
@@ -210,7 +210,7 @@ final class Records {
 			foreach ($allowed as $key => $rules_available) {
 				if (isset($rules[$key])) {
 					$rules[$key] = array_values(array_filter($rules[$key],
-						static fn(array $rule): bool => in_array($key.'.'.$rule['name'], $rules_available, true)));
+						static function (array $rule) use ($key, $rules_available): bool  { return in_array($key.'.'.$rule['name'], $rules_available, true); }));
 				}
 			}
 		}
@@ -219,13 +219,12 @@ final class Records {
 	}
 
 	private static function timePeriod(array $period): array {
-		$fields = match ((int) ($period['timeperiod_type'] ?? -1)) {
+		$fields = [
 			TIMEPERIOD_TYPE_ONETIME => 'start_date',
 			TIMEPERIOD_TYPE_DAILY => 'start_time every',
 			TIMEPERIOD_TYPE_WEEKLY => 'start_time every dayofweek',
 			TIMEPERIOD_TYPE_MONTHLY => 'start_time every day dayofweek month',
-			default => ''
-		};
+			][ (int) ($period['timeperiod_type'] ?? -1)] ?? '';
 
 		return self::fields($period, 'period timeperiod_type '.$fields);
 	}
@@ -302,7 +301,7 @@ final class Records {
 				$phase_fields .= ' evaltype opconditions';
 			}
 			$data[$phase] = $this->rows($row, $phase, $phase_fields,
-				fn(array $operation): array => $this->operation($operation, $export));
+				function (array $operation) use ($export): array  { return $this->operation($operation, $export); });
 		}
 
 		return $data;

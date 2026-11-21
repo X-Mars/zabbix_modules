@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 require_once dirname(__DIR__) . "/lib/ViewGrid.php";
 require_once dirname(__DIR__) . "/lib/Ui.php";
 use Modules\ZabbixImportExport\Lib\{LanguageManager as L, ViewGrid, Ui as U};

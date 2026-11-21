@@ -4,16 +4,16 @@ namespace Modules\SwitchVisual\Includes;
 
 class DataFetcher {
 
-    private array $config;
+    /** @var array */ private $config;
 
     /** itemid → iface, populated by fetchPorts() for sparkline use */
-    private array $in_itemid_map  = [];   // itemid(string) → iface
-    private array $out_itemid_map = [];   // itemid(string) → iface
+    /** @var array */ private $in_itemid_map  = [];   // itemid(string) → iface
+    /** @var array */ private $out_itemid_map = [];   // itemid(string) → iface
     /** iface → value_type for history API */
-    private array $in_value_type  = [];   // iface → int
-    private array $out_value_type = [];   // iface → int
+    /** @var array */ private $in_value_type  = [];   // iface → int
+    /** @var array */ private $out_value_type = [];   // iface → int
     /** iface → port position */
-    private array $iface_to_pos   = [];
+    /** @var array */ private $iface_to_pos   = [];
 
     public function __construct(array $config) {
         $this->config = $config;
@@ -108,7 +108,7 @@ class DataFetcher {
 
         // Auto-detect: drop excluded interfaces (VLANs, aggregates, mgmt, ...)
         if ($auto_detect) {
-            $by_iface = array_filter($by_iface, fn($v, $k): bool => !$this->isExcluded((string) $k), ARRAY_FILTER_USE_BOTH);
+            $by_iface = array_filter($by_iface, function ($v, $k): bool  { return !$this->isExcluded((string) $k); }, ARRAY_FILTER_USE_BOTH);
         }
 
         if ($by_iface === []) return [];
@@ -154,8 +154,7 @@ class DataFetcher {
                 // string — mixed type prefixes (GE/TE/XGE...), quotes and name
                 // suffixes make natural name order differ from panel order.
                 foreach ($by_member as $member => $rows) {
-                    usort($rows, static fn(array $a, array $b): int =>
-                        ($a['num'] <=> $b['num']) ?: strnatcmp($a['raw'], $b['raw']));
+                    usort($rows, static function (array $a, array $b): int  { return ($a['num'] <=> $b['num']) ?: strnatcmp($a['raw'], $b['raw']); });
                     $by_member[$member] = array_column($rows, 'raw');
                 }
 
@@ -180,7 +179,7 @@ class DataFetcher {
         // Auto-detect: show every detected port (after exclusions) — the
         // RJ45/SFP split is positional per member, driven by num_ports only.
         if ($auto_detect && $ifaces !== []) {
-            $total = max(array_map(fn($i) => $this->iface_to_pos[$i], $ifaces));
+            $total = max(array_map(function ($i) { return $this->iface_to_pos[$i]; }, $ifaces));
         }
 
         // RJ45 position: "front" (default) = first N ports of every member are
@@ -317,8 +316,8 @@ class DataFetcher {
 
         // If items deliver bits/sec, convert to bytes/sec so all display/util logic is unit-consistent
         if ($this->config['bw_bits'] ?? true) {
-            foreach ($in_history  as &$s) { $s = array_map(fn($v) => $v / 8.0, $s); } unset($s);
-            foreach ($out_history as &$s) { $s = array_map(fn($v) => $v / 8.0, $s); } unset($s);
+            foreach ($in_history  as &$s) { $s = array_map(function ($v) { return $v / 8.0; }, $s); } unset($s);
+            foreach ($out_history as &$s) { $s = array_map(function ($v) { return $v / 8.0; }, $s); } unset($s);
         }
 
         // Union of all ifaces that have any history
@@ -578,7 +577,7 @@ class DataFetcher {
             $this->config['bw_out_pattern'] ?? '',
             $this->config['status_pattern'] ?? '',
             $this->config['speed_pattern']  ?? '',
-        ], static fn(string $p): bool => strpos($p, '*') !== false));
+        ], static function (string $p): bool  { return strpos($p, '*') !== false; }));
 
         if ($patterns === []) return [];
 
@@ -766,10 +765,10 @@ class DataFetcher {
 
     public static function resolveState(array $raw, array $config = []): array {
         $speed_raw    = (int)   ($raw['speed_negotiated'] ?? 0);
-        // ifHighSpeed returns Mbps (e.g. 1000 for 1 Gbps); ifSpeed returns bps (e.g. 1_000_000_000).
+        // ifHighSpeed returns Mbps (e.g. 1000 for 1 Gbps); ifSpeed returns bps (e.g. 1000000000).
         // Normalize to bytes/sec so we can compare directly with bw_in/bw_out (bytes/sec).
-        $speed_mbps   = $speed_raw > 1_000_000 ? (int) round($speed_raw / 1_000_000) : $speed_raw;
-        $speed_Bps    = $speed_mbps * 125_000;  // 1 Mbps = 125,000 B/s
+        $speed_mbps   = $speed_raw > 1000000 ? (int) round($speed_raw / 1000000) : $speed_raw;
+        $speed_Bps    = $speed_mbps * 125000;  // 1 Mbps = 125,000 B/s
         $bw_in        = (float) ($raw['bw_in']  ?? 0.0);
         $bw_out       = (float) ($raw['bw_out'] ?? 0.0);
         $util_pct     = ($speed_Bps > 0) ? round(($bw_in  / $speed_Bps) * 100, 2) : 0.0;

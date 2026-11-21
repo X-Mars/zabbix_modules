@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 
 // 引入语言管理器和兼容层
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';

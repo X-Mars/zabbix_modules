@@ -6,9 +6,9 @@ use RuntimeException;
 
 final class BackupService {
 
-	private Api $api;
-	private References $refs;
-	private Records $records;
+	/** @var Api */ private $api;
+	/** @var References */ private $refs;
+	/** @var Records */ private $records;
 
 	public function __construct(Api $api) {
 		$this->api = $api;
@@ -36,7 +36,7 @@ final class BackupService {
 			'omissions' => ['secret_macros' => 0, 'provisioned_users' => 0]
 		];
 		$options = [];
-		foreach (array_intersect_key(Catalog::NATIVE, array_flip($selection)) as $type => [$api, $id, $option]) {
+		foreach (array_intersect_key(Catalog::native($version), array_flip($selection)) as $type => [$api, $id, $option]) {
 			$params = ['output' => [$id]];
 			if ($type === 'hosts') {
 				$params['filter'] = ['flags' => ZBX_FLAG_DISCOVERY_NORMAL];
@@ -48,8 +48,15 @@ final class BackupService {
 		}
 
 		if ($options) {
-			$config = $this->api->call('Configuration', 'export', ['options' => $options, 'format' => 'raw']);
+			$legacy = version_compare($version, '6.4', '<');
+			$config = $this->api->call('Configuration', 'export', ['options' => $options, 'format' => $legacy ? 'json' : 'raw']);
+			if ($legacy) {
+				$config = json_decode($config, true, 512, JSON_THROW_ON_ERROR);
+			}
 			$backup['configuration'] = $config['zabbix_export'];
+			// Legacy JSON exports include a scalar date header; it is metadata,
+			// not a configuration row list accepted by the streamed bundle format.
+			unset($backup['configuration']['date']);
 			self::maskNativeMacros($backup['configuration'], $backup['omissions']['secret_macros']);
 		}
 		if (!empty($backup['configuration']['hosts'])) {
@@ -177,6 +184,10 @@ final class BackupService {
 			'items', 'triggers', 'discoveryRules', 'graphs', 'httptests', 'templateDashboards', 'valueMaps'
 		], $merge);
 		$rules['templateLinkage'] = ['createMissing' => true];
+		if (version_compare($version, '6.4', '<')) {
+			unset($rules['host_groups'], $rules['template_groups']);
+			$rules['groups'] = $merge;
+		}
 		if (substr($version, 0, 3) === '8.0') {
 			$rules['dashboards'] = $merge;
 		}
@@ -329,7 +340,7 @@ final class BackupService {
 			if (array_diff($old_ids, $new_ids)) {
 				$retained = array_intersect($old_ids, $new_ids);
 				$this->api->call('Service', 'update', [['serviceid' => $serviceid, 'children' => array_values(
-					array_map(static fn($id): array => ['serviceid' => $id], $retained)
+					array_map(static function ($id): array  { return ['serviceid' => $id]; }, $retained)
 				)]]);
 			}
 			if (array_diff($new_ids, $old_ids)) {

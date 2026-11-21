@@ -92,6 +92,12 @@ final class Catalog {
 	public const LATE_NATIVE = ['images', 'maps', 'dashboards'];
 
 	public static function groups(string $version): array {
+		if (version_compare($version, '6.4', '<')) {
+			return ['Monitoring' => [
+				'host_groups' => 'Host groups', 'templates' => 'Templates', 'hosts' => 'Hosts',
+				'media_types' => 'Media types', 'images' => 'Images', 'maps' => 'Maps'
+			]];
+		}
 		$groups = self::GROUPS;
 		if (substr($version, 0, 3) !== '8.0') {
 			unset($groups['Monitoring']['dashboards']);
@@ -102,5 +108,14 @@ final class Catalog {
 
 	public static function labels(string $version): array {
 		return array_merge(...array_values(self::groups($version)));
+	}
+
+	public static function native(string $version): array {
+		$native = self::NATIVE;
+		if (version_compare($version, '6.4', '<')) {
+			$native['host_groups'][2] = 'groups';
+			$native['host_groups'][3] = 'groups';
+		}
+		return $native;
 	}
 }

@@ -13,7 +13,11 @@ class RebrandConfig extends CController {
 	use RebrandStorageTrait;
 
 	public function init(): void {
-		$this->disableCsrfValidation();
+		if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation();
+        } else {
+            $this->disableSIDvalidation();
+        }
 	}
 
 	protected function checkInput(): bool {

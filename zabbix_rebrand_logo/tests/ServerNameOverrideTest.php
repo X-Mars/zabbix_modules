@@ -9,6 +9,15 @@ if (!in_array(PHP_SAPI, ['cli', 'phpdbg', 'wasm'], true)) {
 	exit;
 }
 
+if (!function_exists('str_contains')) {
+    function str_contains(string $value, string $needle): bool {
+        return $needle === '' || strpos($value, $needle) !== false;
+    }
+    function str_starts_with(string $value, string $needle): bool {
+        return $needle === '' || strncmp($value, $needle, strlen($needle)) === 0;
+    }
+}
+
 use Modules\ZabbixRebrandLogo\Lib\ServerNameOverride;
 
 /**
@@ -18,8 +27,8 @@ use Modules\ZabbixRebrandLogo\Lib\ServerNameOverride;
  * frontend tree and loaded from there.
  */
 final class ServerNameOverrideTest {
-	private int $assertions = 0;
-	private string $root = '';
+	/** @var int */ private $assertions = 0;
+	/** @var string */ private $root = '';
 
 	public function run(): void {
 		// Settings are read on every Zabbix page, so any warning is a failure.
@@ -62,8 +71,13 @@ final class ServerNameOverrideTest {
 
 	private function testNormalizeConfig(): void {
 		$override = new ServerNameOverride();
-		$normalize = static fn(array $config): array =>
-			(new ReflectionMethod($override, 'normalizeConfig'))->invoke($override, $config);
+		$method = new ReflectionMethod($override, 'normalizeConfig');
+        if (PHP_VERSION_ID < 80100) {
+            $method->setAccessible(true);
+        }
+        $normalize = static function (array $config) use ($override, $method): array {
+            return $method->invoke($override, $config);
+        };
 
 		$config = $normalize([]);
 		$this->same(ServerNameOverride::MODE_DEFAULT, $config['server_name_mode']);
@@ -169,7 +183,11 @@ final class ServerNameOverrideTest {
 	}
 
 	private function resetCapturedDefault(): void {
-		(new ReflectionProperty(ServerNameOverride::class, 'zabbix_default'))->setValue(null, null);
+		$property = new ReflectionProperty(ServerNameOverride::class, 'zabbix_default');
+        if (PHP_VERSION_ID < 80100) {
+            $property->setAccessible(true);
+        }
+        $property->setValue(null, null);
 	}
 
 	/**
@@ -204,7 +222,7 @@ final class ServerNameOverrideTest {
 
 		$source = dirname(__DIR__);
 
-		foreach (['actions/RebrandStorageTrait.php', 'lib/BrandingLimits.php', 'lib/ServerNameOverride.php'] as $file) {
+		foreach (['actions/RebrandStorageTrait.php', 'lib/BrandingLimits.php', 'lib/ServerNameOverride.php', 'lib/ModuleNotice.php'] as $file) {
 			if (!copy($source.'/'.$file, $module.'/'.$file)) {
 				throw new RuntimeException('Cannot copy '.$file.' into the test tree.');
 			}

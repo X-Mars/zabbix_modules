@@ -77,7 +77,7 @@ class IpScan extends CController {
         $page = min($page, $pages);
         $tasks = array_slice($tasks, ($page - 1) * $per_page, $per_page);
 
-        $this->setResponse(new CControllerResponseData([
+        $response = new CControllerResponseData([
             'title' => LanguageManager::t('Task Management'),
             'tasks' => $tasks,
             'ranges' => $ranges,
@@ -85,6 +85,8 @@ class IpScan extends CController {
             'summary' => $summary,
             'filters' => ['rangeid' => $range_id, 'status' => $status, 'search' => $search],
             'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total_rows, 'per_page' => $per_page]
-        ]));
+        ]);
+        $response->setTitle('Scan tasks');
+        $this->setResponse($response);
     }
 }

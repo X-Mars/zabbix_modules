@@ -4,14 +4,11 @@
 
 ## ✨ Version Compatibility
 
-This module is compatible with Zabbix 6.0 / 7.0+ / 8.0+.
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**Compatibility Note**: The module includes intelligent version detection that automatically adapts to different Zabbix API versions and class libraries, requiring no manual configuration.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -71,6 +68,10 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_graphtrees/ma
 - **Data Accuracy**: Displayed information is based on the current state of the Zabbix database.
 - **Item Dependencies**: Chart display depends on corresponding item configuration.
 
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
+
 ## Development
 
 The module is built on the Zabbix module framework. File structure:
@@ -85,6 +86,10 @@ The module is built on the Zabbix module framework. File structure:
 - `lib/ZabbixVersion.php`: Version compatibility utilities
 
 For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).
+
+## Module Configuration
+
+Select host groups and hosts, filter items by tags, and set the chart time range and automatic refresh interval.
 
 ## License
 

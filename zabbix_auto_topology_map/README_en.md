@@ -4,14 +4,11 @@
 
 ## ✨ Version Compatibility
 
-This module is developed for Zabbix 7.0 and uses `manifest_version: 2.0`.
-
-- ✅ Zabbix 7.0.28: verified against the source code and tested in a live environment
-- ✅ Zabbix 8.0: adapted to the new `indicator_type` validation on map links and the frontend API error handling
-- ⚠️ Zabbix 6.x: includes partial compatibility handling, but has not been tested
-- ⚠️ Other Zabbix 7.x releases: require verification in the target environment
-
-**Compatibility notes**: The module includes compatibility handling for older and newer module base classes and menu components. This does not mean every version has been tested. Before upgrading, verify menu registration, map reading and writing, and automatic discovery in a test environment.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -41,7 +38,7 @@ The module reads and writes maps through native Zabbix APIs and shares the same 
 
 ## Installation
 
-### Install the Module
+### Install Module
 
 Deploy this repository to the module directory for your Zabbix frontend installation. Common paths are shown below:
 
@@ -64,28 +61,7 @@ If you attempt to deploy the module on Zabbix 6.0, change its `manifest_version`
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_auto_topology_map/manifest.json
 ```
 
-### Configure the Automatic Discovery Environment
-
-- Install and enable the `snmp` extension in **the PHP environment used by the Zabbix web frontend**. The module does not require the `snmpwalk` command-line tool.
-- Ensure that the frontend server can reach the target devices over SNMP and that the relevant LLDP / CDP / EDP protocols are enabled on those devices.
-- Configure SNMP interfaces and authentication details on Zabbix hosts. The discovery host selector only allows hosts with SNMP interfaces.
-- The module creates the `topomap_link_metrics`, `topomap_link_paths`, and `topomap_settings` tables on demand. The database account used by the frontend needs the corresponding table creation, read, and write permissions.
-
-Install the PHP SNMP extension using the command for your operating system:
-
-```bash
-# Debian / Ubuntu
-sudo apt update
-sudo apt install php-snmp
-
-# Systems using dnf (such as Rocky Linux / AlmaLinux / Fedora)
-sudo dnf install php-snmp
-
-# Systems using yum (such as older CentOS / RHEL releases)
-sudo yum install php-snmp
-```
-
-### Enable the Module
+### Enable Module
 
 1. Go to **Administration → General → Modules**.
 2. Click **Scan directory** to scan for new modules.
@@ -107,6 +83,10 @@ You can also access the module directly at `zabbix.php?action=topomap.view`.
 - **Icon and macro limitations**: The module preview does not resolve icon mappings. Shape text and host element labels support the `{MAP.NAME}`, `{HOST.NAME}`, and `{HOST.CONN}` macros, expanded at render time from the current map name and the latest host name/connection address (`{HOST.CONN}` prefers the main interface, then the SNMP interface IP or DNS). Other macros are not expanded. Use the native Zabbix map page when full native rendering is required.
 - **Upgrades and backups**: Back up native map data and the module's custom tables to preserve link metrics, routing, and settings. After upgrading, use `Ctrl+F5` to refresh the browser cache. If the menu does not update, check the PHP OPcache cache.
 
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
+
 ## Development
 
 The plugin is built on the Zabbix module framework. File structure:
@@ -124,6 +104,29 @@ The plugin is built on the Zabbix module framework. File structure:
 Map content is saved through the native Zabbix `map` API. Link metrics, routing, and module settings are stored in custom module tables. When extending the save logic, account for element and link ID reuse and cleanup of associated configuration.
 
 For more information, see the [Zabbix module development documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).
+
+## Module Configuration
+
+### Configure the Automatic Discovery Environment
+
+- Install and enable the `snmp` extension in **the PHP environment used by the Zabbix web frontend**. The module does not require the `snmpwalk` command-line tool.
+- Ensure that the frontend server can reach the target devices over SNMP and that the relevant LLDP / CDP / EDP protocols are enabled on those devices.
+- Configure SNMP interfaces and authentication details on Zabbix hosts. The discovery host selector only allows hosts with SNMP interfaces.
+- The module creates the `topomap_link_metrics`, `topomap_link_paths`, and `topomap_settings` tables on demand. The database account used by the frontend needs the corresponding table creation, read, and write permissions.
+
+Install the PHP SNMP extension using the command for your operating system:
+
+```bash
+# Debian / Ubuntu
+sudo apt update
+sudo apt install php-snmp
+
+# Systems using dnf (such as Rocky Linux / AlmaLinux / Fedora)
+sudo dnf install php-snmp
+
+# Systems using yum (such as older CentOS / RHEL releases)
+sudo yum install php-snmp
+```
 
 ## License
 

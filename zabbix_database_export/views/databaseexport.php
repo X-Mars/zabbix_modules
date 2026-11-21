@@ -1,4 +1,8 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
+require_once dirname(__DIR__).'/lib/SecurityToken.php';
 
 use Modules\ZabbixDatabaseExport\Lib\LanguageManager;
 use Modules\ZabbixDatabaseExport\Lib\SqlExport;
@@ -41,7 +45,7 @@ ob_start();
     <?php endif; ?>
     <?php if ($data['can_export']): ?>
         <form id="zb-export" class="zb-layout" action="zabbix.php?action=databaseexport" method="post">
-            <input type="hidden" name="<?= $escape(CSRF_TOKEN_NAME) ?>" value="<?= $escape($data['token']) ?>">
+            <input type="hidden" name="<?= $escape(\Modules\ZabbixDatabaseExport\Lib\SecurityToken::name()) ?>" value="<?= $escape($data['token']) ?>">
             <section class="zb-card" aria-labelledby="zb-tables-heading">
                 <header class="zb-card-header">
                     <h2 id="zb-tables-heading"><?= $escape($t('Database tables')) ?></h2>
@@ -132,4 +136,12 @@ $markup = ob_get_clean();
 // CHtmlPage accepts a CObject containing markup rendered and escaped above.
 $content = new CObject();
 $content->addItem($markup);
-(new CHtmlPage())->setTitle($t('Database export'))->addItem($content)->show();
+$page = ((class_exists('CHtmlPage') ? new CHtmlPage() : new CWidget()))->setTitle($t('Database export'))->addItem($content);
+
+// Zabbix 6.0 ignores manifest.assets; load scoped assets with this view.
+if (!class_exists('CHtmlPage')) {
+    $page->addItem(new CTag('style', true, (new CObject())->addItem(file_get_contents(dirname(__DIR__).'/assets/css/backup.css'))));
+    $page->addItem((new CTag('script', true))->setAttribute('src',
+        'modules/'.basename(dirname(__DIR__)).'/assets/js/backup.js?v='.filemtime(dirname(__DIR__).'/assets/js/backup.js')));
+}
+$page->show();

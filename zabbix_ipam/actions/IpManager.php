@@ -91,7 +91,7 @@ class IpManager extends CController {
         $page = min($page, $pages);
         $rows = array_slice($rows, ($page - 1) * $per_page, $per_page);
 
-        $this->setResponse(new CControllerResponseData([
+        $response = new CControllerResponseData([
             'title' => LanguageManager::t('IPAM'),
             'rows' => $rows,
             'all_ranges' => $all_ranges,
@@ -102,6 +102,8 @@ class IpManager extends CController {
                 'search' => $search
             ],
             'pagination' => ['page' => $page, 'pages' => $pages, 'total' => $total_rows, 'per_page' => $per_page]
-        ]));
+        ]);
+        $response->setTitle('IP management');
+        $this->setResponse($response);
     }
 }

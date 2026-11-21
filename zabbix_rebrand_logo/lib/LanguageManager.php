@@ -1,13 +1,9 @@
 <?php
 namespace Modules\ZabbixRebrandLogo\Lib;
+require_once __DIR__.'/ModuleNotice.php';
 class LanguageManager {
     public static function t(string $text): string {
-        $lang = null;
-        try { if (class_exists('CWebUser')) { $lang = method_exists('CWebUser', 'get') ? \CWebUser::get('lang') : (\CWebUser::$data['lang'] ?? null); } } catch (\Throwable $e) {}
-        if (!$lang || $lang === 'default') {
-            try { $lang = class_exists('CSettingsHelper') ? \CSettingsHelper::get('default_lang') : 'en_US'; } catch (\Throwable $e) { $lang = 'en_US'; }
-        }
-        if (stripos((string) $lang, 'zh') !== 0) { return $text; }
+        if (\ZabbixModuleNotice::language() !== 'zh_CN') { return $text; }
         $translations = [
             'Default is the Zabbix server name, which is not set (ZBX_SERVER_NAME in Docker, $ZBX_SERVER_NAME in zabbix.conf.php).' => '默认使用 Zabbix 服务器名称，目前未设置（Docker 中为 ZBX_SERVER_NAME，zabbix.conf.php 中为 $ZBX_SERVER_NAME）。',
             "Zabbix Rebrand Logo" => "品牌 logo 设置",

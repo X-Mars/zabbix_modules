@@ -2,6 +2,8 @@
 
 namespace Modules\ZabbixIm\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
@@ -63,7 +65,7 @@ class ImSettingsSave extends CController {
             $this->respond(true, LanguageManager::t('Settings saved'), (string) $setting['id']);
         } catch (\Throwable $e) {
             error_log('IM Settings save error: ' . $e->getMessage());
-            $this->respond(false, LanguageManager::t('Save failed') . ': ' . $e->getMessage());
+            $this->respond(false, LanguageManager::t('Save failed') . ': ' . \ZabbixModuleNotice::failure($e, dirname(__DIR__), [dirname(__DIR__).'/data']));
         }
     }
 

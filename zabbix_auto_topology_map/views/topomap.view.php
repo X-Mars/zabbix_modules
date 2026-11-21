@@ -1,4 +1,7 @@
 <?php declare(strict_types = 0);
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 
 use Modules\Topomap\Lib\LanguageManager;
 
@@ -17,7 +20,7 @@ use Modules\Topomap\Lib\LanguageManager;
  */
 
 $sysmapid = isset($data['sysmapid']) ? (string) $data['sysmapid'] : '';
-$t = static fn(string $s): string => htmlspecialchars(LanguageManager::t($s), ENT_QUOTES, 'UTF-8');
+$t = static function (string $s): string  { return htmlspecialchars(LanguageManager::t($s), ENT_QUOTES, 'UTF-8'); };
 ?>
 <div id="topomap-root" data-sysmapid="<?= htmlspecialchars($sysmapid, ENT_QUOTES, 'UTF-8') ?>">
 

@@ -2,6 +2,8 @@
 
 namespace Modules\ZabbixIm\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
@@ -49,7 +51,7 @@ class ImSettingsDelete extends CController {
             }
         } catch (\Throwable $e) {
             error_log('IM Settings delete error: ' . $e->getMessage());
-            $this->respond(false, LanguageManager::t('Delete failed') . ': ' . $e->getMessage());
+            $this->respond(false, LanguageManager::t('Delete failed') . ': ' . \ZabbixModuleNotice::failure($e, dirname(__DIR__), [dirname(__DIR__).'/data']));
         }
     }
 

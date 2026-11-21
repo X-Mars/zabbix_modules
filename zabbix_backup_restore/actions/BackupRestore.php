@@ -2,8 +2,11 @@
 
 namespace Modules\ZabbixBackupRestore\Actions;
 
+require_once dirname(__DIR__).'/lib/SecurityToken.php';
+
 use Modules\ZabbixBackupRestore\Lib\{Api, BackupService, Bundle, BundleYaml, Catalog, LanguageManager};
 use RuntimeException;
+use function Modules\ZabbixBackupRestore\Lib\str_contains;
 
 require_once dirname(__DIR__).'/lib/bootstrap.php';
 
@@ -15,7 +18,11 @@ final class BackupRestore extends \CController {
 
 	protected function init(): void {
 		if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
-			$this->disableCsrfValidation();
+			if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation();
+        } else {
+            $this->disableSIDvalidation();
+        }
 		}
 	}
 
@@ -36,7 +43,7 @@ final class BackupRestore extends \CController {
 		$version = ZABBIX_VERSION;
 		if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			$response = new \CControllerResponseData([
-				'token' => \CCsrfTokenHelper::get($this->getAction()),
+				'token' => \Modules\ZabbixBackupRestore\Lib\SecurityToken::get($this->getAction()),
 				'version' => $version,
 				'groups' => Bundle::supports($version) ? Catalog::groups($version) : [],
 				'upload_limit' => $this->uploadLimit()
@@ -87,7 +94,7 @@ final class BackupRestore extends \CController {
 			if ($operation === 'preview') {
 				$expires = time() + self::PREVIEW_VALID_SECONDS;
 				$this->json([
-					'proof' => $expires.'.'.\CCsrfTokenHelper::get(self::previewScope($digest, $update, $expires)),
+					'proof' => $expires.'.'.\Modules\ZabbixBackupRestore\Lib\SecurityToken::get(self::previewScope($digest, $update, $expires)),
 					'source' => $bundle['source_version'],
 					'target' => $version,
 					'counts' => $this->translatedCounts($bundle),
@@ -197,7 +204,7 @@ final class BackupRestore extends \CController {
 	private function checkPreview($proof, string $digest, bool $update): void {
 		if (!is_string($proof) || !preg_match('/^(\d{10})\.(.{1,128})$/D', $proof, $parts)
 				|| (int) $parts[1] <= time() || (int) $parts[1] > time() + self::PREVIEW_VALID_SECONDS
-				|| !\CCsrfTokenHelper::check($parts[2], self::previewScope($digest, $update, (int) $parts[1]))) {
+				|| !\Modules\ZabbixBackupRestore\Lib\SecurityToken::check($parts[2], self::previewScope($digest, $update, (int) $parts[1]))) {
 			throw new RuntimeException(LanguageManager::t('Preview this file and restore option again before restoring.'));
 		}
 	}

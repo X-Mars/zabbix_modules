@@ -1,6 +1,8 @@
 <?php
 
 namespace Modules\ZabbixIm\Lib;
+require_once __DIR__.'/ModuleNotice.php';
+
 
 require_once __DIR__ . '/LanguageManager.php';
 require_once __DIR__ . '/SyncRegistry.php';
@@ -400,7 +402,7 @@ class ConfigManager {
             throw new \RuntimeException(LanguageManager::t('Failed to encode config'));
         }
         if (@file_put_contents($path, $json) === false) {
-            throw new \RuntimeException(LanguageManager::tf('Failed to write config file: %s', $path));
+            throw new \RuntimeException(\ZabbixModuleNotice::administrator() ? \ZabbixModuleNotice::storageText(dirname(__DIR__), [dirname($path)]) : LanguageManager::tf('Failed to write config file: %s', $path));
         }
         self::$config = null;
     }

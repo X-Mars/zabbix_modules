@@ -19,7 +19,11 @@ class WidgetSparkline extends CController {
     private const POINT_LIMIT      = 30;
 
     protected function init(): void {
-        $this->disableCsrfValidation();
+        if (method_exists($this, 'disableCsrfValidation')) {
+            $this->disableCsrfValidation();
+        } else {
+            $this->disableSIDvalidation();
+        }
     }
 
     protected function checkInput(): bool {
@@ -111,7 +115,7 @@ class WidgetSparkline extends CController {
         }
 
         return array_map(
-            static fn(array $r): float => (float) $r['value'],
+            static function (array $r): float  { return (float) $r['value']; },
             array_reverse($rows)
         );
     }

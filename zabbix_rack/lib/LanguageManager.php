@@ -114,7 +114,7 @@ class LanguageManager {
             'remove_success' => '移除成功',
             'remove_failed' => '移除失败',
             'operation_failed' => '操作失败',
-            'save_permission_hint' => "保存失败，请检查 data 目录权限。\n\n可尝试执行：\n\nchown -R apache.apache {path} \n\n或 \n\nchmod -R 777 {path}",
+            'save_permission_hint' => "保存失败，请检查 {path} 的目录和文件写权限，以及 SELinux 标签（httpd_sys_rw_content_t）。仅修改归属或 chmod 无法解除 SELinux 拒绝；详见模块 README 与 PHP/Web 错误日志。",
             
             // 错误消息
             'room_not_found' => '机房不存在',
@@ -319,7 +319,7 @@ class LanguageManager {
             'remove_success' => 'Remove successful',
             'remove_failed' => 'Remove failed',
             'operation_failed' => 'Operation failed',
-            'save_permission_hint' => "Save failed. Please check the permissions of the data directory.\n\nYou may try: \n\nchown -R apache.apache {path} \n\nor \n\nchmod -R 777 {path}",
+            'save_permission_hint' => "Save failed. Check directory/file permissions on {path} and the SELinux httpd_sys_rw_content_t label. Ownership or chmod alone cannot resolve SELinux denials. See the module README and PHP/Web logs.",
             
             // 错误消息
             'room_not_found' => 'Room not found',

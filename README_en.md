@@ -2,15 +2,12 @@
 
 [中文](README.md)
 
+<img src="images/wechat.jpg" width="10%" alt="wechat">
+<img src="images/gongzhonghao.jpg" width="13%" alt="gongzhonghao">
+
 ## Starting from November 15th, 2026
 
-![本项目被访问次数](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
-
-## ✨ Version Compatibility
-
-Supported Zabbix versions and deployment requirements vary by module. See the compatibility section in each module's README.
-
-Zabbix Switch Visual's widget loading, configuration form, and default view were verified on Zabbix 7.0.32 and 8.0.0. See the [widget compatibility notes](./zabbix_switch_visual/README.md#版本兼容性) for the scope of testing on each version.
+![Project visits](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
 
 ## Description
 
@@ -38,6 +35,34 @@ This collection contains independent modules that extend the Zabbix monitoring s
 | 14 | [Zabbix Database Export](./zabbix_database_export/README_en.md) | `3.0.4` | Detect MySQL, MariaDB, or PostgreSQL, display the database version, and export structures and data to a SQL download or server file. |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README_en.md) | `1.0.0-beta` | Draw neighbor topology from Zabbix LLDP discovery items, filter by host group or host, and inspect link ports. |
 | 16 | [Zabbix Backup and Restore](./zabbix_backup_restore/README_en.md) | `1.1.0` | Export Zabbix configuration such as hosts, templates, users, and permissions to YAML by category, then preview and restore it on a target instance. |
+
+## Compatibility Test Results
+
+| Module | Pages per environment | 6.0 | 7.0 | 8.0 | Details |
+| --- | ---: | --- |--- | --- | --- |
+| `zabbix_assets_export_import` | 1 | Pass | Pass | Pass | [README](zabbix_assets_export_import/README_en.md) |
+| `zabbix_auto_topology_map` | 1 | Pass | Pass | Pass | [README](zabbix_auto_topology_map/README_en.md) |
+| `zabbix_backup_restore` | 1 | Pass | Pass | Pass | [README](zabbix_backup_restore/README_en.md) |
+| `zabbix_clonehosts` | 1 | Pass | Pass | Pass | [README](zabbix_clonehosts/README_en.md) |
+| `zabbix_clouds` | 2 | Pass | Pass | Pass | [README](zabbix_clouds/README_en.md) |
+| `zabbix_cmdb` | 3 | Pass | Pass | Pass | [README](zabbix_cmdb/README_en.md) |
+| `zabbix_database_export` | 1 | Pass | Pass | Pass | [README](zabbix_database_export/README_en.md) |
+| `zabbix_export_import` | 3 | Pass | Pass | Pass | [README](zabbix_export_import/README_en.md) |
+| `zabbix_graphtrees` | 1 | Pass | Pass | Pass | [README](zabbix_graphtrees/README_en.md) |
+| `zabbix_im` | 2 | Pass | Pass | Pass | [README](zabbix_im/README_en.md) |
+| `zabbix_ipam` | 3 | Pass | Pass | Pass | [README](zabbix_ipam/README_en.md) |
+| `zabbix_jumpserver` | 1 | Pass | Pass | Pass | [README](zabbix_jumpserver/README_en.md) |
+| `zabbix_lldp` | 1 | Pass | Pass | Pass | [README](zabbix_lldp/README_en.md) |
+| `zabbix_performance_report` | 2 | Pass | Pass | Pass | [README](zabbix_performance_report/README_en.md) |
+| `zabbix_rack` | 2 | Pass | Pass | Pass | [README](zabbix_rack/README_en.md) |
+| `zabbix_rebrand_logo` | 1 | Pass | Pass | Pass | [README](zabbix_rebrand_logo/README_en.md) |
+| `zabbix_reports` | 4 | Pass | Pass | Pass | [README](zabbix_reports/README_en.md) |
+| `zabbix_rightsizing` | 1 | Pass | Pass | Pass | [README](zabbix_rightsizing/README_en.md) |
+| `zabbix_snmp` | 2 | Pass | Pass | Pass | [README](zabbix_snmp/README_en.md) |
+| `zabbix_switch_backup` | 1 | Pass | Pass | Pass | [README](zabbix_switch_backup/README_en.md) |
+| `zabbix_switch_visual` | 1 | Pass | Pass | Pass | [README](zabbix_switch_visual/README_en.md) |
+
+## Module Overviews
 
 ### 1. Zabbix Reports
 

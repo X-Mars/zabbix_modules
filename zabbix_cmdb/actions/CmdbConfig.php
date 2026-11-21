@@ -60,6 +60,9 @@ class CmdbConfig extends \CController {
         } catch (\Throwable $e) {
             $error = $e->getMessage();
         }
+        if ($error !== '' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && strpos($error, 'getenforce') === false) {
+            $error .= "\n".\ZabbixModuleNotice::storageText(dirname(__DIR__), [dirname(__DIR__).'/data']);
+        }
         $response = new \CControllerResponseData([
             'rules' => $rules, 'message' => $message, 'error' => $error,
             'token' => self::token(),

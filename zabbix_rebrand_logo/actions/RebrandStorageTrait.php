@@ -1,6 +1,8 @@
 <?php
 
 namespace Modules\ZabbixRebrandLogo\Actions;
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 
 use Modules\ZabbixRebrandLogo\Lib\BrandingLimits;
 use Modules\ZabbixRebrandLogo\Lib\ServerNameOverride;
@@ -41,7 +43,7 @@ trait RebrandStorageTrait {
 		) * BrandingLimits::LOGIN_LOGO_RATIO));
 	}
 
-	private function normalizeLoginLogoSize(mixed $width, mixed $height): ?array {
+	private function normalizeLoginLogoSize($width, $height): ?array {
 		$width = filter_var($width, FILTER_VALIDATE_INT, [
 			'options' => ['min_range' => 1, 'max_range' => BrandingLimits::LOGIN_LOGO_MAX_WIDTH]
 		]);
@@ -98,7 +100,7 @@ trait RebrandStorageTrait {
 		return $this->getLocalConfDir($frontend_root).DIRECTORY_SEPARATOR.'brand.conf.php';
 	}
 
-	private function normalizeLogoName(mixed $value): ?string {
+	private function normalizeLogoName($value): ?string {
 		if (!is_string($value) || trim($value) === '') {
 			return null;
 		}
@@ -112,7 +114,7 @@ trait RebrandStorageTrait {
 	 * Settings are also read on every page (see ServerNameOverride), so a
 	 * hand-edited config.json with a wrong value type must not raise warnings.
 	 */
-	private function normalizeText(mixed $value): string {
+	private function normalizeText($value): string {
 		return is_scalar($value) ? trim((string) $value) : '';
 	}
 
@@ -237,7 +239,7 @@ trait RebrandStorageTrait {
 			}
 
 			if (!@copy($source, $target)) {
-				$errors[] = 'Failed to copy existing file from legacy storage: '.$filename;
+				$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [$primary_dir]);
 				continue;
 			}
 
@@ -350,15 +352,15 @@ trait RebrandStorageTrait {
 	}
 
 	private function getUploadErrorMessage(int $code): string {
-		return match ($code) {
-			UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'file too large.',
+		return \ZabbixModuleNotice::translate([
+			UPLOAD_ERR_INI_SIZE => 'file too large.',
+			UPLOAD_ERR_FORM_SIZE => 'file too large.',
 			UPLOAD_ERR_PARTIAL => 'upload was only partially completed.',
 			UPLOAD_ERR_NO_FILE => 'no file was uploaded.',
 			UPLOAD_ERR_NO_TMP_DIR => 'missing temporary upload directory.',
 			UPLOAD_ERR_CANT_WRITE => 'could not write file to disk.',
 			UPLOAD_ERR_EXTENSION => 'upload blocked by a PHP extension.',
-			default => 'unknown upload error.'
-		};
+			][$code] ?? 'unknown upload error.');
 	}
 
 	private function detectMimeType(string $file_path): ?string {
@@ -416,28 +418,28 @@ trait RebrandStorageTrait {
 		}
 
 		if ($error !== UPLOAD_ERR_OK) {
-			return $meta['label'].': '.$this->getUploadErrorMessage((int) $error);
+			return LanguageManager::t($meta['label']).': '.$this->getUploadErrorMessage((int) $error);
 		}
 
 		$tmp_name = $upload['tmp_name'] ?? '';
 		if (!is_string($tmp_name) || $tmp_name === '' || !is_uploaded_file($tmp_name)) {
-			return $meta['label'].': invalid upload payload.';
+			return LanguageManager::t($meta['label']).': '.\ZabbixModuleNotice::translate('invalid upload payload.');
 		}
 
 		$original_name = isset($upload['name']) && is_string($upload['name']) ? basename($upload['name']) : '';
 		$extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
 
 		if (!in_array($extension, ['png', 'jpg', 'jpeg', 'gif', 'ico'], true)) {
-			return $meta['label'].': invalid file type. Allowed: PNG, JPG, GIF, ICO.';
+			return LanguageManager::t($meta['label']).': '.\ZabbixModuleNotice::translate('invalid file type. Allowed: PNG, JPG, GIF, ICO.');
 		}
 
 		$file_size = isset($upload['size']) ? (int) $upload['size'] : 0;
 		if ($file_size > BrandingLimits::LOGO_UPLOAD_LIMIT) {
-			return $meta['label'].': file too large. Maximum: 2 MB.';
+			return LanguageManager::t($meta['label']).': '.\ZabbixModuleNotice::translate('file too large. Maximum: 2 MB.');
 		}
 
 		if (!$this->isAllowedUpload($tmp_name, $extension)) {
-			return $meta['label'].': file content does not match the selected image format.';
+			return LanguageManager::t($meta['label']).': '.\ZabbixModuleNotice::translate('file content does not match the selected image format.');
 		}
 
 		$target_name = ($logo_key === 'favicon') ? 'favicon.ico' : $logo_key.'.'.$extension;
@@ -449,7 +451,7 @@ trait RebrandStorageTrait {
 		}
 
 		if (!@move_uploaded_file($tmp_name, $target_file)) {
-			return $meta['label'].': failed to save file. Check write permissions for '.$storage_dir.'.';
+			return \ZabbixModuleNotice::storageText($this->getModuleDir(), [['path' => $storage_dir, 'public' => true]]);
 		}
 
 		@chmod($target_file, 0644);

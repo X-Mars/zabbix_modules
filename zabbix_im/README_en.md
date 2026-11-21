@@ -4,20 +4,17 @@
 
 ## ✨ Version Compatibility
 
-This module is compatible with Zabbix 6.0 / 7.0+ / 8.0+.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**Compatibility Note**: The module includes intelligent version detection that automatically adapts to different Zabbix API versions and class libraries, requiring no manual configuration.
+## Description
 
 ![1](images/1.png)
 ![2](images/2.png)
 ![3](images/3.png)
-
-## Description
 
 This is a Zabbix frontend module that syncs departments from **WeCom**, **Feishu**, or **DingTalk** into Zabbix **user groups**, and assigns department members to the corresponding groups.
 
@@ -53,6 +50,65 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 # ⚠️ For Zabbix 6.0, modify manifest_version
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
 ```
+
+### Enable Module
+
+1. Go to **Administration → General → Modules**.
+2. Click **Scan directory** to scan for new modules.
+3. Find the **IM Sync Assistant** module and enable it.
+4. Refresh the page. **IM Sync Assistant** will appear under the **Users** menu.
+
+## Notes
+
+### Permissions
+
+- Viewing the page and syncing departments requires **Zabbix Admin** privileges.
+- **Sync Settings** (CRUD credentials, enable/disable) requires **Super Admin** (involves app secrets).
+- **Sync all users** (with auto user creation) requires **Super Admin** (Zabbix 7 `user.create` is Super Admin only).
+- IM apps must have contact/address book API permissions enabled.
+
+- **Protection policy**: Built-in or manually created users/groups are **never deleted or modified**; the module only manages objects recorded in `data/sync_registry.json`.
+- **User types**:
+  - `created`: Auto-created by the module; can be added/updated/removed with IM changes.
+  - `linked`: Matched to existing Zabbix users; only group membership is synced; **accounts are not deleted**.
+- **Group conflicts**: If a group name already exists but was not created by the module, that department is skipped and logged.
+- **Manual members**: Non-module users manually added to module-managed groups are preserved on sync.
+- **Auto-created users**: Passwords are auto-generated (12 chars, upper/lower/digits), shown **once** in "Sync all users" results — save promptly; Zabbix 7+ also needs `default_roleid`; run sync as Super Admin.
+- **Manual user deletion**: If you delete a synced user in Zabbix, the next sync clears registry entry and recreates the user.
+- **Multi-department users**: Users in multiple IM departments are added to multiple Zabbix user groups.
+- **Network access**: Zabbix Web must reach the IM platform APIs.
+- **DingTalk username changes**: If users were previously synced by `userid`, switching to mobile/pinyin may create new accounts instead of matching old ones; preview before sync.
+- **PHP extensions**: DingTalk name-to-pinyin requires `iconv` or `mbstring` (either is sufficient).
+
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
+
+## Development
+
+The module is built on the Zabbix module framework:
+
+- `manifest.json`: Module configuration
+- `Module.php`: Menu registration (IM Sync / Sync Settings)
+- `actions/Im.php`: Main page logic
+- `actions/ImSync.php` / `ImSyncUsers.php`: Sync APIs
+- `actions/ImPreview.php`: Preview API
+- `actions/ImSettings.php` / `ImSettingsSave.php` / `ImSettingsDelete.php` / `ImSettingsEnable.php`: Sync settings CRUD
+- `views/im.php` / `im.settings.php`: Page views
+- `lib/ImSyncService.php`: Core sync logic
+- `lib/WeComClient.php` / `FeishuClient.php` / `DingTalkClient.php`: IM platform clients
+- `lib/PinyinHelper.php`: Chinese name to pinyin (DingTalk when mobile is absent)
+- `lib/ConfigManager.php`: Configuration (multi `settings`, single enable, legacy migration)
+- `lib/SyncRegistry.php`: Registry of module-created objects
+- `lib/LanguageManager.php`: Internationalization
+- `data/config.json`: Connection settings (`settings` list)
+- `data/sync_registry.json`: Sync registry (generated at runtime)
+
+### Internationalization
+
+All UI strings are managed in `lib/LanguageManager.php` for **Chinese (zh_CN)** and **English (en_US)**. Language detection follows Zabbix: user language → system default → `en_US`. Menus, pages, dialogs, API error messages, and IM client exceptions are translated; raw error codes/messages from third-party APIs may still appear in English.
+
+## Module Configuration
 
 ### Configure IM Provider
 
@@ -96,7 +152,7 @@ Credentials are managed in the UI: go to **Users → Sync Settings** (**Super Ad
 
 > Legacy compatibility: if `config.json` still uses the old format (top-level `provider` plus `wecom`/`feishu`/`dingtalk` sections), the module migrates it into the `settings` list on load, enabling the provider that matches the old `provider` value.
 
-#### Configuration Reference
+##### Configuration Reference
 
 > `provider` and per-provider credentials are entered via the **Sync Settings** UI; the global options below can still be adjusted at the top level of `config.json`.
 
@@ -116,7 +172,7 @@ Credentials are managed in the UI: go to **Users → Sync Settings** (**Super Ad
 | `default_user_type` | int | User type for auto-created users on Zabbix 6.x: `1` User / `2` Admin / `3` Super Admin (usually `1` or `2`). |
 | `verify_ssl` | bool | Verify HTTPS certificates when calling IM APIs. Set `false` for internal proxies or self-signed certs. |
 
-#### Zabbix username rules by platform
+##### Zabbix username rules by platform
 
 The module always matches/creates users by **username**. Source per platform:
 
@@ -140,7 +196,7 @@ This module calls WeCom contact APIs via an **enterprise self-built app**, using
 
 > **Important**: Use a **self-built app Secret**, not the contact sync Secret from **Admin Tools → Contact Sync**. Since 2022-08-15, contact sync assistant restricts new IPs on member/dept detail APIs (error `48009`). See [Contact sync API changes](https://developer.work.weixin.qq.com/document/path/90193).
 
-#### WeCom app setup
+##### WeCom app setup
 
 1. **Create a self-built app**  
    Log in to [WeCom Admin Console](https://work.weixin.qq.com/wework_admin/frame) → **App Management → Apps → Built-in → Create app**. This module only needs server-side contact APIs; no web OAuth or callback URL required (unless you later need OAuth for sensitive fields).
@@ -187,7 +243,7 @@ This module calls WeCom contact APIs via an **enterprise self-built app**, using
 7. **Enable in Zabbix**  
    **Users → Sync Settings** → add WeCom setting → fill Corp ID, Corp Secret, `root_department_id` → save and enable → preview/sync on **IM Sync**.
 
-#### WeCom config example
+##### WeCom config example
 
 ```json
 {
@@ -201,7 +257,7 @@ This module calls WeCom contact APIs via an **enterprise self-built app**, using
 }
 ```
 
-#### WeCom troubleshooting
+##### WeCom troubleshooting
 
 | Symptom / error | Likely cause | Fix |
 |-----------------|--------------|-----|
@@ -227,7 +283,7 @@ This module calls Feishu contact APIs via an **enterprise self-built app**, usin
 | `app_secret` | Self-built app **App Secret** |
 | `root_department_id` | Root department ID. `"0"` = sync from enterprise root recursively; or a specific `open_department_id` (e.g. `od-xxxxxxxx`) for that subtree only |
 
-#### Feishu app setup
+##### Feishu app setup
 
 1. **Create a self-built app**  
    Log in to [Feishu Developer Console](https://open.feishu.cn/app) and follow the [self-built app development process](https://open.feishu.cn/document/home/introduction-to-custom-app-development/self-built-application-development-process). Server-side APIs only; no bot or web app required.
@@ -286,7 +342,7 @@ This module calls Feishu contact APIs via an **enterprise self-built app**, usin
 7. **Enable in Zabbix**  
    **Users → Sync Settings** → add Feishu setting → App ID, App Secret, `root_department_id` → save and enable → preview/sync on **IM Sync**.
 
-#### Feishu config example
+##### Feishu config example
 
 ```json
 {
@@ -300,7 +356,7 @@ This module calls Feishu contact APIs via an **enterprise self-built app**, usin
 }
 ```
 
-#### Feishu troubleshooting
+##### Feishu troubleshooting
 
 | Symptom / error | Likely cause | Fix |
 |-----------------|--------------|-----|
@@ -325,7 +381,7 @@ This module calls DingTalk contact APIs via an **enterprise internal app**, usin
 
 > **Important**: Use an **enterprise internal app**, not a third-party enterprise app. Third-party apps typically **do not return** mobile, email, etc.; internal apps are required for this module.
 
-#### DingTalk app setup
+##### DingTalk app setup
 
 1. **Create an internal app**  
    Admin login to [DingTalk Open Platform](https://open.dingtalk.com/) → **App development → Internal development → Create app**. Server-side contact APIs only. Tutorial: [Get all employees of an enterprise](https://open.dingtalk.com/document/orgapp/obtains-information-about-all-employees-of-an-enterprise).
@@ -375,7 +431,7 @@ This module calls DingTalk contact APIs via an **enterprise internal app**, usin
 8. **Enable in Zabbix**  
    **Users → Sync Settings** → add DingTalk setting → App Key, App Secret, `root_department_id` → save and enable → preview/sync on **IM Sync**.
 
-#### DingTalk config example
+##### DingTalk config example
 
 ```json
 {
@@ -389,7 +445,7 @@ This module calls DingTalk contact APIs via an **enterprise internal app**, usin
 }
 ```
 
-#### DingTalk troubleshooting
+##### DingTalk troubleshooting
 
 | Symptom / error | Likely cause | Fix |
 |-----------------|--------------|-----|
@@ -413,14 +469,7 @@ This module calls DingTalk contact APIs via an **enterprise internal app**, usin
 - User group names have no prefix; they match IM department names.
 - User matching is fixed to **username** (WeCom/Feishu: IM account ID; **DingTalk: mobile first**, then name pinyin, then `userid`).
 
-### Enable Module
-
-1. Go to **Administration → General → Modules**.
-2. Click **Scan directory** to scan for new modules.
-3. Find the **IM Sync Assistant** module and enable it.
-4. Refresh the page. **IM Sync Assistant** will appear under the **Users** menu.
-
-## Usage
+### Usage
 
 1. Open **Users → Sync Settings** and add/enable a sync setting (WeCom / Feishu / DingTalk).
 2. Open **Users → IM Sync Assistant → IM Sync**; the enabled setting is shown at the top (use the **Sync settings** button to jump to the management page).
@@ -429,52 +478,6 @@ This module calls DingTalk contact APIs via an **enterprise internal app**, usin
 5. Click **Sync all users** to create/match IM members as Zabbix users.
 
 Recommended order: **Configure and enable sync setting → Preview departments → Sync all departments → Sync all users**.
-
-## Permissions
-
-- Viewing the page and syncing departments requires **Zabbix Admin** privileges.
-- **Sync Settings** (CRUD credentials, enable/disable) requires **Super Admin** (involves app secrets).
-- **Sync all users** (with auto user creation) requires **Super Admin** (Zabbix 7 `user.create` is Super Admin only).
-- IM apps must have contact/address book API permissions enabled.
-
-## Notes
-
-- **Protection policy**: Built-in or manually created users/groups are **never deleted or modified**; the module only manages objects recorded in `data/sync_registry.json`.
-- **User types**:
-  - `created`: Auto-created by the module; can be added/updated/removed with IM changes.
-  - `linked`: Matched to existing Zabbix users; only group membership is synced; **accounts are not deleted**.
-- **Group conflicts**: If a group name already exists but was not created by the module, that department is skipped and logged.
-- **Manual members**: Non-module users manually added to module-managed groups are preserved on sync.
-- **Auto-created users**: Passwords are auto-generated (12 chars, upper/lower/digits), shown **once** in "Sync all users" results — save promptly; Zabbix 7+ also needs `default_roleid`; run sync as Super Admin.
-- **Manual user deletion**: If you delete a synced user in Zabbix, the next sync clears registry entry and recreates the user.
-- **Multi-department users**: Users in multiple IM departments are added to multiple Zabbix user groups.
-- **Network access**: Zabbix Web must reach the IM platform APIs.
-- **DingTalk username changes**: If users were previously synced by `userid`, switching to mobile/pinyin may create new accounts instead of matching old ones; preview before sync.
-- **PHP extensions**: DingTalk name-to-pinyin requires `iconv` or `mbstring` (either is sufficient).
-
-## Development
-
-The module is built on the Zabbix module framework:
-
-- `manifest.json`: Module configuration
-- `Module.php`: Menu registration (IM Sync / Sync Settings)
-- `actions/Im.php`: Main page logic
-- `actions/ImSync.php` / `ImSyncUsers.php`: Sync APIs
-- `actions/ImPreview.php`: Preview API
-- `actions/ImSettings.php` / `ImSettingsSave.php` / `ImSettingsDelete.php` / `ImSettingsEnable.php`: Sync settings CRUD
-- `views/im.php` / `im.settings.php`: Page views
-- `lib/ImSyncService.php`: Core sync logic
-- `lib/WeComClient.php` / `FeishuClient.php` / `DingTalkClient.php`: IM platform clients
-- `lib/PinyinHelper.php`: Chinese name to pinyin (DingTalk when mobile is absent)
-- `lib/ConfigManager.php`: Configuration (multi `settings`, single enable, legacy migration)
-- `lib/SyncRegistry.php`: Registry of module-created objects
-- `lib/LanguageManager.php`: Internationalization
-- `data/config.json`: Connection settings (`settings` list)
-- `data/sync_registry.json`: Sync registry (generated at runtime)
-
-### Internationalization
-
-All UI strings are managed in `lib/LanguageManager.php` for **Chinese (zh_CN)** and **English (en_US)**. Language detection follows Zabbix: user language → system default → `en_US`. Menus, pages, dialogs, API error messages, and IM client exceptions are translated; raw error codes/messages from third-party APIs may still appear in English.
 
 ## License
 

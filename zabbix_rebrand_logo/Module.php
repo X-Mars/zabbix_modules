@@ -8,7 +8,13 @@ use CWebUser;
 use Modules\ZabbixRebrandLogo\Lib\ServerNameOverride;
 use Modules\ZabbixRebrandLogo\Lib\LanguageManager;
 
-class Module extends \Zabbix\Core\CModule {
+if (class_exists('Zabbix\\Core\\CModule')) {
+    class ModuleBase extends \Zabbix\Core\CModule {}
+} else {
+    class ModuleBase extends \Core\CModule {}
+}
+
+class Module extends ModuleBase {
 
 	public function init(): void {
 		(new ServerNameOverride())->apply();

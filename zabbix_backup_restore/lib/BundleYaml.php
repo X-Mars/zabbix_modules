@@ -2,6 +2,8 @@
 
 namespace Modules\ZabbixBackupRestore\Lib;
 
+require_once __DIR__.'/Compat.php';
+
 use RuntimeException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;

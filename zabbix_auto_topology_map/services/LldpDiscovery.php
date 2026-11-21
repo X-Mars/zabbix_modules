@@ -69,10 +69,10 @@ class LldpDiscovery {
 	];
 
 	/** 单次 SNMP 超时（微秒）。设备不通时以 1.2s 收场，避免把整轮发现拖住。 */
-	private int $timeout_us;
+	/** @var int */ private $timeout_us;
 
 	/** 重试次数：0，交换机不回就是真不回，多试只是浪费时间 */
-	private int $retries = 0;
+	/** @var int */ private $retries = 0;
 
 	/**
 	 * 同一台设备两次 SNMP 请求之间的最小间隔（微秒）。
@@ -81,14 +81,14 @@ class LldpDiscovery {
 	 */
 	private const WALK_GAP_US = 70000;
 
-	private float $last_request_at = 0.0;
+	/** @var float */ private $last_request_at = 0.0;
 
 	/**
 	 * 本轮 scanHost 里 SNMP 成功应答过几次。
 	 * 用来区分「设备回了空表（没开 LLDP）」和「设备根本没响应（超时/限流）」——
 	 * 前者是设备配置问题，后者该提示用户稍后重试，不能混为一谈。
 	 */
-	private int $walk_answered = 0;
+	/** @var int */ private $walk_answered = 0;
 
 	public function __construct(int $timeout_ms = 1200) {
 		$this->timeout_us = max(200, $timeout_ms) * 1000;

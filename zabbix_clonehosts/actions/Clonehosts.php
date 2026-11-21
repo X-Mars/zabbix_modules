@@ -122,6 +122,7 @@ class Clonehosts extends CController {
 		}
 
 		$response = new CControllerResponseData($data);
+		$response->setTitle('Clone hosts');
 		$this->setResponse($response);
 	}
 }

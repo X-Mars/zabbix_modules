@@ -31,7 +31,7 @@ final class ServerNameOverride {
 	/**
 	 * Server name from the Zabbix configuration, captured before it is replaced.
 	 */
-	private static ?string $zabbix_default = null;
+	/** @var ?string */ private static $zabbix_default = null;
 
 	/**
 	 * Replace $ZBX_SERVER_NAME for the current request according to the saved
@@ -67,11 +67,10 @@ final class ServerNameOverride {
 	 * without a name also keeps the default rather than showing nothing.
 	 */
 	public static function resolve(string $mode, string $name): ?string {
-		return match ($mode) {
-			self::MODE_HIDDEN => '',
-			self::MODE_CUSTOM => ($name !== '') ? $name : null,
-			default => null
-		};
+        if ($mode === self::MODE_HIDDEN) {
+            return '';
+        }
+        return $mode === self::MODE_CUSTOM && $name !== '' ? $name : null;
 	}
 
 	/**

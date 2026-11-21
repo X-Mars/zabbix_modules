@@ -43,6 +43,12 @@
 		return window.TOPOMAP_LANG === 'zh_CN' ? 'zh-CN' : 'en-US';
 	}
 
+
+    function saveError(message) {
+        var note = document.querySelector(".module-save-hint");
+        return String(message) + (note && String(message).indexOf("getenforce") < 0 ? "\n" + note.getAttribute("data-save-hint") : "");
+    }
+
 	function start() {
 		var root = document.getElementById('topomap-root');
 
@@ -5541,7 +5547,7 @@
 							msg(elListMsg, T('已保存「') + name + T('」的属性'), 'ok');
 						}).catch(function (e) {
 							warn.className = 'tm-msg tm-msg-error';
-							warn.textContent = T('保存失败：') + e.message;
+							warn.textContent = T('保存失败：') + saveError(e.message);
 						});
 					};
 
@@ -8154,8 +8160,8 @@
 			}).then(function () {
 				setHint(T('已保存 ') + new Date().toLocaleTimeString(locale()));
 			}).catch(function (e) {
-				setHint(T('保存失败：') + e.message);
-				openNoticeDialog(T('保存失败'), e.message);
+				setHint(T('保存失败：') + saveError(e.message));
+				openNoticeDialog(T('保存失败'), saveError(e.message));
 			}).then(function () {
 				elSaveBtn.disabled = false;
 			});

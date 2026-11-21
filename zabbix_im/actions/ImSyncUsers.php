@@ -2,6 +2,8 @@
 
 namespace Modules\ZabbixIm\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
@@ -54,7 +56,7 @@ class ImSyncUsers extends CController {
             $this->respond(true, LanguageManager::t('User sync completed'), $summary);
         } catch (\Throwable $e) {
             error_log('IM User Sync error: ' . $e->getMessage());
-            $this->respond(false, LanguageManager::t('User sync failed') . ': ' . $e->getMessage());
+            $this->respond(false, LanguageManager::t('User sync failed') . ': ' . \ZabbixModuleNotice::translate($e->getMessage()));
         }
     }
 
