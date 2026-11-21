@@ -7,6 +7,47 @@
         return;
     }
 
+    // Reflow staggered hexagon rows when the viewport or native sidebar changes width.
+    const honeycombs = [...root.querySelectorAll('.ipam-detail-grid')];
+    const honeycomb_layouts = new WeakMap();
+    const layoutHoneycomb = grid => {
+        if (!grid.clientWidth) {
+            return;
+        }
+        const style = getComputedStyle(grid);
+        const width = parseFloat(style.getPropertyValue('--ipam-hex-width'));
+        const height = parseFloat(style.getPropertyValue('--ipam-hex-height'));
+        const gap = parseFloat(style.getPropertyValue('--ipam-hex-gap'));
+        const pitch = width + gap;
+        const columns = Math.max(1, Math.floor((grid.clientWidth - pitch / 2 + gap) / pitch));
+        const layout = columns+':'+width+':'+height+':'+gap;
+        if (honeycomb_layouts.get(grid) === layout) {
+            return;
+        }
+        honeycomb_layouts.set(grid, layout);
+        const row_pitch = height * .75 + gap;
+        const tracks = columns * 2 + (columns > 1 ? 1 : 0);
+        grid.style.gridTemplateColumns = 'repeat('+(tracks - 1)+', '+pitch / 2+'px) '+(pitch / 2 - gap)+'px';
+        grid.style.gridAutoRows = row_pitch+'px';
+        grid.style.paddingBottom = (height - row_pitch)+'px';
+        [...grid.children].forEach((cell, index) => {
+            const row = Math.floor(index / columns);
+            const offset = columns > 1 ? row % 2 : 0;
+            cell.style.gridColumn = ((index % columns) * 2 + offset + 1)+' / span 2';
+            cell.style.gridRow = String(row + 1);
+        });
+    };
+    honeycombs.forEach(layoutHoneycomb);
+    if (honeycombs.length) {
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(entries => entries.forEach(entry => layoutHoneycomb(entry.target)));
+            honeycombs.forEach(grid => observer.observe(grid));
+        }
+        else {
+            window.addEventListener('resize', () => honeycombs.forEach(layoutHoneycomb));
+        }
+    }
+
 
     function saveError(message) {
         var note = document.querySelector(".module-save-hint");

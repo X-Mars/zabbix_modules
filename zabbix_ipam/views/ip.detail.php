@@ -80,7 +80,7 @@ foreach ($data['matrix_ranges'] as $range) {
         .'<div class="ipam-detail-grid">'.$cells.'</div></section>';
 }
 
-$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.0">'
+$html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=1.5.0"><link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam-responsive.css?v=1.6.1">'
     .'<div class="ipam"><header class="ipam-head">'
     .'<form class="ipam-toolbar ip-detail-toolbar js-auto-filter" method="get"><input type="hidden" name="action" value="ip.detail"><input type="hidden" name="per_page" value="'.$e($data['pagination']['per_page']).'">'
     .'<input type="hidden" name="view" value="'.$e($data['view']).'">'
@@ -99,6 +99,6 @@ $html = '<link rel="stylesheet" href="modules/zabbix_ipam/assets/css/ipam.css?v=
     .'<div class="ipam-table-wrap"><table class="ipam-table ipam-detail-table"><thead><tr>'
     .'<th>'.$t('No.').'</th><th>'.$t('IP').'</th><th>'.$t('IP range name').'</th><th>'.$t('IP range').'</th><th>'.$t('IP status').'</th><th>'.$t('Status last updated').'</th><th>'.$t('Host association').'</th><th>'.$t('Associated host').'</th>'
     .'</tr></thead><tbody>'.($rows ?: '<tr><td colspan="8" class="ipam-empty">'.$t('No IP addresses found.').'</td></tr>').'</tbody></table></div>'.$pagination.'</div></section></div>'
-    .'<script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.5.0"></script>';
+    .'<script src="modules/zabbix_ipam/assets/js/ipam.js.php?v=1.6.1"></script>';
 
 ViewRenderer::render($data['title'], $html);
