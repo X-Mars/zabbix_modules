@@ -22,7 +22,9 @@ class GraphTreesData extends CController {
         return $this->validateInput([
             'type' => 'string',
             'hostid' => 'int32',
-            'category' => 'string'
+            'category' => 'string',
+            'from' => 'string',
+            'to' => 'string'
         ]);
     }
 
@@ -37,6 +39,9 @@ class GraphTreesData extends CController {
         $result = ['success' => false, 'error' => 'Invalid request'];
 
         switch ($type) {
+            case 'validate_time_range':
+                $result = $this->validateCustomTimeRange();
+                break;
             case 'categories':
                 $result = $this->getCategories($hostid);
                 break;
@@ -46,9 +51,55 @@ class GraphTreesData extends CController {
                 break;
         }
 
+        // 在输出前保存会话，避免旧版调试器在 PHP shutdown 中写会话时发出警告。
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
         header('Content-Type: application/json');
         echo json_encode($result, JSON_UNESCAPED_UNICODE);
         exit;
+    }
+
+    /** Validate using the same parser, user time zone and limits as native charts. */
+    private function validateCustomTimeRange(): array {
+        try {
+            $timestamps = [];
+            foreach (['from', 'to'] as $field) {
+                $parser = new \CRangeTimeParser();
+                if ($parser->parse($this->getInput($field, '')) !== \CParser::PARSE_SUCCESS) {
+                    return ['success' => false, 'error' => LanguageManager::t('Select a valid start and end time.')];
+                }
+                $timestamps[$field] = $parser->getDateTime($field === 'from')->getTimestamp();
+            }
+
+            if ($timestamps['from'] >= $timestamps['to']) {
+                return ['success' => false, 'error' => LanguageManager::t('Start time must be earlier than end time.')];
+            }
+            $period = $timestamps['to'] - $timestamps['from'] + 1;
+            if ($period < ZBX_MIN_PERIOD) {
+                return ['success' => false, 'error' => LanguageManager::t('Time range must be at least one minute.')];
+            }
+            if (class_exists('CTimePeriodHelper')) {
+                $maxPeriod = \CTimePeriodHelper::getMaxPeriod();
+            } else {
+                // Zabbix 6.0 尚无 CTimePeriodHelper，遵循其原生图表校验方式。
+                $limitParser = new \CRangeTimeParser();
+                $limitParser->parse('now-' . \CSettingsHelper::get(\CSettingsHelper::MAX_PERIOD));
+                $maxPeriod = time() - $limitParser->getDateTime(true)->getTimestamp();
+            }
+            if ($period > $maxPeriod + 1) {
+                return ['success' => false, 'error' => LanguageManager::t('Time range exceeds the maximum allowed by Zabbix.')];
+            }
+
+            return [
+                'success' => true,
+                'from' => date('Y-m-d H:i:s', $timestamps['from']),
+                'to' => date('Y-m-d H:i:s', $timestamps['to'])
+            ];
+        } catch (\Throwable $error) {
+            error_log('GraphTreesData: time range validation failed: ' . $error->getMessage());
+            return ['success' => false, 'error' => LanguageManager::t('Failed to validate time range. Please try again.')];
+        }
     }
 
     /**
@@ -409,7 +460,7 @@ class GraphTreesData extends CController {
         $prefix = $names[0];
 
         for ($i = 1; $i < count($names); $i++) {
-            while (strpos($names[$i], $prefix) !== 0 && strlen($prefix) > 0) {
+            while (strlen($prefix) > 0 && strpos($names[$i], $prefix) !== 0) {
                 $prefix = substr($prefix, 0, -1);
             }
             if (strlen($prefix) === 0) {
