@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制（`CompatHelper`），自动适配不同版本的 Zabbix API 参数差异（如 6.0 的 `selectGroups` 与 6.4+ 的 `selectHostGroups`、`groups` 与 `hostgroups` 结果键差异、`Zabbix\Core\CModule` 与 `Core\CModule` 命名空间差异等），无需手动配置。语言助手 `LangHelper` 会自动跟随 Zabbix 系统语言设置切换中/英文界面。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -76,7 +73,41 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/ma
 3. 找到「Host Batch Import / 主机批量导入」模块，点击启用模块。
 4. 刷新页面，模块将在 **Data collection（数据采集）** 菜单下显示为「主机批量导入」，位于「Hosts（主机）」之后。
 
-## CSV 数据格式
+## 注意事项
+
+- **性能考虑**：导入采用逐台串行方式，大批量导入可能需要较长时间。建议单次导入不超过 500 台主机。
+- **主机名唯一性**：主机名在 Zabbix 中与模板名共享命名空间，必须全局唯一。预览阶段会同时检测主机和模板冲突。
+- **模板依赖**：CSV 中指定的模板必须在 Zabbix 中已存在，否则导入时仅关联已存在的模板（未找到的模板会被标记为「未找到」）。
+- **CSV 编码**：建议使用 UTF-8 编码保存 CSV 文件。若中文显示乱码，可在页面切换编码为 GBK 后重新解析。
+- **权限要求**：使用本模块需要 Zabbix 管理员（Zabbix Admin）及以上权限。
+- **数据准确性**：创建的监控主机基于源主机的当前配置快照。如果源主机在导入过程中被修改，已创建的主机不会受影响。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
+## 开发
+
+模块基于 Zabbix 模块框架开发。文件结构：
+
+- `manifest.json`：模块配置、路由和静态资源声明
+- `Module.php`：菜单注册（兼容 `Zabbix\Core\CModule` 与 `Core\CModule`）
+- `CompatHelper.php`：Zabbix 6.0/6.4/7.x/8.x API 兼容性辅助类
+- `LangHelper.php`：中英文国际化语言管理（纯 PHP 数组实现，无 gettext 依赖）
+- `actions/Clonehosts.php`：主页面控制器（源主机选择、CSV 上传、表格录入）
+- `actions/ClonehostsSource.php`：AJAX 源主机配置加载接口
+- `actions/ClonehostsPreview.php`：预览页面控制器（冲突检测、字段状态）
+- `actions/ClonehostsImport.php`：AJAX 导入接口（逐台创建主机）
+- `views/`：页面视图（主页面、预览、JSON 响应）
+- `assets/js/`：JavaScript（CSV 解析、表格管理、AJAX 导入进度）
+- `assets/css/`：模块样式表
+- `clonehosts_template.csv`：CSV 导入模板
+
+如需扩展，可参考 [Zabbix 模块开发文档](https://www.zabbix.com/documentation/current/zh/devel/modules/file_structure)。
+
+## 模块配置
+
+### CSV 数据格式
 
 模块附带模板文件 `clonehosts_template.csv`，可在导入页面点击「下载 CSV 模板」获取。CSV 表头及字段说明：
 
@@ -99,34 +130,6 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/ma
 web-server-01,Web Server 01,192.168.1.10,10050,Servers;Web Servers,Linux by Zabbix Agent;Nginx by HTTP,env=prod;os=linux,{$SNMP_COMMUNITY}=public,Web server 01
 db-server-01,DB Server 01,192.168.1.20,10050,Servers;Database Servers,MySQL by Zabbix Agent,env=prod;os=linux;role=db,{$MYSQL_PORT}=3306,Database server 01
 ```
-
-## 注意事项
-
-- **性能考虑**：导入采用逐台串行方式，大批量导入可能需要较长时间。建议单次导入不超过 500 台主机。
-- **主机名唯一性**：主机名在 Zabbix 中与模板名共享命名空间，必须全局唯一。预览阶段会同时检测主机和模板冲突。
-- **模板依赖**：CSV 中指定的模板必须在 Zabbix 中已存在，否则导入时仅关联已存在的模板（未找到的模板会被标记为「未找到」）。
-- **CSV 编码**：建议使用 UTF-8 编码保存 CSV 文件。若中文显示乱码，可在页面切换编码为 GBK 后重新解析。
-- **权限要求**：使用本模块需要 Zabbix 管理员（Zabbix Admin）及以上权限。
-- **数据准确性**：创建的监控主机基于源主机的当前配置快照。如果源主机在导入过程中被修改，已创建的主机不会受影响。
-
-## 开发
-
-模块基于 Zabbix 模块框架开发。文件结构：
-
-- `manifest.json`：模块配置、路由和静态资源声明
-- `Module.php`：菜单注册（兼容 `Zabbix\Core\CModule` 与 `Core\CModule`）
-- `CompatHelper.php`：Zabbix 6.0/6.4/7.x/8.x API 兼容性辅助类
-- `LangHelper.php`：中英文国际化语言管理（纯 PHP 数组实现，无 gettext 依赖）
-- `actions/Clonehosts.php`：主页面控制器（源主机选择、CSV 上传、表格录入）
-- `actions/ClonehostsSource.php`：AJAX 源主机配置加载接口
-- `actions/ClonehostsPreview.php`：预览页面控制器（冲突检测、字段状态）
-- `actions/ClonehostsImport.php`：AJAX 导入接口（逐台创建主机）
-- `views/`：页面视图（主页面、预览、JSON 响应）
-- `assets/js/`：JavaScript（CSV 解析、表格管理、AJAX 导入进度）
-- `assets/css/`：模块样式表
-- `clonehosts_template.csv`：CSV 导入模板
-
-如需扩展，可参考 [Zabbix 模块开发文档](https://www.zabbix.com/documentation/current/zh/devel/modules/file_structure)。
 
 ## 许可证
 

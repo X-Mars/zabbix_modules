@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -74,28 +71,16 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 3. 找到 "Zabbix SNMP" 模块，点击启用模块。
 4. 刷新页面，模块将在 **数据采集** 菜单下显示为 "SNMP Assistant" 子菜单，包含 "Zabbix Mibs" 和 "Zabbix Walk" 两个子项。
 
-## 默认扫描目录
-
-- `/usr/share/snmp/mibs`
-- `/usr/local/share/snmp/mibs`
-- `/usr/share/mibs`
-- `/usr/local/share/mibs`
-- `/var/lib/mibs`
-- `/usr/share/net-snmp/mibs`
-- `/opt/share/snmp/mibs`
-- `/opt/local/share/snmp/mibs`
-- `C:\usr\share\snmp\mibs`
-- `C:\usr\local\share\snmp\mibs`
-- `C:\net-snmp\share\snmp\mibs`
-- `C:\Program Files\Net-SNMP\share\snmp\mibs`
-- `C:\Program Files (x86)\Net-SNMP\share\snmp\mibs`
-
 ## 注意事项
 
 - **依赖命令**：SNMP Walk 功能依赖 Zabbix Web 服务器上已安装 `net-snmp` 工具（`snmpwalk` / `snmpget` / `snmptranslate`）。
 - **目录权限**：如果 Zabbix Web 运行用户没有目录读取权限，页面中会显示目录但无法读取文件。
 - **模板命名限制**：Zabbix 模板技术名称仅支持英文字母、数字、点号(.)、下划线(_)和连字符(-)，不支持中文；模板群组名称可使用中文。
 - **性能考虑**：对于超大 Walk 结果，结果表格采用客户端分页渲染以保证页面响应速度。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
 
 ## 开发
 
@@ -116,6 +101,24 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 - `lib/ZabbixVersion.php`：版本兼容工具
 
 如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
+
+## 模块配置
+
+### 默认扫描目录
+
+- `/usr/share/snmp/mibs`
+- `/usr/local/share/snmp/mibs`
+- `/usr/share/mibs`
+- `/usr/local/share/mibs`
+- `/var/lib/mibs`
+- `/usr/share/net-snmp/mibs`
+- `/opt/share/snmp/mibs`
+- `/opt/local/share/snmp/mibs`
+- `C:\usr\share\snmp\mibs`
+- `C:\usr\local\share\snmp\mibs`
+- `C:\net-snmp\share\snmp\mibs`
+- `C:\Program Files\Net-SNMP\share\snmp\mibs`
+- `C:\Program Files (x86)\Net-SNMP\share\snmp\mibs`
 
 ## 许可证
 

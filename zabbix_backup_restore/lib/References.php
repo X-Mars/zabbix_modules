@@ -18,8 +18,8 @@ final class References {
 		'triggers' => ['Trigger', 'triggerid', 'description']
 	];
 
-	private Api $api;
-	private array $indexes = [];
+	/** @var Api */ private $api;
+	/** @var array */ private $indexes = [];
 
 	public function __construct(Api $api) {
 		$this->api = $api;

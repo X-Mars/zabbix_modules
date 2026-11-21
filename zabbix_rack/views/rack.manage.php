@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 /**
  * 机柜管理页面 - 重构版
  * 功能：机房和机柜的增删改查管理
@@ -657,6 +660,12 @@ $content->addItem(new CJsScript('<script>
     
     // 国际化文本
     var i18n = ' . $i18nJson . ';
+
+    function saveError(message) {
+        var note = document.querySelector(".module-save-hint");
+        return String(message) + (note && String(message).indexOf("getenforce") < 0 ? "\n" + note.getAttribute("data-save-hint") : "");
+    }
+
     
     // 机房数据（以 ID 为键的映射）
     var roomsData = ' . $roomsJson . ';
@@ -780,12 +789,12 @@ $content->addItem(new CJsScript('<script>
                     self.closeRoomModal();
                     location.reload();
                 } else {
-                    RackUI.message(data.error || data.message || i18n.operation_failed);
+                    RackUI.message(saveError(data.error || data.message || i18n.operation_failed));
                 }
             })
             .catch(function() {
                 saveBtn.classList.remove("loading");
-                RackUI.message(i18n.operation_failed);
+                RackUI.message(saveError(i18n.operation_failed));
             });
         },
         
@@ -895,12 +904,12 @@ $content->addItem(new CJsScript('<script>
                     self.closeRackModal();
                     location.reload();
                 } else {
-                    RackUI.message(data.error || data.message || i18n.operation_failed);
+                    RackUI.message(saveError(data.error || data.message || i18n.operation_failed));
                 }
             })
             .catch(function() {
                 saveBtn.classList.remove("loading");
-                RackUI.message(i18n.operation_failed);
+                RackUI.message(saveError(i18n.operation_failed));
             });
         },
         

@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -29,37 +26,6 @@
 - **统计信息**：展示主机数、链路数、设备数及跳过项计数
 - **可扩展设计**：节点 JSON 预留 `image` 字段，便于后续接入设备图标
 - **国际化支持**：支持中英文界面
-
-## 模板依赖
-
-本模块依赖名为 **Lldp Discovery** 的 Zabbix 模板（可在配置中修改）。模板应通过 LLD 发现 `lldp.remote.info[{#LOCAL_PORT}]` 监控项，其 `lastvalue` 格式为：
-
-```
-对端设备名(对端端口)
-```
-
-例如：`YJZHZX-LouCengHuiJu-S7510E(GigabitEthernet2/2/0/1)`
-
-请将模板关联到需要展示 LLDP 拓扑的主机，并确保 LLD 已发现且监控项有最新数据。
-
-## 配置
-
-模块配置保存在 `data/config.json`：
-
-```json
-{
-    "template_name": "Lldp Discovery",
-    "item_key_prefix": "lldp.remote.info",
-    "discovery_key": "lldp_discovery"
-}
-```
-
-| 字段 | 说明 |
-|------|------|
-| `template_name` | LLDP 模板可见名称（也支持按 technical name 匹配） |
-| `item_key_prefix` | 监控项 key 前缀，用于查询 LLDP 邻居项 |
-| `root_hostid` | 可选，指定全网拓扑的根设备 Zabbix 主机 ID。未配置或该设备不在查询结果中时自动选择。 |
-| `discovery_key` | LLD 规则 key，预留供后续版本使用 |
 
 ## 安装步骤
 
@@ -87,20 +53,16 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_lldp/manifest
 3. 找到 "Zabbix LLDP Topology" 模块，点击启用。
 4. 刷新页面，模块将在 **Monitoring** 菜单下显示为 **LLDP 拓扑**（或 **LLDP Topology**）。
 
-## 使用方法
-
-1. 进入 **Monitoring → LLDP 拓扑**。
-2. 选择主机分组和主机（默认「所有分组」「所有主机」）。
-3. 点击 **查询**，等待拓扑加载。
-4. 点击节点旁的 `+N` 展开下一层，点击 `−` 收起。虚线表示布局主路径之外的链路。
-5. 将鼠标悬停在链路或节点上，查看端口与设备详情。
-
 ## 注意事项
 
 - 若未找到 LLDP 模板，请检查 `data/config.json` 中的 `template_name` 是否与 Zabbix 中模板名称一致。
 - 空 `lastvalue` 或格式不符合 `设备(端口)` 的监控项会被跳过，并在统计中计入「跳过项」。
 - 对端设备为 LLDP 上报的系统名，可能与 Zabbix 主机名不一致；同名对端会自动合并为一个节点。
 - 当前版本不包含设备图标、力导向布局、双向链路合并及 `REMOTE_SYS_DESC` 展示。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
 
 ## 开发
 
@@ -124,6 +86,47 @@ zabbix_lldp/
     ├── TemplateHostResolver.php
     └── LldpTopologyBuilder.php
 ```
+
+## 模块配置
+
+### 模板依赖
+
+本模块依赖名为 **Lldp Discovery** 的 Zabbix 模板（可在配置中修改）。模板应通过 LLD 发现 `lldp.remote.info[{#LOCAL_PORT}]` 监控项，其 `lastvalue` 格式为：
+
+```
+对端设备名(对端端口)
+```
+
+例如：`YJZHZX-LouCengHuiJu-S7510E(GigabitEthernet2/2/0/1)`
+
+请将模板关联到需要展示 LLDP 拓扑的主机，并确保 LLD 已发现且监控项有最新数据。
+
+### 配置
+
+模块配置保存在 `data/config.json`：
+
+```json
+{
+    "template_name": "Lldp Discovery",
+    "item_key_prefix": "lldp.remote.info",
+    "discovery_key": "lldp_discovery"
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `template_name` | LLDP 模板可见名称（也支持按 technical name 匹配） |
+| `item_key_prefix` | 监控项 key 前缀，用于查询 LLDP 邻居项 |
+| `root_hostid` | 可选，指定全网拓扑的根设备 Zabbix 主机 ID。未配置或该设备不在查询结果中时自动选择。 |
+| `discovery_key` | LLD 规则 key，预留供后续版本使用 |
+
+### 使用方法
+
+1. 进入 **Monitoring → LLDP 拓扑**。
+2. 选择主机分组和主机（默认「所有分组」「所有主机」）。
+3. 点击 **查询**，等待拓扑加载。
+4. 点击节点旁的 `+N` 展开下一层，点击 `−` 收起。虚线表示布局主路径之外的链路。
+5. 将鼠标悬停在链路或节点上，查看端口与设备详情。
 
 ## 许可证
 

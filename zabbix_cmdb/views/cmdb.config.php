@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 require_once dirname(__DIR__).'/lib/ItemConfig.php';
 require_once dirname(__DIR__).'/lib/ViewRenderer.php';
 use Modules\ZabbixCmdb\Lib\ItemConfig;

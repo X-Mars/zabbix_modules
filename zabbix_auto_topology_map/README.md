@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块基于 Zabbix 7.0 开发，使用 `manifest_version: 2.0`。
-
-- ✅ Zabbix 7.0.28：已进行源码核对与真机验证
-- ✅ Zabbix 8.0：已适配拓扑图连线新增的 `indicator_type` 校验与前端 API 错误返回方式
-- ⚠️ Zabbix 6.x：包含部分兼容处理，但尚未实测
-- ⚠️ Zabbix 7.x 其他版本：需在目标环境验证
-
-**兼容性说明**：模块对新旧模块基类和菜单组件做了兼容处理，但不代表所有版本均已通过测试。建议升级前在测试环境确认菜单、拓扑图读写和自动发现功能。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -64,27 +61,6 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_auto_topology_map/manifest.json
 ```
 
-### 配置自动发现环境
-
-- 为 **Zabbix Web 前端使用的 PHP 环境** 安装并启用 `snmp` 扩展，无需额外调用 `snmpwalk` 命令行工具。
-- 确保前端服务器能够通过 SNMP 访问目标设备，并在设备上开启相应的 LLDP / CDP / EDP 协议。
-- 在 Zabbix 主机中配置 SNMP 接口及认证信息。自动发现主机选择器仅允许选择具有 SNMP 接口的主机。
-- 模块会按需创建 `topomap_link_metrics`、`topomap_link_paths` 和 `topomap_settings` 数据表，前端使用的数据库账号需具有相应的建表和读写权限。
-
-根据操作系统选择对应命令安装 PHP SNMP 扩展：
-
-```bash
-# Debian / Ubuntu
-sudo apt update
-sudo apt install php-snmp
-
-# 使用 dnf 的系统（如 Rocky Linux / AlmaLinux / Fedora）
-sudo dnf install php-snmp
-
-# 使用 yum 的系统（如 CentOS / RHEL 旧版本）
-sudo yum install php-snmp
-```
-
 ### 启用模块
 
 1. 转到 **Administration → General → Modules（管理 → 通用 → 模块）**。
@@ -107,6 +83,10 @@ sudo yum install php-snmp
 - **图标与宏限制**：模块预览不解析图标映射；形状文本与主机元素标签中支持 `{MAP.NAME}`、`{HOST.NAME}`、`{HOST.CONN}` 宏，按当前拓扑图名称和主机最新名称/连接地址实时展开（`{HOST.CONN}` 优先取主接口，其次 SNMP 接口的 IP 或 DNS），其余宏不会展开。需要完整原生渲染效果时，请使用 Zabbix 原生拓扑图页面。
 - **升级与备份**：备份原生拓扑图数据及模块自建表，保留链路指标、走线和设置。升级后建议使用 `Ctrl+F5` 刷新浏览器缓存；若菜单未更新，可检查 PHP OPcache 缓存。
 
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
 ## 开发
 
 插件基于 Zabbix 模块框架开发。文件结构：
@@ -124,6 +104,29 @@ sudo yum install php-snmp
 拓扑图主体使用 Zabbix 原生 `map` API 保存；链路指标、走线和模块设置保存在模块自建表中。扩展保存逻辑时，应同时考虑元素及链接 ID 的复用和关联配置的清理。
 
 如需扩展，可参考 [Zabbix 模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
+
+## 模块配置
+
+### 配置自动发现环境
+
+- 为 **Zabbix Web 前端使用的 PHP 环境** 安装并启用 `snmp` 扩展，无需额外调用 `snmpwalk` 命令行工具。
+- 确保前端服务器能够通过 SNMP 访问目标设备，并在设备上开启相应的 LLDP / CDP / EDP 协议。
+- 在 Zabbix 主机中配置 SNMP 接口及认证信息。自动发现主机选择器仅允许选择具有 SNMP 接口的主机。
+- 模块会按需创建 `topomap_link_metrics`、`topomap_link_paths` 和 `topomap_settings` 数据表，前端使用的数据库账号需具有相应的建表和读写权限。
+
+根据操作系统选择对应命令安装 PHP SNMP 扩展：
+
+```bash
+# Debian / Ubuntu
+sudo apt update
+sudo apt install php-snmp
+
+# 使用 dnf 的系统（如 Rocky Linux / AlmaLinux / Fedora）
+sudo dnf install php-snmp
+
+# 使用 yum 的系统（如 CentOS / RHEL 旧版本）
+sudo yum install php-snmp
+```
 
 ## 许可证
 

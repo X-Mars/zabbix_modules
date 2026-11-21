@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -91,12 +88,9 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 
 如需扩展，可参考[Zabbix模块开发文档](https://www.zabbix.com/documentation/7.0/en/devel/modules)。
 
-## 许可证
+## 模块配置
 
-本项目遵循Zabbix的许可证。详情请见[Zabbix许可证](https://www.zabbix.com/license)。
-
-
-## CMDB 指标配置
+### CMDB 指标配置
 
 超级管理员可在「资产记录 → CMDB → 监控项配置」管理 CPU 总量、CPU 使用率、内存总量和内存使用率的监控项规则。
 
@@ -110,3 +104,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_cmdb/manifest
 - 配置读取失败时报告错误，不使用隐藏的硬编码规则。
 
 规则测试：`php zabbix_cmdb/tests/item_rules.php`（仅写入系统临时目录）。
+
+## 许可证
+
+本项目遵循Zabbix的许可证。详情请见[Zabbix许可证](https://www.zabbix.com/license)。

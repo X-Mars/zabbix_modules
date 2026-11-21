@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 
 require_once dirname(__DIR__).'/lib/ViewRenderer.php';
 require_once dirname(__DIR__).'/lib/LanguageManager.php';
@@ -11,7 +14,7 @@ use Modules\ZabbixIpam\Lib\ViewPagination;
 use Modules\ZabbixIpam\Lib\ViewRenderer;
 
 $t = [LanguageManager::class, 't'];
-$e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$e = static function ($value): string  { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); };
 
 $counts = $data['summary'];
 

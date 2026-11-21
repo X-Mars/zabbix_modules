@@ -5,6 +5,8 @@
 
 namespace Modules\ZabbixRack\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use CController;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
@@ -76,13 +78,10 @@ class RoomSave extends CController {
         
         $message = LanguageManager::t('save_success');
         if (!$success) {
-            if (!RackConfig::isDataDirWritable()) {
-                $message = str_replace('{path}', RackConfig::getDataDir(), LanguageManager::t('save_permission_hint'));
-            } else {
-                $message = LanguageManager::t('save_failed');
-            }
+            $message = LanguageManager::t('save_failed')."\n".
+                \ZabbixModuleNotice::storageText(dirname(__DIR__), [RackConfig::getDataDir()]);
         }
-        
+
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $success,

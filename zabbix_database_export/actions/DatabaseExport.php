@@ -2,6 +2,9 @@
 
 namespace Modules\ZabbixDatabaseExport\Actions;
 
+require_once dirname(__DIR__).'/lib/SecurityToken.php';
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use Modules\ZabbixDatabaseExport\Lib\{Access, BackupFile, SqlExport, LanguageManager};
 
 foreach (['Access', 'BackupFile', 'SqlExport', 'LanguageManager'] as $class) {
@@ -11,7 +14,11 @@ foreach (['Access', 'BackupFile', 'SqlExport', 'LanguageManager'] as $class) {
 final class DatabaseExport extends \CController {
     protected function init(): void {
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+            if (method_exists($this, 'disableCsrfValidation')) {
             $this->disableCsrfValidation();
+        } else {
+            $this->disableSIDvalidation();
+        }
         }
     }
 
@@ -30,7 +37,7 @@ final class DatabaseExport extends \CController {
     protected function doAction(): void {
         $data = [
             'database' => null, 'tables' => [], 'error' => '', 'saved' => null, 'can_export' => false,
-            'token' => \CCsrfTokenHelper::get($this->getAction()),
+            'token' => \Modules\ZabbixDatabaseExport\Lib\SecurityToken::get($this->getAction()),
             'scope' => 'all', 'mode' => 'both', 'destination' => 'download',
             'selected' => [], 'exclude_history' => false, 'directory' => BackupFile::DEFAULT_DIRECTORY
         ];
@@ -48,6 +55,11 @@ final class DatabaseExport extends \CController {
             $data['error'] = LanguageManager::tf('The database export failed (MySQL error %d).', $error->getCode());
         } catch (\RuntimeException $error) {
             $data['error'] = LanguageManager::t($error->getMessage());
+            if ($data['directory'] === BackupFile::DEFAULT_DIRECTORY || preg_match('/private backup file|save the backup/', $error->getMessage())) {
+                try { $data['error'] .= "\n\n".\ZabbixModuleNotice::storageText(dirname(__DIR__), [
+                    ['path' => $data['directory'], 'private' => true]
+                ]); } catch (\InvalidArgumentException $ignored) {}
+            }
         }
 
         $response = new \CControllerResponseData($data);

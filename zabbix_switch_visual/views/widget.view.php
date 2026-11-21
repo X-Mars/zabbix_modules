@@ -1,4 +1,7 @@
 <?php declare(strict_types=1);
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+if (!empty($data['standalone'])) { echo \ZabbixModuleNotice::reminder(dirname(__DIR__)); }
+
 
 $hosts       = $data['hosts']            ?? [];
 $fields      = $data['fields']           ?? [];
@@ -29,7 +32,7 @@ if ($brand_file !== null && \Modules\SwitchVisual\Includes\BrandLogos::exists($b
 }
 
 // Module-local translator (EN → zh_CN when the user language is Chinese)
-$t = static fn(string $s): string => \Modules\SwitchVisual\Includes\Translation::t($s);
+$t = static function (string $s): string  { return \Modules\SwitchVisual\Includes\Translation::t($s); };
 
 $sfx = static function(string $state): string {
     return ['green' => 'g', 'amber' => 'a', 'red' => 'r', 'gray' => 'z', 'blue' => 'g'][$state] ?? 'z';
@@ -803,7 +806,7 @@ if ($error !== null) {
     ksort($member_groups);
     // Stacked = two or more real member numbers (>= 1). Ports without member
     // info (member 0 — VLANs, mgmt, 2-level names) never count as a stack.
-    $stacked = count(array_filter(array_keys($member_groups), static fn($m): bool => $m > 0)) > 1;
+    $stacked = count(array_filter(array_keys($member_groups), static function ($m): bool  { return $m > 0; })) > 1;
 
     // Split one member's ports into RJ45 / SFP maps of global pos => display num
     $split_member = static function(array $glist) use ($ports): array {
@@ -898,8 +901,7 @@ if ($error !== null) {
         $sum_rows[] = [$t('Temp'), ($alarm ? '⚠ ' : '') . $tmp_val, $alarm ? 'sw-sum-v sw-sum-alert' : 'sw-sum-v', $tooltip];
     }
     if (!empty($summary['poe_total']) || !empty($summary['poe_max'])) {
-        $fmt_w = static fn(string $v): string =>
-            rtrim(rtrim(number_format((float) $v, 1), '0'), '.');
+        $fmt_w = static function (string $v): string  { return rtrim(rtrim(number_format((float) $v, 1), '0'), '.'); };
         $poe_val = $fmt_w(trim($summary['poe_total'] ?? ''));
         $poe_max = $fmt_w(trim($summary['poe_max']   ?? ''));
         if ($poe_val !== '' && $poe_max !== '') {
@@ -957,4 +959,18 @@ if ($error !== null) {
   } // foreach hosts
 }
 
-(new CWidgetView($data))->addItem(new CTag('style', true, $css))->addItem($outer)->show();
+if (!empty($data['standalone'])) {
+    $select = new CSelect('hostid');
+    $select->addOption(new CSelectOption('', $t('Select a host')));
+    foreach ($data['host_options'] as $host) {
+        $select->addOption(new CSelectOption($host['hostid'], $host['name']));
+    }
+    $select->setValue($data['selected_hostid']);
+    $form = (new CForm('get'))->addItem(new CVar('action', 'switchvisual.view'))
+        ->addItem($select)->addItem(new CSubmit('apply', _('Apply')));
+    $page = class_exists('CHtmlPage') ? new CHtmlPage() : new CWidget();
+    $page->setTitle('Switch visual')->addItem($form)
+        ->addItem(new CTag('style', true, $css))->addItem($outer)->show();
+} else {
+    (new CWidgetView($data))->addItem(new CTag('style', true, $css))->addItem($outer)->show();
+}

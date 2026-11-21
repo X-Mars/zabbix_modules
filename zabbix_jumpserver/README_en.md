@@ -4,14 +4,11 @@
 
 ## ✨ Version Compatibility
 
-This module is compatible with Zabbix 6.0 / 7.0+ / 8.0+.
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**Compatibility Note**: The module includes intelligent version detection that automatically adapts to different Zabbix API versions and class libraries, requiring no manual configuration.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -40,7 +37,66 @@ When pushing hosts, it automatically:
 - **Asset ID persistence**: The JumpServer asset ID is stored as a Zabbix host tag (`jumpserver_asset_id`)
 - **Internationalization**: Supports Chinese and English interfaces
 
-## Configuration
+## Installation
+
+### Install Module
+
+```bash
+# Zabbix 6.0 / 7.0 deployment
+git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
+
+# Zabbix 7.2+ / 7.4 / 8.0 deployment
+git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
+```
+
+### ⚠️ Modify manifest.json
+
+```bash
+# ⚠️ For Zabbix 6.0, modify manifest_version
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
+```
+
+### Enable Module
+
+1. Go to **Administration → General → Modules**.
+2. Click **Scan directory** to scan for new modules.
+3. Find the "Zabbix JumpServer" module and enable it.
+4. Refresh the page. The module will appear under the **Inventory** menu as "JumpServer".
+
+## Notes
+
+- **Network**: The Zabbix web server must be able to reach the JumpServer URL.
+- **Permissions**: Viewing the page requires regular user privileges; pushing and fetching asset IDs require Zabbix Admin privileges.
+- **Platform detection**: Host platform relies on the Zabbix "Operating system" item value; defaults to Linux when missing.
+- **Tag write-back**: After pushing, the `jumpserver_asset_id` tag is written to the Zabbix host; existing tags are preserved.
+- **Credential security**: `data/config.json` contains sensitive credentials; control file permissions and avoid committing it to public repositories.
+
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
+
+## Development
+
+The module is built on the Zabbix module framework. File structure:
+
+- `manifest.json`: Module configuration
+- `Module.php`: Menu registration (Inventory → JumpServer)
+- `actions/Jumpserver.php`: Main page business logic (filters, search, alarm stats, host table)
+- `actions/JumpserverPush.php`: Push hosts/groups and write back the asset ID
+- `actions/JumpserverFetchIds.php`: Fetch asset IDs from JumpServer and write back tags by IP
+- `views/jumpserver.php`: Page view
+- `lib/JumpserverClient.php`: JumpServer API client (HTTP Signature auth)
+- `lib/ConfigManager.php`: Reads credentials from data/config.json
+- `lib/LanguageManager.php`: Internationalization language management
+- `lib/ViewRenderer.php`: View rendering utilities
+- `lib/ZabbixVersion.php`: Version compatibility utilities
+- `data/config.json`: JumpServer connection credentials
+
+For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).
+
+## Module Configuration
+
+### Configuration
 
 Credentials are stored in `data/config.json`:
 
@@ -68,7 +124,7 @@ Credentials are stored in `data/config.json`:
 
 **Getting an AccessKey**: Log in to JumpServer → User interface → Profile → API Key (AccessKey); create one to get the ID and Secret. The module authenticates using HTTP Signature (hmac-sha256). See the [JumpServer REST API docs](https://docs.jumpserver.org/zh/v4/dev/rest_api/).
 
-### Automatic account linking
+#### Automatic account linking
 
 When `account_template_id` is set, the module automatically links a login account via the account template **when creating** a JumpServer asset (existing assets are not modified):
 
@@ -82,7 +138,7 @@ Notes:
 - The user behind the AccessKey must have account management (`accounts.add_account`) permission.
 - The credentials come from the template; if you need JumpServer to actually create/change the system account on the target host, enable auto-push in the account template and configure a privileged account.
 
-### Reverse sync asset IDs
+#### Reverse sync asset IDs
 
 Click **Fetch JumpServer asset IDs** to:
 
@@ -92,62 +148,9 @@ Click **Fetch JumpServer asset IDs** to:
 
 Useful when assets already exist in JumpServer but Zabbix hosts do not yet have the asset ID tag.
 
-## Installation
-
-### Install Module
-
-```bash
-# Zabbix 6.0 / 7.0 deployment
-git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/modules/
-
-# Zabbix 7.2+ / 7.4 / 8.0 deployment
-git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modules/
-```
-
-### ⚠️ Modify manifest.json
-
-```bash
-# ⚠️ For Zabbix 6.0, modify manifest_version
-sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_jumpserver/manifest.json
-```
-
 ### Configure credentials
 
 Edit `zabbix_jumpserver/data/config.json` and fill in the JumpServer URL and AccessKey. Make sure the Zabbix web user can read this file.
-
-### Enable Module
-
-1. Go to **Administration → General → Modules**.
-2. Click **Scan directory** to scan for new modules.
-3. Find the "Zabbix JumpServer" module and enable it.
-4. Refresh the page. The module will appear under the **Inventory** menu as "JumpServer".
-
-## Notes
-
-- **Network**: The Zabbix web server must be able to reach the JumpServer URL.
-- **Permissions**: Viewing the page requires regular user privileges; pushing and fetching asset IDs require Zabbix Admin privileges.
-- **Platform detection**: Host platform relies on the Zabbix "Operating system" item value; defaults to Linux when missing.
-- **Tag write-back**: After pushing, the `jumpserver_asset_id` tag is written to the Zabbix host; existing tags are preserved.
-- **Credential security**: `data/config.json` contains sensitive credentials; control file permissions and avoid committing it to public repositories.
-
-## Development
-
-The module is built on the Zabbix module framework. File structure:
-
-- `manifest.json`: Module configuration
-- `Module.php`: Menu registration (Inventory → JumpServer)
-- `actions/Jumpserver.php`: Main page business logic (filters, search, alarm stats, host table)
-- `actions/JumpserverPush.php`: Push hosts/groups and write back the asset ID
-- `actions/JumpserverFetchIds.php`: Fetch asset IDs from JumpServer and write back tags by IP
-- `views/jumpserver.php`: Page view
-- `lib/JumpserverClient.php`: JumpServer API client (HTTP Signature auth)
-- `lib/ConfigManager.php`: Reads credentials from data/config.json
-- `lib/LanguageManager.php`: Internationalization language management
-- `lib/ViewRenderer.php`: View rendering utilities
-- `lib/ZabbixVersion.php`: Version compatibility utilities
-- `data/config.json`: JumpServer connection credentials
-
-For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).
 
 ## License
 

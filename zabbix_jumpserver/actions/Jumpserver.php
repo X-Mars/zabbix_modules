@@ -234,8 +234,6 @@ class Jumpserver extends CController {
                 'monitored'         => true,
                 'skipDependent'     => true,
                 'expandDescription' => true,
-                'sortfield'         => 'lastchange',
-                'sortorder'         => 'DESC',
             ]);
         } catch (\Throwable $e) {
             error_log('JumpServer: Trigger fetch failed: ' . $e->getMessage());
@@ -245,6 +243,12 @@ class Jumpserver extends CController {
         if (!is_array($triggers)) {
             return $map;
         }
+
+        // PostgreSQL rejects the core API's DISTINCT + runtime-table ORDER BY.
+        // Sort the returned rows here; all rows are needed for per-host counts.
+        usort($triggers, static function (array $a, array $b): int {
+            return (int) ($b['lastchange'] ?? 0) <=> (int) ($a['lastchange'] ?? 0);
+        });
 
         foreach ($triggers as $trigger) {
             $priority = (int) ($trigger['priority'] ?? 0);

@@ -1,6 +1,8 @@
 <?php
 namespace Modules\ZabbixCmdb\Lib;
 
+require_once __DIR__.'/ModuleNotice.php';
+
 require_once __DIR__.'/LanguageManager.php';
 
 class ItemConfig {
@@ -57,12 +59,12 @@ class ItemConfig {
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n";
         $tmp = @tempnam(dirname(self::path()), '.item_rules_');
         if ($tmp === false) {
-            throw new \RuntimeException(LanguageManager::t('Cannot save: grant the web service user write access to the CMDB data directory.'));
+            throw new \RuntimeException(LanguageManager::t('Cannot save: grant the web service user write access to the CMDB data directory.')."\n\n".\ZabbixModuleNotice::storageText(dirname(__DIR__), [dirname(self::path())]));
         }
         try {
-            if (file_put_contents($tmp, $json, LOCK_EX) !== strlen($json)
-                    || !chmod($tmp, 0640) || !rename($tmp, self::path())) {
-                throw new \RuntimeException(LanguageManager::t('Cannot save: check write permissions on the CMDB data directory.'));
+            if (@file_put_contents($tmp, $json, LOCK_EX) !== strlen($json)
+                    || !@chmod($tmp, 0640) || !@rename($tmp, self::path())) {
+                throw new \RuntimeException(LanguageManager::t('Cannot save: check write permissions on the CMDB data directory.')."\n\n".\ZabbixModuleNotice::storageText(dirname(__DIR__), [dirname(self::path())]));
             }
             self::$cache = $data;
         } finally {

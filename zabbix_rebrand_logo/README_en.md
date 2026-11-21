@@ -4,10 +4,11 @@
 
 ## ✨ Version Compatibility
 
-- ✅ Zabbix 7.0.32 / PHP 8.0
-- ✅ Zabbix 8.0.0 / PHP 8.4
-
-These combinations have been verified. Test other versions in your target environment first.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -34,7 +35,7 @@ This Zabbix frontend module lets Super Admins change the login logo, sidebar log
 
 ## Installation
 
-### Install the module
+### Install Module
 
 Run the following commands from the repository root. Set `ZABBIX_ROOT` to the directory serving the Zabbix frontend, such as `/usr/share/zabbix` or `/usr/share/zabbix/ui`. Set `WEB_USER` and `WEB_GROUP` to the PHP-FPM pool's user and group, such as `apache` or `www-data`.
 
@@ -55,13 +56,19 @@ sudo chmod g+w "$CONF_DIR"
 
 PHP-FPM needs write access to the image directory, `local/conf/rebrand/`, and `local/conf/` to save images and atomically replace `brand.conf.php`. Keep the module code under the deployment account's ownership. On SELinux systems, configure the writable directories with `httpd_sys_rw_content_t` and apply the labels with `restorecon`.
 
-### Enable the module
+### ⚠️ Modify manifest.json
+
+For Zabbix 6.0, change the module manifest version to 1.0. Keep 2.0 on 7.0/8.0.
+
+```bash
+sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' /usr/share/zabbix/modules/zabbix_rebrand_logo/manifest.json
+```
+
+### Enable Module
 
 1. Sign in as a Super Admin and go to **Administration → General → Modules**.
 2. Click **Scan directory** and enable **Zabbix Rebrand Logo**.
 3. Open **Administration → Zabbix Rebrand Logo**, select and preview or crop your images, then click **Update**.
-
-### Enable the login logo size slider (optional)
 
 Install the local login view in the frontend root. Run the following command only if the destination is absent. If you already use a custom login view, check compatibility before enabling this option.
 
@@ -71,8 +78,6 @@ if [ ! -e "$LOGIN_VIEW" ] && [ ! -L "$LOGIN_VIEW" ]; then
   sudo install -D -m 0644 "$MODULE_DIR/install/login-view.php" "$LOGIN_VIEW"
 fi
 ```
-
-### Enable the browser favicon (optional)
 
 Upload and save the favicon in the module. Then back up the frontend's original `favicon.ico` and create a symlink to the module's favicon. Use the commands below when the frontend still has its original favicon and no backup. If you already use a custom symlink, check its target before updating it.
 
@@ -85,20 +90,15 @@ if [ -f "$MODULE_DIR/assets/logos/favicon.ico" ] \
 fi
 ```
 
-### Upgrade from the old directory
-
-1. Back up the old module directory, `local/conf/rebrand/`, and `local/conf/brand.conf.php`. Disable the old module in the module list.
-2. Move the old module directory (`zabbix_brand_logo`, `zabbix_branding`, or `Branding`) outside the frontend's `modules/` directory. Scan the directory to clear its registration.
-3. Install `zabbix_rebrand_logo`, scan again, and enable it. If any legacy settings or images exist only in the old module's `assets/logos/` directory, copy them to the corresponding directory in the new module.
-4. Open the module and click **Update** to rewrite the image URLs in `brand.conf.php` for the new directory. If you use a favicon symlink, update it to point to the new directory as well.
-
-The module ID is `zabbix-rebrand-logo`. Persistent settings remain in `local/conf/rebrand/`.
-
 ## Notes
 
 - Each file is limited to 2 MB, subject to PHP's upload limits. On save, a login image with pending crop changes or a file over the limit is exported as a PNG that fits the limit.
 - To keep an animated GIF, upload the original within the file size limit and skip cropping. ICO is recommended for the browser favicon.
 - If an old image still appears after updating it, try a hard refresh. A private browser window can help verify favicon changes.
+
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
 
 ## Development
 
@@ -114,6 +114,21 @@ Run the server name regression test with PHP 8.1 or later on the command line:
 php zabbix_rebrand_logo/tests/ServerNameOverrideTest.php
 ```
 
-## Acknowledgements
+### Acknowledgements
 
 Thanks to [Keberneth](https://github.com/Keberneth) for creating and sharing the original [Zabbix Branding module](https://github.com/Keberneth/Zabbix-Modules/tree/main/Branding), on which this module is based.
+
+## Module Configuration
+
+### Upgrade from the old directory
+
+1. Back up the old module directory, `local/conf/rebrand/`, and `local/conf/brand.conf.php`. Disable the old module in the module list.
+2. Move the old module directory (`zabbix_brand_logo`, `zabbix_branding`, or `Branding`) outside the frontend's `modules/` directory. Scan the directory to clear its registration.
+3. Install `zabbix_rebrand_logo`, scan again, and enable it. If any legacy settings or images exist only in the old module's `assets/logos/` directory, copy them to the corresponding directory in the new module.
+4. Open the module and click **Update** to rewrite the image URLs in `brand.conf.php` for the new directory. If you use a favicon symlink, update it to point to the new directory as well.
+
+The module ID is `zabbix-rebrand-logo`. Persistent settings remain in `local/conf/rebrand/`.
+
+## License
+
+See the repository [license terms](../README_en.md#license). Preserve third-party attribution when redistributing.

@@ -2,6 +2,8 @@
 
 namespace Modules\ZabbixIpam\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
 use CController;
 use Modules\ZabbixIpam\Lib\HostMatcher;
 use Modules\ZabbixIpam\Lib\IpScanner;
@@ -102,7 +104,7 @@ class IpAjax extends CController {
             }
         }
         catch (\Throwable $exception) {
-            $output = ['ok' => false, 'message' => LanguageManager::t($exception->getMessage())];
+            $output = ['ok' => false, 'message' => LanguageManager::t(\ZabbixModuleNotice::failure($exception, dirname(__DIR__), [dirname(__DIR__).'/data']))];
         }
 
         header('Content-Type: application/json; charset=UTF-8');

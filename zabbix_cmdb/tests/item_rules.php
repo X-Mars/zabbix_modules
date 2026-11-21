@@ -3,7 +3,7 @@
 $fixture = sys_get_temp_dir().'/cmdb-rules-'.bin2hex(random_bytes(6));
 mkdir($fixture.'/lib', 0700, true);
 mkdir($fixture.'/data', 0700);
-foreach (['ItemConfig.php', 'ItemFinder.php', 'LanguageManager.php'] as $file) {
+foreach (['ItemConfig.php', 'ItemFinder.php', 'LanguageManager.php', 'ModuleNotice.php'] as $file) {
     copy(dirname(__DIR__).'/lib/'.$file, $fixture.'/lib/'.$file);
 }
 copy(dirname(__DIR__).'/data/item_rules.json', $fixture.'/data/item_rules.json');

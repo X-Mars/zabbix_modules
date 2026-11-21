@@ -1,9 +1,13 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
+require_once dirname(__DIR__).'/lib/SecurityToken.php';
 
 use Modules\ZabbixBackupRestore\Lib\LanguageManager;
 
-$t = static fn(string $text): string => htmlspecialchars(LanguageManager::t($text), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-$escape = static fn(string $text): string => htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$t = static function (string $text): string  { return htmlspecialchars(LanguageManager::t($text), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
+$escape = static function (string $text): string  { return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
 
 ob_start();
 ?>
@@ -23,7 +27,7 @@ ob_start();
 			<section class="zbr-card" aria-labelledby="zbr-export-title">
 				<header><h2 id="zbr-export-title"><?= $t('Export backup') ?></h2></header>
 				<form id="zbr-export" action="zabbix.php?action=backuprestore" method="post">
-					<input type="hidden" name="<?= $escape(CSRF_TOKEN_NAME) ?>" value="<?= $escape($data['token']) ?>">
+					<input type="hidden" name="<?= $escape(\Modules\ZabbixBackupRestore\Lib\SecurityToken::name()) ?>" value="<?= $escape($data['token']) ?>">
 					<div class="zbr-section-heading">
 						<h3><?= $t('Configuration to export') ?></h3>
 						<label class="zbr-choice"><input type="checkbox" id="zbr-select-all"><?= $t('Select all') ?></label>
@@ -54,7 +58,7 @@ ob_start();
 			<section class="zbr-card" aria-labelledby="zbr-restore-title">
 				<header><h2 id="zbr-restore-title"><?= $t('Restore backup') ?></h2></header>
 				<form id="zbr-restore" action="zabbix.php?action=backuprestore" method="post" enctype="multipart/form-data">
-					<input type="hidden" name="<?= $escape(CSRF_TOKEN_NAME) ?>" value="<?= $escape($data['token']) ?>">
+					<input type="hidden" name="<?= $escape(\Modules\ZabbixBackupRestore\Lib\SecurityToken::name()) ?>" value="<?= $escape($data['token']) ?>">
 					<label class="zbr-upload" for="zbr-file">
 						<input id="zbr-file" type="file" name="yaml" accept=".yaml,.yml" aria-describedby="zbr-file-help">
 						<span><strong><?= $t('Choose a YAML file') ?></strong> <?= $t('or drag it here') ?></span>
@@ -101,4 +105,12 @@ ob_start();
 <?php
 $content = new CObject();
 $content->addItem(ob_get_clean());
-(new CHtmlPage())->setTitle(LanguageManager::t('Backup and restore'))->addItem($content)->show();
+$page = ((class_exists('CHtmlPage') ? new CHtmlPage() : new CWidget()))->setTitle(LanguageManager::t('Backup and restore'))->addItem($content);
+
+// Zabbix 6.0 ignores manifest.assets; load scoped assets with this view.
+if (!class_exists('CHtmlPage')) {
+    $page->addItem(new CTag('style', true, (new CObject())->addItem(file_get_contents(dirname(__DIR__).'/assets/css/backuprestore.css'))));
+    $page->addItem((new CTag('script', true))->setAttribute('src',
+        'modules/'.basename(dirname(__DIR__)).'/assets/js/backuprestore.js?v='.filemtime(dirname(__DIR__).'/assets/js/backuprestore.js')));
+}
+$page->show();

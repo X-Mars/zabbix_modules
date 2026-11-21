@@ -16,9 +16,15 @@
         },
         "widget.zabbix-switch-visual.sparkline": {
             "class": "WidgetSparkline"
+        },
+        "switchvisual.view": {
+            "class": "StandaloneView",
+            "view": "widget.view"
         }
     },
     "assets": {
-        "js": ["class.widget.js"]
+        "js": [
+            "class.widget.js"
+        ]
     }
 }

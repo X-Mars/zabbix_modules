@@ -2,15 +2,11 @@
 
 [English](README_en.md)
 
+![WeChat](images/wechat.jpg)![公众号](images/gongzhonghao.jpg)
+
 ## 自2026年11月15日起
 
 ![本项目被访问次数](https://zabbix.huoxingxiaoliu.com/api/visits?repository=zabbix_modules)
-
-## ✨ 版本兼容性
-
-不同模块的适用版本和部署要求不同，请以各模块 README 的兼容性说明为准。
-
-Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 7.0.32 与 8.0.0 验证。各版本的验证范围见[组件兼容性说明](./zabbix_switch_visual/README.md#版本兼容性)。
 
 ## 描述
 
@@ -38,6 +34,34 @@ Zabbix Switch Visual 的组件加载、配置表单和默认视图已在 Zabbix 
 | 14 | [Zabbix Database Export（数据库导出）](./zabbix_database_export/README.md) | `3.0.4` | 自动识别 MySQL、MariaDB 或 PostgreSQL，显示数据库版本并导出表结构和数据，支持下载或服务器保存。 |
 | 15 | [Zabbix LLDP Topology](./zabbix_lldp/README.md) | `1.0.0-beta` | 根据 Zabbix 的 LLDP 发现监控项绘制设备邻居拓扑，支持按主机组或主机筛选和查看链路端口。 |
 | 16 | [Zabbix Backup and Restore（配置备份与还原）](./zabbix_backup_restore/README.md) | `1.1.0` | 按类别将主机、模板、用户和权限等 Zabbix 配置导出为 YAML，支持在目标实例预览并还原。 |
+
+## 兼容性测试结果
+
+| 模块 | 页数/环境 | 6.0 | 7.0 | 8.0 | 详细说明 |
+| --- | ---: | --- |--- | --- | --- |
+| `zabbix_assets_export_import` | 1 | 通过 | 通过 | 通过 | [README](zabbix_assets_export_import/README.md) |
+| `zabbix_auto_topology_map` | 1 | 通过 | 通过 | 通过 | [README](zabbix_auto_topology_map/README.md) |
+| `zabbix_backup_restore` | 1 | 通过 | 通过 | 通过 | [README](zabbix_backup_restore/README.md) |
+| `zabbix_clonehosts` | 1 | 通过 | 通过 | 通过 | [README](zabbix_clonehosts/README.md) |
+| `zabbix_clouds` | 2 | 通过 | 通过 | 通过 | [README](zabbix_clouds/README.md) |
+| `zabbix_cmdb` | 3 | 通过 | 通过 | 通过 | [README](zabbix_cmdb/README.md) |
+| `zabbix_database_export` | 1 | 通过 | 通过 | 通过 | [README](zabbix_database_export/README.md) |
+| `zabbix_export_import` | 3 | 通过 | 通过 | 通过 | [README](zabbix_export_import/README.md) |
+| `zabbix_graphtrees` | 1 | 通过 | 通过 | 通过 | [README](zabbix_graphtrees/README.md) |
+| `zabbix_im` | 2 | 通过 | 通过 | 通过 | [README](zabbix_im/README.md) |
+| `zabbix_ipam` | 3 | 通过 | 通过 | 通过 | [README](zabbix_ipam/README.md) |
+| `zabbix_jumpserver` | 1 | 通过 | 通过 | 通过 | [README](zabbix_jumpserver/README.md) |
+| `zabbix_lldp` | 1 | 通过 | 通过 | 通过 | [README](zabbix_lldp/README.md) |
+| `zabbix_performance_report` | 2 | 通过 | 通过 | 通过 | [README](zabbix_performance_report/README.md) |
+| `zabbix_rack` | 2 | 通过 | 通过 | 通过 | [README](zabbix_rack/README.md) |
+| `zabbix_rebrand_logo` | 1 | 通过 | 通过 | 通过 | [README](zabbix_rebrand_logo/README.md) |
+| `zabbix_reports` | 4 | 通过 | 通过 | 通过 | [README](zabbix_reports/README.md) |
+| `zabbix_rightsizing` | 1 | 通过 | 通过 | 通过 | [README](zabbix_rightsizing/README.md) |
+| `zabbix_snmp` | 2 | 通过 | 通过 | 通过 | [README](zabbix_snmp/README.md) |
+| `zabbix_switch_backup` | 1 | 通过 | 通过 | 通过 | [README](zabbix_switch_backup/README.md) |
+| `zabbix_switch_visual` | 1 | 通过 | 通过 | 通过 | [README](zabbix_switch_visual/README.md) |
+
+## 模块介绍
 
 ### 1. Zabbix Reports
 

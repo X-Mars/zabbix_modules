@@ -11,7 +11,7 @@ final class Bundle {
 	public const TLS_FIELDS = 'tls_connect tls_accept tls_issuer tls_subject tls_psk_identity tls_psk';
 
 	public static function supports(string $version): bool {
-		return preg_match('/^(?:7|8)\.0(?:\.\d+)?(?:[a-z][a-z0-9.-]*)?$/iD', $version) === 1;
+		return preg_match('/^(?:6|7|8)\.0(?:\.\d+)?(?:[a-z][a-z0-9.-]*)?$/iD', $version) === 1;
 	}
 
 	public static function read($stream, string $target_version): array {
@@ -34,7 +34,7 @@ final class Bundle {
 		$native = $data['configuration'];
 		if ($native !== []) {
 			$allowed = array_merge(['version', 'graphs', 'triggers'],
-				array_column(array_intersect_key(Catalog::NATIVE, Catalog::labels($data['source_version'])), 3));
+				array_column(array_intersect_key(Catalog::native($data['source_version']), Catalog::labels($data['source_version'])), 3));
 			if (($native['version'] ?? null) !== substr($data['source_version'], 0, 3)
 					|| array_diff(array_keys($native), $allowed)) {
 				throw self::invalid();
@@ -44,6 +44,9 @@ final class Bundle {
 			}
 		}
 		foreach ($data['records'] as $type => $rows) {
+			if (version_compare($data['source_version'], '6.4', '<') && $rows) {
+				throw self::invalid();
+			}
 			self::checkRows($rows);
 			$seen = [];
 			foreach ($rows as $row) {
@@ -82,7 +85,7 @@ final class Bundle {
 
 	public static function counts(array $data): array {
 		$counts = [];
-		foreach (Catalog::NATIVE as $type => [, , , $field]) {
+		foreach (Catalog::native($data['source_version']) as $type => [, , , $field]) {
 			if (isset($data['configuration'][$field]) && $data['configuration'][$field] !== []) {
 				$counts[$type] = count($data['configuration'][$field]);
 			}

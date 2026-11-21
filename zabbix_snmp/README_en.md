@@ -4,14 +4,11 @@
 
 ## ✨ Version Compatibility
 
-This module is compatible with Zabbix 6.0 / 7.0+ / 8.0+.
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**Compatibility Note**: The module includes intelligent version detection that automatically adapts to different Zabbix API versions and class libraries, requiring no manual configuration.
+| Zabbix | PHP | manifest_version | Result |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | Recognized, enabled; pages pass |
+| 7.0.32 | 8.0.30 | 2.0 | Recognized, enabled; pages pass |
+| 8.0.0 | 8.4.27 | 2.0 | Recognized, enabled; pages pass |
 
 ## Description
 
@@ -74,28 +71,16 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_snmp/manifest
 3. Find the "Zabbix SNMP" module and enable it.
 4. Refresh the page. The module will appear under the **Data collection** menu as "SNMP Assistant" submenu, containing "Zabbix Mibs" and "Zabbix Walk" subitems.
 
-## Default directories
-
-- `/usr/share/snmp/mibs`
-- `/usr/local/share/snmp/mibs`
-- `/usr/share/mibs`
-- `/usr/local/share/mibs`
-- `/var/lib/mibs`
-- `/usr/share/net-snmp/mibs`
-- `/opt/share/snmp/mibs`
-- `/opt/local/share/snmp/mibs`
-- `C:\usr\share\snmp\mibs`
-- `C:\usr\local\share\snmp\mibs`
-- `C:\net-snmp\share\snmp\mibs`
-- `C:\Program Files\Net-SNMP\share\snmp\mibs`
-- `C:\Program Files (x86)\Net-SNMP\share\snmp\mibs`
-
 ## Notes
 
 - **Required commands**: The SNMP Walk feature relies on the `net-snmp` tools (`snmpwalk` / `snmpget` / `snmptranslate`) being installed on the Zabbix web server.
 - **Directory permissions**: If the Zabbix web user cannot read a directory, the page can still list the directory entry but cannot load file content.
 - **Template naming limitation**: Zabbix template technical names only allow English letters, numbers, dots (.), underscores (_) and hyphens (-); Chinese is not supported. Template group names may use Chinese.
 - **Performance**: For very large walk results, the result table uses client-side pagination to keep the page responsive.
+
+### Directory ownership and save errors
+
+Module pages show an ownership command only when the directory owner or group differs from the PHP runtime account. Correct ownership produces no reminder. Save errors retain their original message and add directory ownership and SELinux (`getenforce`) reminders. Text follows the Zabbix Web user language. No extra dialogs or command panels are added.
 
 ## Development
 
@@ -116,6 +101,24 @@ The module is built on the Zabbix module framework. File structure:
 - `lib/ZabbixVersion.php`: Version compatibility utilities
 
 For extensions, refer to [Zabbix module documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules).
+
+## Module Configuration
+
+### Default directories
+
+- `/usr/share/snmp/mibs`
+- `/usr/local/share/snmp/mibs`
+- `/usr/share/mibs`
+- `/usr/local/share/mibs`
+- `/var/lib/mibs`
+- `/usr/share/net-snmp/mibs`
+- `/opt/share/snmp/mibs`
+- `/opt/local/share/snmp/mibs`
+- `C:\usr\share\snmp\mibs`
+- `C:\usr\local\share\snmp\mibs`
+- `C:\net-snmp\share\snmp\mibs`
+- `C:\Program Files\Net-SNMP\share\snmp\mibs`
+- `C:\Program Files (x86)\Net-SNMP\share\snmp\mibs`
 
 ## License
 

@@ -11,10 +11,10 @@ namespace Modules\SwitchVisual\Includes;
  */
 class Translation {
 
-	private static ?bool $zh = null;
+	/** @var ?bool */ private static $zh = null;
 
 	/** English source string → 简体中文 */
-	private static array $dict = [
+	/** @var array */ private static $dict = [
 		// Widget / general
 		'Zabbix Switch Visual' => 'Zabbix 交换机可视化',
 

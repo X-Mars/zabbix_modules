@@ -22,5 +22,5 @@ class TaskManager {
     private function fail(string $id,string $message):void{$t=$this->storage->task($id);if(!$t)return;$t['status']='failed';$t['error']=$message;$t['updated_at']=gmdate('c');$this->storage->saveTask($t);}
     public function stop(string $id):void{$t=$this->storage->task($id);if(!$t)throw new \InvalidArgumentException('Task not found');if(in_array($t['status'],['pending','running'],true)){$t['status']='stopped';$t['updated_at']=gmdate('c');$this->storage->saveTask($t);}}
     /** Every cron invocation schedules all enabled ranges; the crontab expression defines the interval. */
-    public function due():array{return array_values(array_filter($this->storage->ranges(),fn($r)=>!empty($r['enabled'])));}
+    public function due():array{return array_values(array_filter($this->storage->ranges(),function ($r) { return !empty($r['enabled']); }));}
 }

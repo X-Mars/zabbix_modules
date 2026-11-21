@@ -12,6 +12,7 @@ class RackConfig {
     
     private static $configFile = null;
     private static $config = null;
+    private static $lastError = '';
     
     /**
      * 获取配置文件路径
@@ -26,11 +27,14 @@ class RackConfig {
     /**
      * 确保数据目录存在
      */
-    private static function ensureDataDir(): void {
+    private static function ensureDataDir(): bool {
         $dataDir = dirname(self::getConfigFile());
         if (!is_dir($dataDir)) {
-            mkdir($dataDir, 0755, true);
+            if (!@mkdir($dataDir, 0750, true) && !is_dir($dataDir)) {
+                return self::storageFailure('Cannot create data directory', $dataDir);
+            }
         }
+        return true;
     }
     
     /**
@@ -60,11 +64,51 @@ class RackConfig {
      * 保存配置
      */
     public static function save(array $config): bool {
-        self::ensureDataDir();
-        self::$config = $config;
-        
+        self::$lastError = '';
+        if (!self::ensureDataDir()) {
+            return false;
+        }
         $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        return file_put_contents(self::getConfigFile(), $json) !== false;
+        if ($json === false) {
+            self::$lastError = 'Cannot encode configuration: '.json_last_error_msg();
+            error_log('[Zabbix Rack] '.self::$lastError);
+            return false;
+        }
+        // Keep the previous file and cached state intact if writing fails.
+        // Suppress PHP warnings here so the AJAX response remains valid JSON;
+        // retain the OS error in the server log instead.
+        $temporary = @tempnam(self::getDataDir(), '.rack-');
+        if ($temporary === false) {
+            return self::storageFailure('Cannot create temporary configuration', self::getDataDir());
+        }
+        try {
+            if (dirname($temporary) !== self::getDataDir()) {
+                return self::storageFailure('Temporary file fell back outside data directory', self::getDataDir());
+            }
+            if (@file_put_contents($temporary, $json, LOCK_EX) !== strlen($json)) {
+                return self::storageFailure('Cannot write configuration', self::getConfigFile());
+            }
+            if (!@rename($temporary, self::getConfigFile())) {
+                return self::storageFailure('Cannot replace configuration', self::getConfigFile());
+            }
+            self::$config = $config;
+            return true;
+        } finally {
+            if (is_file($temporary)) {
+                @unlink($temporary);
+            }
+        }
+    }
+
+    private static function storageFailure(string $operation, string $path): bool {
+        $error = error_get_last();
+        self::$lastError = $operation.' ('.$path.'). Check file/directory ownership and SELinux policy.';
+        error_log('[Zabbix Rack] '.self::$lastError.' '.($error['message'] ?? ''));
+        return false;
+    }
+
+    public static function getLastError(): string {
+        return self::$lastError;
     }
     
     /**

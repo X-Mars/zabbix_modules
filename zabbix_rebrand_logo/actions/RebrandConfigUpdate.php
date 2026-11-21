@@ -2,6 +2,10 @@
 
 namespace Modules\ZabbixRebrandLogo\Actions;
 
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+
+require_once dirname(__DIR__).'/lib/SecurityToken.php';
+
 use CController;
 use CControllerResponseRedirect;
 use CMessageHelper;
@@ -93,15 +97,15 @@ class RebrandConfigUpdate extends CController {
 			$errors = [];
 
 			if (!$this->ensureDirectory($local_conf_dir)) {
-				$errors[] = 'Could not create or access '.$local_conf_dir.'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+				$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [['path' => $local_conf_dir, 'recursive' => false, 'files' => ['brand.conf.php']]]);
 			}
 
 			if (!$this->ensureDirectory($config_storage_dir)) {
-				$errors[] = 'Could not create or access '.$config_storage_dir.'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+				$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [$config_storage_dir]);
 			}
 
 			if (!$this->ensureDirectory($logo_storage_dir)) {
-				$errors[] = 'Could not create or access '.$logo_storage_dir.'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+				$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [['path' => $logo_storage_dir, 'public' => true]]);
 			}
 
 			$config = $this->loadStoredConfig($config_storage_dir, $logo_storage_dir);
@@ -190,7 +194,7 @@ class RebrandConfigUpdate extends CController {
 
 			if ($config_json !== null
 					&& !$this->writeFileAtomically($this->getConfigFilePath($config_storage_dir), $config_json)) {
-				$errors[] = 'Could not write '.$this->getConfigFilePath($config_storage_dir).'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+				$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [dirname($this->getConfigFilePath($config_storage_dir))]);
 			}
 
 			$brand_error = $this->writeBrandConf($config, $frontend_root, $logo_storage_url, $runtime_user);
@@ -200,8 +204,11 @@ class RebrandConfigUpdate extends CController {
 
 			if ($errors) {
 				CMessageHelper::setErrorTitle(LanguageManager::t('Cannot update branding.'));
+				if (strpos(implode("\n", $errors), 'getenforce') === false) {
+					$errors[] = \ZabbixModuleNotice::storageText($this->getModuleDir(), [$config_storage_dir]);
+				}
 				foreach ($errors as $error) {
-					CMessageHelper::addError($error);
+					CMessageHelper::addError(\ZabbixModuleNotice::translate($error));
 				}
 				$response->setFormData($this->getInputAll());
 			}
@@ -213,7 +220,8 @@ class RebrandConfigUpdate extends CController {
 			$this->logRuntimeError('Branding update failed', $exception);
 			CMessageHelper::setErrorTitle(LanguageManager::t('Branding update failed.'));
 			CMessageHelper::addError(
-				LanguageManager::t('Check write access for local/conf and review the web server error log.')
+				LanguageManager::t('Check write access for local/conf and review the web server error log.')."\n".
+				\ZabbixModuleNotice::storageText($this->getModuleDir(), [])
 			);
 			$response->setFormData($this->getInputAll());
 		}
@@ -247,7 +255,7 @@ class RebrandConfigUpdate extends CController {
 
 		if (!$brand_data) {
 			if (is_file($conf_file) && !@unlink($conf_file)) {
-				return 'Could not remove '.$conf_file.'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+				return \ZabbixModuleNotice::storageText($this->getModuleDir(), [['path' => dirname($conf_file), 'recursive' => false, 'files' => [basename($conf_file)]]]);
 			}
 
 			return null;
@@ -256,7 +264,7 @@ class RebrandConfigUpdate extends CController {
 		$content = "<?php\n\nreturn ".var_export($brand_data, true).";\n";
 
 		if (!$this->writeFileAtomically($conf_file, $content)) {
-			return 'Could not write '.$conf_file.'. Grant write access to '.$runtime_user.' and ensure SELinux allows writes.';
+			return \ZabbixModuleNotice::storageText($this->getModuleDir(), [['path' => dirname($conf_file), 'recursive' => false, 'files' => [basename($conf_file)]]]);
 		}
 
 		return null;

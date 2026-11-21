@@ -19,7 +19,7 @@ class LanguageManager {
 	private const ZBX_DEFAULT_LANG = 'en_US';
 
 	/** 当前请求内缓存的语言，null 表示还没判定过。 */
-	private static ?string $currentLanguage = null;
+	/** @var ?string */ private static $currentLanguage = null;
 
 	/** 英文词典：键 = 中文原文，值 = 英文。 */
 	private const EN = [

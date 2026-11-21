@@ -1,4 +1,7 @@
 <?php
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
 require_once dirname(__DIR__) . '/lib/ViewRenderer.php';
@@ -96,7 +99,7 @@ $dateForm->addItem($groupDiv);
 
 $generateBtn = (new CButton('generate', LanguageManager::t('Generate Report')))
     ->addClass('rpt-btn rpt-btn-primary')
-    ->setAttribute('onclick', 'var f=document.getElementById("from_date").value,t=document.getElementById("to_date").value,g=document.getElementById("custom_groupid").value;if(!f||!t){alert("Please select dates");return;}var u="zabbix.php?action=reports.custom&generate=1&from_date="+encodeURIComponent(f)+"&to_date="+encodeURIComponent(t);if(g)u+="&groupid="+encodeURIComponent(g);window.location.href=u;');
+    ->setAttribute('onclick', 'var f=document.getElementById("from_date").value,t=document.getElementById("to_date").value,g=document.getElementById("custom_groupid").value;if(!f||!t){alert(' . json_encode(\ZabbixModuleNotice::translate('Please select dates'), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) . ');return;}var u="zabbix.php?action=reports.custom&generate=1&from_date="+encodeURIComponent(f)+"&to_date="+encodeURIComponent(t);if(g)u+="&groupid="+encodeURIComponent(g);window.location.href=u;');
 $dateForm->addItem($generateBtn);
 $content->addItem($dateForm);
 

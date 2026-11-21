@@ -4,14 +4,11 @@
 
 ## ✨ 版本兼容性
 
-本模块兼容 Zabbix 6.0 / 7.0+ / 8.0+ 版本。
-
-- ✅ Zabbix 6.0.x
-- ✅ Zabbix 7.0.x
-- ✅ Zabbix 7.4.x
-- ✅ Zabbix 8.0.x
-
-**兼容性说明**：模块内置智能版本检测机制，自动适配不同版本的 Zabbix API 和类库，无需手动配置。
+| Zabbix | PHP | manifest_version | 结果 |
+|---|---|---|---|
+| 6.0.49 | 7.3.33 | 1.0 | 可识别、可启用；页面通过 |
+| 7.0.32 | 8.0.30 | 2.0 | 可识别、可启用；页面通过 |
+| 8.0.0 | 8.4.27 | 2.0 | 可识别、可启用；页面通过 |
 
 ## 描述
 
@@ -53,6 +50,65 @@ git clone https://github.com/X-Mars/zabbix_modules.git /usr/share/zabbix/ui/modu
 # ⚠️ 如果使用 Zabbix 6.0，修改 manifest_version
 sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.json
 ```
+
+### 启用模块
+
+1. 转到 **Administration → General → Modules**。
+2. 点击 **Scan directory** 扫描新模块。
+3. 找到 **IM Sync Assistant** 模块并启用。
+4. 刷新页面，在 **Users** 菜单下会出现 **IM同步助手**。
+
+## 注意事项
+
+### 权限要求
+
+- 查看页面与同步部门需要 **Zabbix Admin** 权限。
+- **同步设置**（增删改、启用/停用凭据）需要 **Super Admin** 权限，因其涉及应用密钥管理。
+- **同步所有用户**（含自动创建用户）需要 **Super Admin** 权限（Zabbix 7 的 `user.create` 仅 Super Admin 可调用）。
+- IM 应用需开通通讯录读取相关 API 权限。
+
+- **保护策略**：系统自带或手工创建的用户/用户组**不会被删除或修改**；模块仅管理记录在 `data/sync_registry.json` 中的对象。
+- **用户类型**：
+  - `created`：模块自动创建的用户，可随 IM 变更增删改。
+  - `linked`：匹配到已有 Zabbix 用户的 IM 成员，仅同步用户组成员关系，**不删除账号**。
+- **用户组冲突**：若 IM 部门名称对应的用户组已存在但非模块创建，将跳过该部门并记录日志。
+- **手工成员**：模块管理用户组中手工加入的非模块用户，同步时会被保留。
+- **自动创建用户**：新用户密码由模块自动生成（12 位大小写字母 + 数字），并在「同步所有用户」结果中**仅展示一次**，请及时保存；Zabbix 7+ 还需配置 `default_roleid`；须用 Super Admin 执行同步。
+- **手动删除用户**：若在 Zabbix 中手动删除了模块同步的用户，再次同步时会自动清理注册表记录并重新创建。
+- **多部门用户**：同一用户可属于多个 IM 部门，会加入多个 Zabbix 用户组。
+- **网络访问**：Zabbix Web 需能访问对应 IM 开放平台 API。
+- **钉钉用户名变更**：若此前已用 `userid` 同步，启用手机号/拼音策略后可能创建新账号而非匹配旧账号；调整策略前建议先预览。
+- **PHP 扩展**：钉钉姓名转拼音需要 `iconv` 或 `mbstring`（二者有其一即可）。
+
+### 目录归属与保存提示
+
+仅当模块目录的属主或属组与 PHP 运行账号不匹配时，显示实际安装目录的归属修改命令；归属正确时不显示提醒。保存失败时，在原错误提示中补充修改目录归属和 `getenforce` 检查 SELinux 的提醒。提示跟随 Zabbix Web 用户语言，不增加弹窗或命令折叠区。
+
+## 开发
+
+模块基于 Zabbix 模块框架，文件结构：
+
+- `manifest.json`：模块配置
+- `Module.php`：菜单注册（IM 同步 / 同步设置）
+- `actions/Im.php`：主页面业务逻辑
+- `actions/ImSync.php` / `ImSyncUsers.php`：同步 API
+- `actions/ImPreview.php`：预览 API
+- `actions/ImSettings.php` / `ImSettingsSave.php` / `ImSettingsDelete.php` / `ImSettingsEnable.php`：同步设置 CRUD
+- `views/im.php` / `im.settings.php`：页面视图
+- `lib/ImSyncService.php`：同步核心逻辑
+- `lib/WeComClient.php` / `FeishuClient.php` / `DingTalkClient.php`：IM 平台客户端
+- `lib/PinyinHelper.php`：中文姓名转拼音（钉钉无手机号时使用）
+- `lib/ConfigManager.php`：配置管理（多套 settings、单启用、旧格式迁移）
+- `lib/SyncRegistry.php`：模块创建对象的注册表
+- `lib/LanguageManager.php`：国际化
+- `data/config.json`：连接配置（`settings` 列表）
+- `data/sync_registry.json`：同步注册表（运行时生成）
+
+### 国际化
+
+界面文案统一由 `lib/LanguageManager.php` 管理，支持 **中文（zh_CN）** 与 **英文（en_US）**。语言检测顺序与 Zabbix 一致：当前用户语言 → 系统默认语言 → `en_US`。菜单、页面、弹窗、API 错误提示及 IM 客户端异常信息均已接入翻译；第三方 API 返回的原始错误码/消息仍可能为英文。
+
+## 模块配置
 
 ### 配置 IM 数据源
 
@@ -96,7 +152,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 
 > 兼容旧版：若 `config.json` 仍是旧格式（顶层 `provider` + `wecom`/`feishu`/`dingtalk` 段落），模块会在加载时自动迁移为 `settings` 列表，原 `provider` 对应的平台默认设为启用。
 
-#### 配置说明
+##### 配置说明
 
 > 下表中 `provider` 与各平台凭据现已通过「同步设置」界面填写，无需手工编辑；其余全局选项仍可在 `config.json` 顶层调整。
 
@@ -116,7 +172,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 | `default_user_type` | int | Zabbix 6.x 自动创建用户时的用户类型：`1` 用户 / `2` 管理员 / `3` 超级管理员（一般填 `1` 或 `2`）。 |
 | `verify_ssl` | bool | 访问 IM 开放平台 API 时是否校验 HTTPS 证书。内网代理或自签证书环境可设为 `false`。 |
 
-#### 各平台 Zabbix 用户名规则
+##### 各平台 Zabbix 用户名规则
 
 模块固定按 **username** 匹配/创建 Zabbix 用户，各平台 `username` 来源如下：
 
@@ -140,7 +196,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 
 > **重要**：请使用**自建应用 Secret**，不要使用「管理工具 → 通讯录同步」的通讯录同步 Secret。自 2022 年 8 月 15 日起，通讯录同步助手对新 IP 调用成员/部门详情接口已受限（错误码 `48009`），详见[通讯录同步接口调整说明](https://developer.work.weixin.qq.com/document/path/90193)。
 
-#### 企业微信应用创建与配置步骤
+##### 企业微信应用创建与配置步骤
 
 1. **创建企业自建应用**  
    登录 [企业微信管理后台](https://work.weixin.qq.com/wework_admin/frame)，进入 **应用管理 → 应用 → 自建 → 创建应用**。本模块只需服务端 API 拉取通讯录，无需配置网页授权、回调 URL 等客户端能力（除非后续需要 OAuth 获取敏感字段）。
@@ -187,7 +243,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 7. **在 Zabbix 中启用**  
    进入 **Users → 同步设置** → 添加企业微信设置 → 填写 `Corp ID`、`Corp Secret`、`root_department_id` → 保存并启用 → 在 **IM 同步** 页面预览/同步。
 
-#### 企业微信配置示例
+##### 企业微信配置示例
 
 ```json
 {
@@ -201,7 +257,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 }
 ```
 
-#### 企业微信常见问题排查
+##### 企业微信常见问题排查
 
 | 现象 / 错误 | 可能原因 | 处理建议 |
 |------------|---------|---------|
@@ -227,7 +283,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 | `app_secret` | 飞书自建应用的 **App Secret** |
 | `root_department_id` | 同步根部门的部门 ID。填 `"0"` 表示从企业根部门开始递归同步；也可填写具体部门的 `open_department_id`（如 `od-xxxxxxxx`），仅同步该部门及其子部门 |
 
-#### 飞书应用创建与配置步骤
+##### 飞书应用创建与配置步骤
 
 1. **创建企业自建应用**  
    登录 [飞书开发者后台](https://open.feishu.cn/app)，按[自建应用开发流程](https://open.feishu.cn/document/home/introduction-to-custom-app-development/self-built-application-development-process)创建应用。本模块只需服务端 API，无需开启机器人、网页应用等客户端能力。
@@ -287,7 +343,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 7. **在 Zabbix 中启用**  
    进入 **Users → 同步设置** → 添加飞书设置 → 填写 `App ID`、`App Secret`、`root_department_id` → 保存并启用 → 在 **IM 同步** 页面预览/同步。
 
-#### 飞书配置示例
+##### 飞书配置示例
 
 ```json
 {
@@ -301,7 +357,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 }
 ```
 
-#### 飞书常见问题排查
+##### 飞书常见问题排查
 
 | 现象 / 错误 | 可能原因 | 处理建议 |
 |------------|---------|---------|
@@ -326,7 +382,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 
 > **重要**：请使用**企业内部应用**，不要使用第三方企业应用。第三方应用通常**不返回**手机号、邮箱等个人信息字段；本模块需读取部门与成员详情，企业内部应用更合适。
 
-#### 钉钉应用创建与配置步骤
+##### 钉钉应用创建与配置步骤
 
 1. **创建企业内部应用**  
    使用管理员账号登录 [钉钉开放平台](https://open.dingtalk.com/) → **应用开发 → 企业内部开发 → 创建应用**。本模块只需服务端 API 拉取通讯录，无需配置机器人、网页应用等客户端能力。参见[获取企业下所有员工信息（教程）](https://open.dingtalk.com/document/orgapp/obtains-information-about-all-employees-of-an-enterprise)。
@@ -376,7 +432,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 8. **在 Zabbix 中启用**  
    进入 **Users → 同步设置** → 添加钉钉设置 → 填写 `App Key`、`App Secret`、`root_department_id` → 保存并启用 → 在 **IM 同步** 页面预览/同步。
 
-#### 钉钉配置示例
+##### 钉钉配置示例
 
 ```json
 {
@@ -390,7 +446,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 }
 ```
 
-#### 钉钉常见问题排查
+##### 钉钉常见问题排查
 
 | 现象 / 错误 | 可能原因 | 处理建议 |
 |------------|---------|---------|
@@ -414,14 +470,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 - 用户组名称不加前缀，与 IM 部门名一致。
 - 用户匹配固定为 **username**（企业微信/飞书使用 IM 账号 ID；**钉钉优先使用手机号**，无手机号时使用姓名拼音，仍无法生成时使用 `userid`）。
 
-### 启用模块
-
-1. 转到 **Administration → General → Modules**。
-2. 点击 **Scan directory** 扫描新模块。
-3. 找到 **IM Sync Assistant** 模块并启用。
-4. 刷新页面，在 **Users** 菜单下会出现 **IM同步助手**。
-
-## 使用说明
+### 使用说明
 
 1. 进入 **Users → 同步设置**，添加并启用一个同步设置（企业微信 / 飞书 / 钉钉）。
 2. 进入 **Users → IM同步助手 → IM 同步** 页面，顶部会显示当前启用的设置；可点击 **同步设置** 快速跳转管理页。
@@ -431,52 +480,6 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_im/manifest.j
 
 建议操作顺序：**配置并启用同步设置 → 预览部门 → 同步全部部门 → 同步所有用户**。
 
-## 权限要求
-
-- 查看页面与同步部门需要 **Zabbix Admin** 权限。
-- **同步设置**（增删改、启用/停用凭据）需要 **Super Admin** 权限，因其涉及应用密钥管理。
-- **同步所有用户**（含自动创建用户）需要 **Super Admin** 权限（Zabbix 7 的 `user.create` 仅 Super Admin 可调用）。
-- IM 应用需开通通讯录读取相关 API 权限。
-
-## 注意事项
-
-- **保护策略**：系统自带或手工创建的用户/用户组**不会被删除或修改**；模块仅管理记录在 `data/sync_registry.json` 中的对象。
-- **用户类型**：
-  - `created`：模块自动创建的用户，可随 IM 变更增删改。
-  - `linked`：匹配到已有 Zabbix 用户的 IM 成员，仅同步用户组成员关系，**不删除账号**。
-- **用户组冲突**：若 IM 部门名称对应的用户组已存在但非模块创建，将跳过该部门并记录日志。
-- **手工成员**：模块管理用户组中手工加入的非模块用户，同步时会被保留。
-- **自动创建用户**：新用户密码由模块自动生成（12 位大小写字母 + 数字），并在「同步所有用户」结果中**仅展示一次**，请及时保存；Zabbix 7+ 还需配置 `default_roleid`；须用 Super Admin 执行同步。
-- **手动删除用户**：若在 Zabbix 中手动删除了模块同步的用户，再次同步时会自动清理注册表记录并重新创建。
-- **多部门用户**：同一用户可属于多个 IM 部门，会加入多个 Zabbix 用户组。
-- **网络访问**：Zabbix Web 需能访问对应 IM 开放平台 API。
-- **钉钉用户名变更**：若此前已用 `userid` 同步，启用手机号/拼音策略后可能创建新账号而非匹配旧账号；调整策略前建议先预览。
-- **PHP 扩展**：钉钉姓名转拼音需要 `iconv` 或 `mbstring`（二者有其一即可）。
-
-## 开发
-
-模块基于 Zabbix 模块框架，文件结构：
-
-- `manifest.json`：模块配置
-- `Module.php`：菜单注册（IM 同步 / 同步设置）
-- `actions/Im.php`：主页面业务逻辑
-- `actions/ImSync.php` / `ImSyncUsers.php`：同步 API
-- `actions/ImPreview.php`：预览 API
-- `actions/ImSettings.php` / `ImSettingsSave.php` / `ImSettingsDelete.php` / `ImSettingsEnable.php`：同步设置 CRUD
-- `views/im.php` / `im.settings.php`：页面视图
-- `lib/ImSyncService.php`：同步核心逻辑
-- `lib/WeComClient.php` / `FeishuClient.php` / `DingTalkClient.php`：IM 平台客户端
-- `lib/PinyinHelper.php`：中文姓名转拼音（钉钉无手机号时使用）
-- `lib/ConfigManager.php`：配置管理（多套 settings、单启用、旧格式迁移）
-- `lib/SyncRegistry.php`：模块创建对象的注册表
-- `lib/LanguageManager.php`：国际化
-- `data/config.json`：连接配置（`settings` 列表）
-- `data/sync_registry.json`：同步注册表（运行时生成）
-
-### 国际化
-
-界面文案统一由 `lib/LanguageManager.php` 管理，支持 **中文（zh_CN）** 与 **英文（en_US）**。语言检测顺序与 Zabbix 一致：当前用户语言 → 系统默认语言 → `en_US`。菜单、页面、弹窗、API 错误提示及 IM 客户端异常信息均已接入翻译；第三方 API 返回的原始错误码/消息仍可能为英文。
-
-## License
+## 许可证
 
 本项目遵循 Zabbix 许可。详见 [Zabbix License](https://www.zabbix.com/license)。

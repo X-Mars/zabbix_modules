@@ -1,4 +1,7 @@
 <?php declare(strict_types = 1);
+require_once dirname(__DIR__).'/lib/ModuleNotice.php';
+echo \ZabbixModuleNotice::reminder(dirname(__DIR__));
+
 /*
 ** Zabbix
 ** Copyright (C) 2001-2024 Zabbix SIA

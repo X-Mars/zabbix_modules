@@ -8,6 +8,7 @@
     let messageTimer;
     window.RackUI = {
         message(text) {
+
             const previous = root.querySelector('.rack-message');
             if (previous) previous.remove();
             const box = document.createElement('div');
