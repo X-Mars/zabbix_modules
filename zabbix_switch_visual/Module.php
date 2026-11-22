@@ -1,6 +1,10 @@
 <?php
 namespace Modules\SwitchVisual;
 
+use Modules\SwitchVisual\Includes\Translation;
+
+require_once __DIR__.'/includes/Translation.php';
+
 if (class_exists('Zabbix\Core\CModule')) {
     class ModuleBase extends \Zabbix\Core\CModule {}
 } else {
@@ -12,6 +16,6 @@ if (class_exists('Zabbix\Core\CModule')) {
 class Module extends ModuleBase {
     public function init(): void {
         \APP::Component()->get('menu.main')->findOrAdd(_('Monitoring'))->getSubmenu()
-            ->add((new \CMenuItem('Switch visual'))->setAction('switchvisual.view'));
+            ->add((new \CMenuItem(Translation::t('Switch visual')))->setAction('switchvisual.view'));
     }
 }

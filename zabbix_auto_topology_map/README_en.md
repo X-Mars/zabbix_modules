@@ -1,6 +1,6 @@
 # Zabbix Auto Topology Map Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -34,7 +34,7 @@ The module reads and writes maps through native Zabbix APIs and shares the same 
 - **Automatic refresh**: Refreshes status and metrics every 60 seconds in preview mode. Refreshing pauses while editing or when the page is hidden.
 - **Native host menu**: Click a host in preview mode to open the native Zabbix host menu and access problems, latest data, graphs, and other pages.
 - **View persistence**: Remembers the user's last list or map view and supports zooming, panning, and fitting the map to the window.
-- **Localization and themes**: Displays Chinese or English according to the Zabbix user's language and supports light and dark themes.
+- **Localization and themes**: Displays Chinese, English, or Russian according to the Zabbix user's language and supports light and dark themes.
 
 ## Installation
 
@@ -97,7 +97,7 @@ The plugin is built on the Zabbix module framework. File structure:
 - `actions/TopomapData.php`: Data endpoints for map management, saving discovery results, metrics, and routing settings
 - `views/topomap.view.php`: Page view and dialog structure
 - `services/LldpDiscovery.php`: SNMP neighbor discovery, port parsing, and device matching
-- `lib/LanguageManager.php`: Chinese and English localization
+- `lib/LanguageManager.php`: Chinese, English, and Russian localization
 - `assets/js/topomap.js`: List, canvas, editing interactions, automatic discovery, and status refresh
 - `assets/css/topomap.css`: Page styles and theme support
 

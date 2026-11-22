@@ -1,6 +1,6 @@
 # Zabbix Clonehosts 模块
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -41,7 +41,7 @@
 
 - **结果报告导出**：导入完成后可下载 CSV 格式的结果报告（含主机名、IP、主机ID、结果、错误信息）
 
-- **中英文双语支持**：界面语言自动跟随 Zabbix 系统设置（`zh_CN` / `en_GB`），无需 gettext 依赖
+- **多语言支持**：界面语言自动跟随 Zabbix 用户语言，或继承系统默认语言，无需 gettext 依赖
 
 - **响应式设计**：适配不同屏幕尺寸
 
@@ -93,7 +93,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_clonehosts/ma
 - `manifest.json`：模块配置、路由和静态资源声明
 - `Module.php`：菜单注册（兼容 `Zabbix\Core\CModule` 与 `Core\CModule`）
 - `CompatHelper.php`：Zabbix 6.0/6.4/7.x/8.x API 兼容性辅助类
-- `LangHelper.php`：中英文国际化语言管理（纯 PHP 数组实现，无 gettext 依赖）
+- `LangHelper.php`：中文、英文和俄语语言管理（纯 PHP 数组实现，无 gettext 依赖）
 - `actions/Clonehosts.php`：主页面控制器（源主机选择、CSV 上传、表格录入）
 - `actions/ClonehostsSource.php`：AJAX 源主机配置加载接口
 - `actions/ClonehostsPreview.php`：预览页面控制器（冲突检测、字段状态）

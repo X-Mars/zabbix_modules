@@ -1,6 +1,6 @@
 # Zabbix Reports Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -30,7 +30,7 @@ Zabbix Reports is a frontend module for Zabbix that generates daily, weekly, and
   - Manual PDF export
   - Email delivery of reports (HTML format)
   - Custom date range selection
-- Internationalization: supports Chinese and English
+- Internationalization: supports Chinese, English, and Russian
 - Responsive design: adapts to different screen sizes
 - Modern UI: gradient colors and animation effects
 - Compatibility: supports Linux Agent and Windows Agent templates
@@ -92,6 +92,8 @@ See Zabbix module development docs for extension: https://www.zabbix.com/documen
 ## Module Configuration
 
 Select a host group and report period in the report menu. Generate a preview, then use the page actions to export PDF or send email.
+
+Russian PDF exports use TCPDF with a Unicode font. When TCPDF is unavailable, Russian reports download as printable HTML.
 
 ## License
 

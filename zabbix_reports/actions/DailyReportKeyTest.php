@@ -7,6 +7,10 @@ use CController,
     CControllerResponseFatal,
     API;
 
+use Modules\ZabbixReports\Lib\LanguageManager;
+
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 use Modules\ZabbixReports\Lib\ItemFinder;
 
@@ -40,33 +44,33 @@ class DailyReportKeyTest extends CController {
         
         if (empty($hosts)) {
             header('Content-Type: text/plain; charset=UTF-8');
-            echo "没有找到监控的主机。\n";
+            echo LanguageManager::t('没有找到监控的主机。') . "\n";
             exit;
         }
         
         header('Content-Type: text/plain; charset=UTF-8');
-        echo "=== 监控项Key测试工具 ===\n\n";
-        echo "测试指定的监控项Key:\n";
-        echo "- system.cpu.num (CPU内核总数)\n";
-        echo "- system.cpu.util (CPU使用率)\n";
-        echo "- vm.memory.size[total] (内存总量)\n";
-        echo "- vm.memory.utilization (内存使用率)\n\n";
+        echo LanguageManager::t('=== 监控项Key测试工具 ===') . "\n\n";
+        echo LanguageManager::t('测试指定的监控项Key:') . "\n";
+        echo LanguageManager::t('- system.cpu.num (CPU内核总数)') . "\n";
+        echo LanguageManager::t('- system.cpu.util (CPU使用率)') . "\n";
+        echo LanguageManager::t('- vm.memory.size[total] (内存总量)') . "\n";
+        echo LanguageManager::t('- vm.memory.utilization (内存使用率)') . "\n\n";
         
         $yesterday = strtotime('yesterday');
         $from = mktime(0, 0, 0, date('m', $yesterday), date('d', $yesterday), date('Y', $yesterday));
         $till = mktime(23, 59, 59, date('m', $yesterday), date('d', $yesterday), date('Y', $yesterday));
         
         foreach ($hosts as $host) {
-            echo "主机: {$host['name']} (ID: {$host['hostid']})\n";
+            echo LanguageManager::tf('主机: %s (ID: %s)', $host['name'], $host['hostid']) . "\n";
             echo str_repeat("=", 60) . "\n";
             
             // 测试每个具体的Key
-            $this->testSpecificKey($host['hostid'], 'system.cpu.num', 'CPU内核总数');
-            $this->testSpecificKey($host['hostid'], 'system.cpu.util', 'CPU使用率');
-            $this->testSpecificKey($host['hostid'], 'vm.memory.size[total]', '内存总量');
-            $this->testSpecificKey($host['hostid'], 'vm.memory.utilization', '内存使用率');
+            $this->testSpecificKey($host['hostid'], 'system.cpu.num', LanguageManager::t('CPU内核总数'));
+            $this->testSpecificKey($host['hostid'], 'system.cpu.util', LanguageManager::t('CPU使用率'));
+            $this->testSpecificKey($host['hostid'], 'vm.memory.size[total]', LanguageManager::t('内存总量'));
+            $this->testSpecificKey($host['hostid'], 'vm.memory.utilization', LanguageManager::t('内存使用率'));
             
-            echo "\n=== 使用ItemFinder测试 ===\n";
+            echo "\n" . LanguageManager::t('=== 使用ItemFinder测试 ===') . "\n";
             
             // 使用ItemFinder测试
             $cpuUtil = ItemFinder::findCpuUtilization($host['hostid'], $from, $till);
@@ -74,20 +78,20 @@ class DailyReportKeyTest extends CController {
             $memUtil = ItemFinder::findMemoryUtilization($host['hostid'], $from, $till);
             $memTotal = ItemFinder::findMemoryTotal($host['hostid'], $from, $till);
             
-            echo "CPU使用率: " . ($cpuUtil ? 
-                "找到项目 {$cpuUtil['item']['name']} (key: {$cpuUtil['item']['key_']}) = " . 
+            echo LanguageManager::t('CPU使用率: ') . ($cpuUtil ?
+                LanguageManager::tf('找到项目 %s (key: %s) = ', $cpuUtil['item']['name'], $cpuUtil['item']['key_']) .
                 ($cpuUtil['value'] !== null ? number_format($cpuUtil['value'], 2) . '%' : 'N/A') : 'N/A') . "\n";
                 
-            echo "CPU数量: " . ($cpuCount ? 
-                "找到项目 {$cpuCount['item']['name']} (key: {$cpuCount['item']['key_']}) = " . 
+            echo LanguageManager::t('CPU数量: ') . ($cpuCount ?
+                LanguageManager::tf('找到项目 %s (key: %s) = ', $cpuCount['item']['name'], $cpuCount['item']['key_']) .
                 ($cpuCount['value'] !== null ? $cpuCount['value'] : 'N/A') : 'N/A') . "\n";
                 
-            echo "内存使用率: " . ($memUtil ? 
-                "找到项目 {$memUtil['item']['name']} (key: {$memUtil['item']['key_']}) = " . 
+            echo LanguageManager::t('内存使用率: ') . ($memUtil ?
+                LanguageManager::tf('找到项目 %s (key: %s) = ', $memUtil['item']['name'], $memUtil['item']['key_']) .
                 ($memUtil['value'] !== null ? number_format($memUtil['value'], 2) . '%' : 'N/A') : 'N/A') . "\n";
                 
-            echo "内存总量: " . ($memTotal ? 
-                "找到项目 {$memTotal['item']['name']} (key: {$memTotal['item']['key_']}) = " . 
+            echo LanguageManager::t('内存总量: ') . ($memTotal ?
+                LanguageManager::tf('找到项目 %s (key: %s) = ', $memTotal['item']['name'], $memTotal['item']['key_']) .
                 ($memTotal['value'] !== null ? number_format($memTotal['value'] / (1024*1024*1024), 2) . ' GB' : 'N/A') : 'N/A') . "\n";
             
             echo "\n" . str_repeat("-", 80) . "\n\n";
@@ -97,7 +101,7 @@ class DailyReportKeyTest extends CController {
     }
     
     private function testSpecificKey($hostid, $key, $description) {
-        echo "测试 {$description} (key: {$key}):\n";
+        echo LanguageManager::tf('测试 %s (key: %s):', $description, $key) . "\n";
         
         // 精确匹配key
         $items = API::Item()->get([
@@ -110,7 +114,7 @@ class DailyReportKeyTest extends CController {
         ]);
         
         if (empty($items)) {
-            echo "  未找到精确匹配的监控项\n";
+            echo "  " . LanguageManager::t('未找到精确匹配的监控项') . "\n";
             
             // 尝试模糊匹配
             $items = API::Item()->get([
@@ -122,20 +126,20 @@ class DailyReportKeyTest extends CController {
             ]);
             
             if (!empty($items)) {
-                echo "  找到模糊匹配的监控项:\n";
+                echo "  " . LanguageManager::t('找到模糊匹配的监控项:') . "\n";
                 foreach ($items as $item) {
-                    echo "    - {$item['name']} (key: {$item['key_']}, 最后值: {$item['lastvalue']}, 单位: {$item['units']})\n";
+                    echo "    " . LanguageManager::tf('- %s (key: %s, 最后值: %s, 单位: %s)', $item['name'], $item['key_'], $item['lastvalue'], $item['units']) . "\n";
                 }
             } else {
-                echo "  未找到任何匹配的监控项\n";
+                echo "  " . LanguageManager::t('未找到任何匹配的监控项') . "\n";
             }
         } else {
             $item = $items[0];
-            echo "  找到监控项: {$item['name']}\n";
-            echo "  键值: {$item['key_']}\n";
-            echo "  最后值: {$item['lastvalue']}\n";
-            echo "  单位: {$item['units']}\n";
-            echo "  最后更新: " . date('Y-m-d H:i:s', $item['lastclock']) . "\n";
+            echo "  " . LanguageManager::tf('找到监控项: %s', $item['name']) . "\n";
+            echo "  " . LanguageManager::tf('键值: %s', $item['key_']) . "\n";
+            echo "  " . LanguageManager::tf('最后值: %s', $item['lastvalue']) . "\n";
+            echo "  " . LanguageManager::tf('单位: %s', $item['units']) . "\n";
+            echo "  " . LanguageManager::t('最后更新: ') . date('Y-m-d H:i:s', $item['lastclock']) . "\n";
             
             // 尝试获取历史数据
             $yesterday = strtotime('yesterday');
@@ -153,12 +157,12 @@ class DailyReportKeyTest extends CController {
             ]);
             
             if (!empty($history)) {
-                echo "  昨天的历史数据 (最近5条):\n";
+                echo "  " . LanguageManager::t('昨天的历史数据 (最近5条):') . "\n";
                 foreach ($history as $h) {
                     echo "    " . date('Y-m-d H:i:s', $h['clock']) . " = {$h['value']}\n";
                 }
             } else {
-                echo "  没有找到昨天的历史数据\n";
+                echo "  " . LanguageManager::t('没有找到昨天的历史数据') . "\n";
             }
         }
         echo "\n";

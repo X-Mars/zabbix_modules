@@ -1035,6 +1035,7 @@ class ReportViewHelper {
         // 表体
         $tbody = new \CTag('tbody', true);
         if (!empty($alerts)) {
+            $isRussian = LanguageManager::getCurrentLanguage() === 'ru_RU';
             $count = 0;
             foreach ($alerts as $alert) {
                 if ($count >= $limit) break;
@@ -1068,17 +1069,21 @@ class ReportViewHelper {
                     );
                 }
                 $row->addItem($alertNameTd);
+                $alertTimestamp = strtotime($alert['time'] ?? '');
                 $row->addItem(
                     (new \CTag('td', true))
-                        ->addItem((new \CSpan($alert['time']))->addClass('rpt-time'))
-                        ->setAttribute('data-sort-value', strtotime($alert['time'] ?? '') ?: 0)
+                        ->addItem((new \CSpan($isRussian && $alertTimestamp !== false
+                            ? LanguageManager::formatDateTime($alertTimestamp) : $alert['time']))->addClass('rpt-time'))
+                        ->setAttribute('data-sort-value', $alertTimestamp ?: 0)
                 );
                 $recoveryTime = $alert['recovery_time'] ?: '-';
+                $recoveryTimestamp = $recoveryTime !== '-' ? strtotime($recoveryTime) : false;
                 $recoveryClass = $recoveryTime !== '-' ? 'rpt-time rpt-time-recovered' : 'rpt-time';
                 $row->addItem(
                     (new \CTag('td', true))
-                        ->addItem((new \CSpan($recoveryTime))->addClass($recoveryClass))
-                        ->setAttribute('data-sort-value', $recoveryTime !== '-' ? (strtotime($recoveryTime) ?: 0) : 0)
+                        ->addItem((new \CSpan($isRussian && $recoveryTimestamp !== false
+                            ? LanguageManager::formatDateTime($recoveryTimestamp) : $recoveryTime))->addClass($recoveryClass))
+                        ->setAttribute('data-sort-value', $recoveryTimestamp ?: 0)
                 );
                 $tbody->addItem($row);
             }

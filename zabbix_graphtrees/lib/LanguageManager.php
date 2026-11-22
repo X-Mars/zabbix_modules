@@ -120,7 +120,62 @@ class LanguageManager {
             'Time range must be at least one minute.' => 'Time range must be at least one minute.',
             'Time range exceeds the maximum allowed by Zabbix.' => 'Time range exceeds the maximum allowed by Zabbix.',
             'Failed to validate time range. Please try again.' => 'Failed to validate time range. Please try again.'
-        ]
+        ],
+        'ru_RU' => [
+            'Graph Trees' => 'Дерево графиков',
+            'Resource Tree' => 'Дерево ресурсов',
+            'Host Groups' => 'Группы узлов сети',
+            'Hosts' => 'Узлы сети',
+            'Search...' => 'Поиск…',
+            'Expand All' => 'Развернуть всё',
+            'Collapse All' => 'Свернуть всё',
+            'Time Range' => 'Период',
+            'Last 10 Minutes' => 'Последние 10 минут',
+            'Last 30 Minutes' => 'Последние 30 минут',
+            'Last Hour' => 'Последний час',
+            'Last 3 Hours' => 'Последние 3 часа',
+            'Last 6 Hours' => 'Последние 6 часов',
+            'Last 12 Hours' => 'Последние 12 часов',
+            'Last 24 Hours' => 'Последние 24 часа',
+            'Last 2 Days' => 'Последние 2 дня',
+            'Last 7 Days' => 'Последние 7 дней',
+            'Last 30 Days' => 'Последние 30 дней',
+            'Columns' => 'Столбцы',
+            'Auto Refresh' => 'Автообновление',
+            'Off' => 'Выкл.',
+            'seconds' => 'с',
+            'Refresh' => 'Обновить',
+            'All Graphs' => 'Все графики',
+            'Other' => 'Прочее',
+            'No graphs available' => 'Нет доступных графиков',
+            'No categories found' => 'Категории не найдены',
+            'Select a host to view graphs' => 'Выберите узел сети для просмотра графиков',
+            'Loading...' => 'Загрузка…',
+            'Failed to load data' => 'Не удалось загрузить данные',
+            'Close' => 'Закрыть',
+            'Pre-configured' => 'Настроенные',
+            'Auto-generated' => 'Созданные автоматически',
+            'graphs' => 'графиков',
+            'No data' => 'Нет данных',
+            'Custom' => 'Пользовательский',
+            'From' => 'С',
+            'To' => 'По',
+            'Apply' => 'Применить',
+            'Cancel' => 'Отмена',
+            'Quick Select' => 'Быстрый выбор',
+            'Custom Range' => 'Произвольный период',
+            'Start time' => 'Время начала',
+            'End time' => 'Время окончания',
+            'Time zone' => 'Часовой пояс',
+            'Select a valid start and end time.' => 'Выберите допустимое время начала и окончания.',
+            'Start time must be earlier than end time.' => 'Время начала должно предшествовать времени окончания.',
+            'Export image' => 'Экспортировать изображение',
+            'Exporting...' => 'Экспорт…',
+            'Failed to export image. Please try again.' => 'Не удалось экспортировать изображение. Повторите попытку.',
+            'Time range must be at least one minute.' => 'Период должен составлять не менее одной минуты.',
+            'Time range exceeds the maximum allowed by Zabbix.' => 'Период превышает ограничение Zabbix.',
+            'Failed to validate time range. Please try again.' => 'Не удалось проверить период. Повторите попытку.',
+        ],
     ];
     
     /**
@@ -342,6 +397,10 @@ class LanguageManager {
     private static function mapZabbixLangToOurs($zabbixLang) {
         // 先转换为小写进行比较，以处理大小写不一致的情况
         $lowerLang = strtolower(trim($zabbixLang));
+
+        if (preg_match('/^ru(?:[-_]|$)/i', trim($lowerLang))) {
+            return 'ru_RU';
+        }
         
         $langMap = [
             // 中文的各种变体
@@ -394,7 +453,7 @@ class LanguageManager {
         if (self::isSupportedLocale($mapped)) {
             return $mapped;
         }
-        // 受支持语言有限，仅 zh_CN / en_US
+        // 支持 zh_CN、en_US 和 ru_RU
         return self::ZBX_DEFAULT_LANG;
     }
 

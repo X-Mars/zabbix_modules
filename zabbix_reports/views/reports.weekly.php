@@ -38,7 +38,7 @@ $maxWeek = (int)date('W', mktime(0, 0, 0, 12, 28, $filterYear));
 $isChinese = LanguageManager::isChinese();
 $weekOptions = [];
 for ($w = 1; $w <= $maxWeek; $w++) {
-    $label = $isChinese ? '第' . $w . '周' : 'W' . sprintf('%02d', $w);
+    $label = $isChinese ? '第' . $w . '周' : LanguageManager::tf('W%02d', $w);
     $weekOptions[] = ['value' => (string)$w, 'label' => $label];
 }
 

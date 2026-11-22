@@ -1,6 +1,6 @@
 # Zabbix Rebrand Logo
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -23,7 +23,7 @@ This Zabbix frontend module lets Super Admins change the login logo, sidebar log
 - **Login logo size**: The width and height stay at a 4:1 ratio. The default is 120 × 30 pixels, and the maximum is 512 × 128 pixels, subject to server upload limits. Cropping can retain up to twice the display resolution when the source and file size allow it.
 - **Server name**: Keep the Zabbix default, enter a custom name, or hide the name. The login page uses the Zabbix default.
 - **Footer and Help link**: Customize the footer text and the Help link in the user menu. The link accepts HTTP and HTTPS URLs.
-- **Chinese and English UI**: Follows the Zabbix user's language and supports light and dark themes.
+- **Chinese, English, and Russian UI**: Follows the Zabbix user's language and supports light and dark themes.
 - **Persistent storage**: Settings and image copies are stored in `local/conf/rebrand/` so they can be kept across upgrades.
 
 | Image | Recommended size | Supported formats |

@@ -2,6 +2,40 @@
 /** Vendored into each module so modules remain independently installable. PHP 7.3+. */
 if (!class_exists('ZabbixModuleNotice', false)) {
     final class ZabbixModuleNotice {
+        private const RUSSIAN = [
+            'If saving fails, change the directory ownership and check SELinux: ' => 'При ошибке сохранения измените владельца каталога и проверьте SELinux: ',
+            'Directory ownership reminder: ' => 'Проверьте владельца каталога: ',
+            'Please change the directory ownership and check SELinux.' => 'Измените владельца каталога и проверьте SELinux.',
+            'Configuration file: ' => 'Файл конфигурации: ',
+            'Invalid JSON' => 'Недопустимый JSON',
+            'Invalid config.json' => 'Недопустимый файл config.json',
+            'Invalid provider' => 'Недопустимый поставщик',
+            'Invalid region' => 'Недопустимый регион',
+            'Account not found' => 'Учётная запись не найдена',
+            'Name is required.' => 'Укажите имя.',
+            'Access key is required.' => 'Укажите ключ доступа.',
+            'Secret key is required.' => 'Укажите секретный ключ.',
+            'Cannot lock config file' => 'Не удалось заблокировать файл конфигурации',
+            'Failed to initialize branding storage. Review the web server error log for details.' => 'Не удалось инициализировать хранилище оформления. Проверьте журнал ошибок веб-сервера.',
+            'Failed to encode branding settings as JSON.' => 'Не удалось закодировать настройки оформления в JSON.',
+            'Please select dates' => 'Выберите даты',
+            'Help URL: only HTTP and HTTPS URLs are allowed.' => 'Ссылка на справку должна начинаться с HTTP или HTTPS.',
+            'Server name: enter a name, or choose Default or Hidden.' => 'Введите имя сервера или выберите «По умолчанию» либо «Скрыто».',
+            'file too large.' => 'Файл слишком велик.',
+            'upload was only partially completed.' => 'Файл загружен только частично.',
+            'no file was uploaded.' => 'Файл не загружен.',
+            'missing temporary upload directory.' => 'Временный каталог загрузки отсутствует.',
+            'could not write file to disk.' => 'Не удалось записать файл на диск.',
+            'upload blocked by a PHP extension.' => 'Загрузка заблокирована расширением PHP.',
+            'unknown upload error.' => 'Неизвестная ошибка загрузки.',
+            'invalid upload payload.' => 'Недопустимые данные загрузки.',
+            'invalid file type. Allowed: PNG, JPG, GIF, ICO.' => 'Недопустимый тип файла. Поддерживаются PNG, JPG, GIF и ICO.',
+            'file too large. Maximum: 2 MB.' => 'Файл слишком велик. Максимум — 2 МБ.',
+            'file content does not match the selected image format.' => 'Содержимое файла не соответствует выбранному формату изображения.',
+            'cpu_usage rules are required' => 'Для использования ЦП требуется хотя бы одно правило.',
+            'memory_usage rules are required' => 'Для использования памяти требуется хотя бы одно правило.',
+        ];
+
         public static function language(): string {
             $locale = '';
             try {
@@ -23,10 +57,20 @@ if (!class_exists('ZabbixModuleNotice', false)) {
                     }
                 } catch (\Throwable $e) { $locale = 'en_US'; }
             }
+            $locale = trim($locale);
+            if (preg_match('/^ru(?:[-_]|$)/i', $locale)) {
+                return 'ru_RU';
+            }
+
             return preg_match('/^zh(?:[-_]|$)/i', $locale) ? 'zh_CN' : 'en_US';
         }
         public static function text(string $english, string $chinese): string {
-            return self::language() === 'zh_CN' ? $chinese : $english;
+            $language = self::language();
+            if ($language === 'ru_RU') {
+                return self::RUSSIAN[$english] ?? $english;
+            }
+
+            return $language === 'zh_CN' ? $chinese : $english;
         }
         public static function escape(string $text): string {
             return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -137,14 +181,16 @@ if (!class_exists('ZabbixModuleNotice', false)) {
                 "file too large. Maximum: 2 MB." => "文件过大，上限为 2 MB。",
                 "file content does not match the selected image format." => "文件内容与所选图片格式不符。"
             ];
-            if (self::language() === 'zh_CN') {
+            $language = self::language();
+            if ($language === 'zh_CN') {
                 if (preg_match('/^(cpu_usage|memory_usage) rules are required$/', $message, $match)) {
                     return ($match[1] === 'cpu_usage' ? 'CPU 使用率' : '内存使用率').'至少需要一条匹配规则。';
                 }
                 return $translations[$message] ?? $message;
             }
             $reverse = array_flip($translations);
-            return $reverse[$message] ?? $message;
+            $english = $reverse[$message] ?? $message;
+            return $language === 'ru_RU' ? (self::RUSSIAN[$english] ?? $english) : $english;
         }
     }
 }

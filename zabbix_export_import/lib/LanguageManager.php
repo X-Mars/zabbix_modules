@@ -8,9 +8,14 @@ final class LanguageManager
     {
         $locale = \CWebUser::$data["lang"] ?? "default";
         if (!$locale || $locale === "default") {
-            $locale = \CSettingsHelper::get("default_lang");
+            $locale = method_exists('CSettingsHelper', 'getPublic')
+                ? \CSettingsHelper::getPublic("default_lang")
+                : \CSettingsHelper::get("default_lang");
         }
-        $locale = str_replace("-", "_", (string) $locale);
+        $locale = str_replace("-", "_", trim((string) $locale));
+        if (preg_match('/^ru(?:_|$)/i', $locale)) {
+            return "ru_RU";
+        }
         return preg_match('/^[a-z]{2,3}_[A-Z]{2}$/D', $locale) ? $locale : "en_US";
     }
     public static function t(string $text): string

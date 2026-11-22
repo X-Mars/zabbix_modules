@@ -1,6 +1,6 @@
 # Zabbix Reports 模块
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -30,7 +30,7 @@
   - 手动导出PDF
   - 邮件推送报表（HTML格式）
   - 自定义日期范围选择
-- **国际化支持**：支持中英文界面
+- **国际化支持**：支持中文、英文和俄语界面
 - **响应式设计**：适配不同屏幕尺寸
 - **现代化界面**：采用渐变色彩和动画效果的现代化设计
 - **兼容性**：支持Linux Agent和Windows Agent模板
@@ -91,6 +91,8 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_reports/manif
 ## 模块配置
 
 在报表菜单选择主机组与报表周期，生成预览后可按页面按钮导出 PDF 或发送邮件。
+
+俄语 PDF 导出使用 TCPDF 的 Unicode 字体。未安装 TCPDF 时，俄语报表会导出为可从浏览器打印的 HTML。
 
 ## 许可证
 

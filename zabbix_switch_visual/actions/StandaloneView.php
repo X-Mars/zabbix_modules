@@ -1,6 +1,8 @@
 <?php
 namespace Modules\SwitchVisual\Actions;
 
+use Modules\SwitchVisual\Includes\Translation;
+
 require_once dirname(__DIR__).'/includes/Translation.php';
 require_once dirname(__DIR__).'/includes/DataFetcher.php';
 
@@ -29,12 +31,13 @@ class StandaloneView extends \CController {
             $fetcher = new \Modules\SwitchVisual\Includes\DataFetcher(['hostid' => $selected]);
             $hosts[] = $fetcher->fetchAll() + $host + ['num_ports' => 24];
         }
+        $title = Translation::t('Switch visual');
         $response = new \CControllerResponseData([
             'standalone' => true, 'hosts' => $hosts, 'no_host' => !$hosts,
             'fields' => [], 'error' => null, 'host_options' => $options,
-            'selected_hostid' => $selected, 'widget_name' => 'Switch visual'
+            'selected_hostid' => $selected, 'widget_name' => $title
         ]);
-        $response->setTitle('Switch visual');
+        $response->setTitle($title);
         $this->setResponse($response);
     }
 }

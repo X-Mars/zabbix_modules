@@ -11,7 +11,7 @@ namespace Modules\SwitchVisual\Includes;
  */
 class Translation {
 
-	/** @var ?bool */ private static $zh = null;
+	/** @var ?string */ private static $language = null;
 
 	/** English source string → 简体中文 */
 	/** @var array */ private static $dict = [
@@ -182,12 +182,150 @@ class Translation {
 		'At'      => '时间',
 	];
 
+	private const RUSSIAN = [
+		'Zabbix Switch Visual' => 'Панель коммутатора Zabbix',
+		'Ports' => 'Порты',
+		'PoE' => 'PoE',
+		'System' => 'Система',
+		'Appearance' => 'Внешний вид',
+		'Display' => 'Отображение',
+		'Host' => 'Узел сети',
+		'Host groups' => 'Группы узлов сети',
+		'BW In item pattern' => 'Шаблон ключа входящего трафика',
+		'BW Out item pattern' => 'Шаблон ключа исходящего трафика',
+		'Bandwidth items deliver bits/sec (not bytes/sec)' => 'Элементы пропускной способности возвращают значения в бит/с',
+		'Status item pattern' => 'Шаблон ключа состояния порта',
+		'Speed item pattern' => 'Шаблон ключа скорости порта',
+		'Errors In item pattern' => 'Шаблон ключа ошибок приёма',
+		'Errors Out item pattern' => 'Шаблон ключа ошибок передачи',
+		'Interface alias pattern (optional)' => 'Шаблон ключа псевдонима интерфейса (необязательно)',
+		'PoE status pattern (optional, e.g. pethPsePortDetectionStatus[*])' => 'Шаблон ключа состояния PoE (необязательно, например pethPsePortDetectionStatus[*])',
+		'PoE port power pattern (optional, e.g. pethPsePortPowerConsumption[*], milliwatts)' => 'Шаблон ключа мощности PoE на порту (необязательно, например pethPsePortPowerConsumption[*], мВт)',
+		'Duplex mode pattern (optional, e.g. dot3StatsDuplexStatus[*])' => 'Шаблон ключа режима дуплекса (необязательно, например dot3StatsDuplexStatus[*])',
+		'SFP optical RX power pattern (optional)' => 'Шаблон ключа оптической мощности приёма SFP (необязательно)',
+		'SFP optical TX power pattern (optional)' => 'Шаблон ключа оптической мощности передачи SFP (необязательно)',
+		'Port shape' => 'Форма порта',
+		'Style 1 (stepped)' => 'Стиль 1 (ступенчатый)',
+		'Style 2 (metal)' => 'Стиль 2 (металлический)',
+		'Style 3 (classic)' => 'Стиль 3 (классический)',
+		'RJ45 ports (per stack member; the rest are SFP)' => 'Порты RJ45 на каждом устройстве стека. Остальные порты — SFP.',
+		'SFP ports (manual mode only — with auto-detect the ports beyond RJ45 count are SFP)' => 'Порты SFP в ручном режиме. При автоопределении SFP считаются все порты сверх числа RJ45.',
+		'Port rows (1 or 2)' => 'Ряды портов (1 или 2)',
+		'Invert row order (even ports top — e.g. Huawei)' => 'Поменять ряды местами (чётные порты сверху, например у Huawei)',
+		'Sequential rows (first half top, second half bottom — e.g. 1–24 / 25–48)' => 'Последовательные ряды (первая половина сверху, вторая снизу, например 1–24 / 25–48)',
+		'Zoom (50–300%)' => 'Масштаб (50–300 %)',
+		'Port aliases (e.g. 1=Uplink, 3=ESX01, 4-6=VLAN1)' => 'Псевдонимы портов (например 1=Uplink, 3=ESX01, 4-6=VLAN1)',
+		'Uptime item key (optional)' => 'Ключ элемента времени работы (необязательно)',
+		'Serial number item key (optional)' => 'Ключ элемента серийного номера (необязательно)',
+		'Model item key (optional)' => 'Ключ элемента модели (необязательно)',
+		'CPU % item pattern (optional, e.g. system.cpu.util[*])' => 'Шаблон ключа загрузки ЦП в % (необязательно, например system.cpu.util[*])',
+		'Memory % item pattern (optional, e.g. vm.memory.pused[*])' => 'Шаблон ключа использования памяти в % (необязательно, например vm.memory.pused[*])',
+		'Temperature item pattern (optional, e.g. sensor.temp.value[*]; multiple sensors: panel shows max, hover shows all)' => 'Шаблон ключа температуры (необязательно, например sensor.temp.value[*]). На панели виден максимум по датчикам, при наведении — все значения.',
+		'Temperature alarm threshold (°C, 0 = disabled)' => 'Порог предупреждения о температуре (°C, 0 — отключено)',
+		'RJ45 position' => 'Расположение RJ45',
+		'Front (ports 1..N are RJ45)' => 'Сначала RJ45 (порты 1…N)',
+		'Back (last N ports are RJ45 — SFP first)' => 'Сначала SFP (последние N портов — RJ45)',
+		'Total PoE consumed item key (optional, e.g. pethMainPseConsumptionPower.1, watts)' => 'Ключ элемента общей потребляемой мощности PoE (необязательно, например pethMainPseConsumptionPower.1, Вт)',
+		'Max PoE capacity item key (optional, e.g. pethMainPsePower.1, watts)' => 'Ключ элемента максимальной мощности PoE (необязательно, например pethMainPsePower.1, Вт)',
+		'Fan status pattern (optional, e.g. hpicfFanState[*])' => 'Шаблон ключа состояния вентилятора (необязательно, например hpicfFanState[*])',
+		'Fan OK value (3=HP good, 1=some vendors — check MIB)' => 'Код исправного вентилятора (3 у HP, 1 у некоторых производителей, см. MIB)',
+		'Chassis color' => 'Цвет корпуса',
+		'Brand logo' => 'Логотип производителя',
+		'None' => 'Нет',
+		'1 Gbps port color' => 'Цвет порта 1 Гбит/с',
+		'100 Mbps port color' => 'Цвет порта 100 Мбит/с',
+		'10 Gbps port color' => 'Цвет порта 10 Гбит/с',
+		'40 Gbps port color' => 'Цвет порта 40 Гбит/с',
+		'100 Gbps port color' => 'Цвет порта 100 Гбит/с',
+		'Warning port color' => 'Цвет предупреждения порта',
+		'Error port color' => 'Цвет ошибки порта',
+		'Port index start (SNMP offset)' => 'Начальный индекс порта (смещение SNMP)',
+		'Auto-detect port count (may include VLANs/tunnels)' => 'Автоопределение числа портов (может включать VLAN и туннели)',
+		'Excluded ports (auto-detect only; comma/space separated; name substring match, digits match index, * wildcard, e.g. vlan, Bridge-Aggregation, mgmt*)' => 'Исключённые порты при автоопределении. Разделители — запятые или пробелы. Текст соответствует части имени, число — индексу, * — любой последовательности символов. Например: vlan, Bridge-Aggregation, mgmt*.',
+		'Show summary bar' => 'Показывать сводную панель',
+		'Show port numbers' => 'Показывать номера портов',
+		'Show port labels / aliases' => 'Показывать подписи или псевдонимы портов',
+		'Show global traffic sparkline' => 'Показывать мини-график общего трафика',
+		'Sparkline window (minutes)' => 'Период мини-графика (минуты)',
+		'Utilization warning threshold (%)' => 'Порог предупреждения об использовании порта (%)',
+		'Select a host or host group in widget settings.' => 'Выберите узел сети или группу узлов в настройках виджета.',
+		'No ports found — verify item key patterns match your Zabbix items.' => 'Порты не найдены. Проверьте, что шаблоны ключей совпадают с элементами данных Zabbix.',
+		'Error: ' => 'Ошибка: ',
+		'Invalid host.' => 'Недопустимый узел сети.',
+		'API error.' => 'Ошибка API.',
+		'Active Problems' => 'Активные проблемы',
+		'Type' => 'Тип',
+		'Status' => 'Состояние',
+		'Speed' => 'Скорость',
+		'N/A' => 'Н/Д',
+		'Port' => 'Порт',
+		'RX' => 'RX',
+		'TX' => 'TX',
+		'Util' => 'Загрузка',
+		'Down for' => 'Недоступен',
+		'Duplex' => 'Дуплекс',
+		'Half (!)' => 'Половинный (!)',
+		'Opt RX' => 'Опт. RX',
+		'Opt TX' => 'Опт. TX',
+		'Delivering' => 'Подача питания',
+		'Traffic' => 'Трафик',
+		'green' => 'зелёный',
+		'amber' => 'жёлтый',
+		'red' => 'красный',
+		'gray' => 'серый',
+		'Error value: %.2f' => 'Значение ошибки: %.2f',
+		'Utilization > %.0f%%' => 'Загрузка > %.0f%%',
+		'd' => 'д',
+		'h' => 'ч',
+		'm' => 'м',
+		'min' => 'мин',
+		'Huawei' => 'Huawei',
+		'H3C' => 'H3C',
+		'Ruijie' => 'Ruijie',
+		'ZTE' => 'ZTE',
+		'Inspur' => 'Inspur',
+		'FiberHome' => 'FiberHome',
+		'Maipu' => 'Maipu',
+		'DPtech' => 'DPtech',
+		'Hillstone' => 'Hillstone',
+		'Topsec' => 'Topsec',
+		'Venustech' => 'Venustech',
+		'NSFOCUS' => 'NSFOCUS',
+		'Sangfor' => 'Sangfor',
+		'Qianxin' => 'Qianxin',
+		'DBAPPSecurity' => 'DBAPPSecurity',
+		'Leadsec' => 'Leadsec',
+		'Knownsec' => 'Knownsec',
+		'iKuai' => 'iKuai',
+		'Sundray' => 'Sundray',
+		'HP' => 'HP',
+		'Siemens' => 'Siemens',
+		'Warom' => 'Warom',
+		'up' => 'вкл.',
+		'dn' => 'выкл.',
+		'total' => 'всего',
+		'Member' => 'Устройство стека',
+		'Err' => 'Ош.',
+		'ports' => 'портов',
+		'Uptime' => 'Время работы',
+		'Memory' => 'Память',
+		'Temperature sensors' => 'Датчики температуры',
+		'Sensor' => 'Датчик',
+		'S/N' => 'Сер. №',
+		'Temp' => 'Темп.',
+		'PoE cap' => 'Макс. PoE',
+		'Fans' => 'Вентиляторы',
+		'FAIL' => 'СБОЙ',
+		'At' => 'Время',
+		'Select a host' => 'Выберите узел сети',
+		'Switch visual' => 'Панель коммутатора',
+	];
+
 	/**
-	 * Translate a source string. Returns the English input unchanged when the
-	 * current user's language is not Chinese or no translation exists.
+	 * Translate a source string using the current Zabbix language.
 	 */
 	public static function t(string $en): string {
-		if (self::$zh === null) {
+		if (self::$language === null) {
 			$lang = '';
 			if (class_exists('CWebUser') && \CWebUser::$data !== null && isset(\CWebUser::$data['lang'])) {
 				$lang = (string) \CWebUser::$data['lang'];
@@ -206,8 +344,17 @@ class Translation {
 					$lang = (string) $GLOBALS['ZBX_LOCALES']['selected'];
 				}
 			}
-			self::$zh = in_array(strtolower($lang), ['zh_cn', 'zh_sg'], true);
+			$lang = strtolower(str_replace('-', '_', trim($lang)));
+			if (preg_match('/^ru(?:_|$)/', $lang)) {
+				self::$language = 'ru_RU';
+			} else {
+				self::$language = in_array($lang, ['zh_cn', 'zh_sg'], true) ? 'zh_CN' : 'en_US';
+			}
 		}
-		return self::$zh ? (self::$dict[$en] ?? $en) : $en;
+		if (self::$language === 'ru_RU') {
+			return self::RUSSIAN[$en] ?? $en;
+		}
+
+		return self::$language === 'zh_CN' ? (self::$dict[$en] ?? $en) : $en;
 	}
 }

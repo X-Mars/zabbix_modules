@@ -1,6 +1,6 @@
 # IM Sync Assistant
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -30,7 +30,7 @@ The module adds an **IM Sync Assistant** submenu under the **Users** menu in Zab
 - **Flexible matching**: Match by username, email, or alias (currently fixed to username)
 - **Preview mode**: Preview departments and user matching before sync
 - **Path mode**: Optionally use full department path as group name
-- **Internationalization**: Chinese and English UI
+- **Internationalization**: Chinese, English, and Russian UI
 
 ## Installation
 
@@ -106,7 +106,7 @@ The module is built on the Zabbix module framework:
 
 ### Internationalization
 
-All UI strings are managed in `lib/LanguageManager.php` for **Chinese (zh_CN)** and **English (en_US)**. Language detection follows Zabbix: user language → system default → `en_US`. Menus, pages, dialogs, API error messages, and IM client exceptions are translated; raw error codes/messages from third-party APIs may still appear in English.
+All UI strings are managed in `lib/LanguageManager.php` for **Chinese (zh_CN)**, **English (en_US)**, and **Russian (ru_RU)**. Language detection follows Zabbix: user language → system default → `en_US`. Menus, pages, dialogs, API error messages, and IM client exceptions are translated; raw error codes/messages from third-party APIs may still appear in English.
 
 ## Module Configuration
 

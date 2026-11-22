@@ -7,6 +7,10 @@ use CController,
     CControllerResponseFatal,
     API;
 
+use Modules\ZabbixReports\Lib\LanguageManager;
+
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 use Modules\ZabbixReports\Lib\ItemFinder;
 
@@ -105,58 +109,58 @@ class DailyReportDebug extends CController {
         
         // 输出调试信息
         header('Content-Type: text/plain; charset=UTF-8');
-        echo "=== Zabbix 监控项调试信息 ===\n\n";
-        echo "时间范围: " . date('Y-m-d H:i:s', $from) . " 到 " . date('Y-m-d H:i:s', $till) . "\n\n";
+        echo LanguageManager::t('=== Zabbix 监控项调试信息 ===') . "\n\n";
+        echo LanguageManager::tf('时间范围: %s 到 %s', date('Y-m-d H:i:s', $from), date('Y-m-d H:i:s', $till)) . "\n\n";
         
         foreach ($debugInfo as $hostInfo) {
-            echo "主机: {$hostInfo['hostname']} (ID: {$hostInfo['hostid']})\n";
-            echo "总监控项数: {$hostInfo['total_items']}\n\n";
+            echo LanguageManager::tf('主机: %s (ID: %s)', $hostInfo['hostname'], $hostInfo['hostid']) . "\n";
+            echo LanguageManager::tf('总监控项数: %d', $hostInfo['total_items']) . "\n\n";
             
-            echo "CPU相关监控项:\n";
+            echo LanguageManager::t('CPU相关监控项:') . "\n";
             if (empty($hostInfo['cpu_items'])) {
-                echo "  没有找到CPU相关监控项\n";
+                echo "  " . LanguageManager::t('没有找到CPU相关监控项') . "\n";
             } else {
                 foreach ($hostInfo['cpu_items'] as $item) {
-                    echo "  - 名称: {$item['name']}\n";
-                    echo "    键值: {$item['key']}\n";
+                    echo "  " . LanguageManager::tf('- 名称: %s', $item['name']) . "\n";
+                    echo "    " . LanguageManager::tf('键值: %s', $item['key']) . "\n";
                     echo "    ID: {$item['itemid']}\n\n";
                 }
             }
             
-            echo "内存相关监控项:\n";
+            echo LanguageManager::t('内存相关监控项:') . "\n";
             if (empty($hostInfo['memory_items'])) {
-                echo "  没有找到内存相关监控项\n";
+                echo "  " . LanguageManager::t('没有找到内存相关监控项') . "\n";
             } else {
                 foreach ($hostInfo['memory_items'] as $item) {
-                    echo "  - 名称: {$item['name']}\n";
-                    echo "    键值: {$item['key']}\n";
+                    echo "  " . LanguageManager::tf('- 名称: %s', $item['name']) . "\n";
+                    echo "    " . LanguageManager::tf('键值: %s', $item['key']) . "\n";
                     echo "    ID: {$item['itemid']}\n\n";
                 }
             }
             
             echo str_repeat("-", 80) . "\n";
             
-            echo "ItemFinder 测试结果:\n";
+            echo LanguageManager::t('ItemFinder 测试结果:') . "\n";
             foreach ($hostInfo['itemfinder_results'] as $type => $result) {
                 echo "  {$type}: ";
                 if ($result) {
-                    echo "找到 - 名称: {$result['item']['name']}, 键值: {$result['item']['key_']}, 值: " . 
+                    echo LanguageManager::tf('找到 - 名称: %s, 键值: %s, 值: ', $result['item']['name'], $result['item']['key_']) .
                          ($result['value'] !== null ? $result['value'] : 'N/A') . "\n";
                 } else {
-                    echo "未找到\n";
+                    echo LanguageManager::t('未找到') . "\n";
                 }
             }
             
             echo str_repeat("=", 80) . "\n\n";
         }
         
-        echo "=== 监控项搜索建议 ===\n";
-        echo "根据以上输出，您可以看到实际的监控项名称和键值。\n";
-        echo "请查找包含以下关键词的监控项:\n";
-        echo "- CPU使用率: 'utilization', 'usage', 'util'\n";
-        echo "- CPU总数: 'number', 'cores', 'count'\n";
-        echo "- 内存使用率: 'utilization', 'usage', 'util'\n";
-        echo "- 内存总量: 'total', 'size'\n";
+        echo LanguageManager::t('=== 监控项搜索建议 ===') . "\n";
+        echo LanguageManager::t('根据以上输出，您可以看到实际的监控项名称和键值。') . "\n";
+        echo LanguageManager::t('请查找包含以下关键词的监控项:') . "\n";
+        echo LanguageManager::t('- CPU使用率: \'utilization\', \'usage\', \'util\'') . "\n";
+        echo LanguageManager::t('- CPU总数: \'number\', \'cores\', \'count\'') . "\n";
+        echo LanguageManager::t('- 内存使用率: \'utilization\', \'usage\', \'util\'') . "\n";
+        echo LanguageManager::t('- 内存总量: \'total\', \'size\'') . "\n";
         
         exit;
     }

@@ -1,6 +1,6 @@
 # Zabbix IPAM Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -34,7 +34,7 @@ Scanning uses ICMP only and does not connect to target TCP ports. Large ranges a
 - **Automatic host association**: Match Zabbix hosts by their interface IPv4 addresses
 - **Latest data links**: Open a host's latest data page from its name in the list or from an associated reachable address in the matrix
 - **Pagination**: Paginate every list and allow users to select the number of rows per page
-- **Internationalization**: Follow the Zabbix user language automatically, with Simplified Chinese and English support
+- **Internationalization**: Follow the Zabbix user language automatically, with Simplified Chinese, English, and Russian support
 - **Responsive design**: Adapt to standard, wide, and narrow browser viewports without a fixed maximum width
 - **Access and input controls**: Restrict access to Zabbix administrators and validate IPv4 and numeric input
 
@@ -107,7 +107,7 @@ The module is built on the Zabbix module framework. Its main files are:
 - `lib/IpScanner.php`: ICMP scanning, sharding, and multiprocessing core
 - `lib/IpStorage.php`: JSON data storage
 - `lib/TaskManager.php`: Background tasks and scheduled scan management
-- `lib/LanguageManager.php`: Chinese and English language management
+- `lib/LanguageManager.php`: Chinese, English, and Russian language management
 - `lib/ViewRenderer.php`: View rendering
 - `lib/ZabbixVersion.php`: Zabbix version compatibility detection
 - `assets/`: Page styles and client-side scripts

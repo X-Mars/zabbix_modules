@@ -1,6 +1,6 @@
 # Zabbix Rack Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -52,7 +52,7 @@ This is a Zabbix frontend module for data center rack visualization and host pla
   - Search by rack name
   - Search by hostname
   - Quick host location lookup
-- **Internationalization**: Support for Chinese and English interfaces
+- **Internationalization**: Support for Chinese, English, and Russian interfaces
 - **Responsive Design**: Adapts to different screen sizes
 
 ## Installation

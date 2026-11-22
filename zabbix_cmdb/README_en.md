@@ -1,6 +1,6 @@
 # Zabbix CMDB Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -34,7 +34,7 @@ This is a Zabbix frontend module that provides Configuration Management Database
 - **Host Group Management**: View statistics for all host groups
 - **Group Search**: Search by group name
 - **Group Statistics**: Display host count, CPU total, memory total per group
-- **Internationalization**: Support for Chinese and English interfaces
+- **Internationalization**: Support for Chinese, English, and Russian interfaces
 - **Responsive Design**: Adapts to different screen sizes
 - **Modern Interface**: Modern design with gradient colors and animation effects
 - **Statistics**: Display total hosts, total groups, and active host counts

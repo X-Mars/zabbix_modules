@@ -115,6 +115,61 @@ class LanguageManager {
             'Severity: High' => 'Severity: High',
             'Severity: Disaster' => 'Severity: Disaster',
         ],
+        'ru_RU' => [
+            'LLDP Topology' => 'Топология LLDP',
+            'Select host group' => 'Выберите группу узлов сети',
+            'Select host' => 'Выберите узел сети',
+            'All Groups' => 'Все группы',
+            'All Hosts' => 'Все узлы сети',
+            'Query' => 'Запросить',
+            'Querying...' => 'Выполняется запрос…',
+            'Host Group' => 'Группа узлов сети',
+            'Host' => 'Узел сети',
+            'Local device' => 'Локальное устройство',
+            'Remote device' => 'Удалённое устройство',
+            'Local port' => 'Локальный порт',
+            'Remote port' => 'Удалённый порт',
+            'Last update' => 'Последнее обновление',
+            'Links' => 'Связи',
+            'Devices' => 'Устройства',
+            'Hosts' => 'Узлы сети',
+            'Stats format' => 'Узлов: %d / связей: %d / устройств: %d',
+            'Click query to load topology' => 'Настройте фильтры и нажмите «Запросить», чтобы загрузить топологию',
+            'No LLDP data found' => 'Данные LLDP не найдены',
+            'No hosts with LLDP template' => 'С шаблоном LLDP не связано ни одного узла сети',
+            'Template not found' => 'Шаблон LLDP не найден. Проверьте template_name в data/config.json',
+            'Invalid input parameters.' => 'Недопустимые входные параметры.',
+            'Query failed' => 'Не удалось выполнить запрос',
+            'No permission.' => 'Недостаточно прав.',
+            'Local' => 'Локальный',
+            'Remote' => 'Удалённый',
+            'Skipped items' => 'Пропущенные элементы',
+            'Zoom in' => 'Увеличить',
+            'Zoom out' => 'Уменьшить',
+            'Details' => 'Подробности',
+            'Click a node or link to view details' => 'Нажмите на узел или связь, чтобы посмотреть подробности',
+            'Node type' => 'Тип узла',
+            'Connected links' => 'Связи узла',
+            'Link details' => 'Сведения о связи',
+            'Link filter' => 'Фильтр связей',
+            'Filter links by device or port' => 'Фильтровать связи по устройству или порту',
+            'Clear filter' => 'Очистить фильтр',
+            'Matched links' => 'Найдено связей: %d',
+            'Host name' => 'Имя узла сети',
+            'Problem count' => 'Количество проблем',
+            'No active problem' => 'Нет активных проблем',
+            'Problem details' => 'Сведения о проблеме',
+            'Severity: Not classified' => 'Важность: не классифицировано',
+            'Severity: Information' => 'Важность: информация',
+            'Severity: Warning' => 'Важность: предупреждение',
+            'Severity: Average' => 'Важность: средняя',
+            'Severity: High' => 'Важность: высокая',
+            'Severity: Disaster' => 'Важность: чрезвычайная',
+            'Show %d more devices' => 'Показать скрытые устройства (%d)',
+            'Collapse branch' => 'Свернуть ветвь',
+            'Hidden device alert' => 'Проблема у скрытого устройства',
+            'Visible devices: %d' => 'Видимых устройств: %d',
+        ],
     ];
 
     public static function detectLanguage() {
@@ -186,6 +241,10 @@ class LanguageManager {
 
     private static function mapZabbixLangToOurs($zabbixLang) {
         $lowerLang = strtolower(trim((string) $zabbixLang));
+
+        if (preg_match('/^ru(?:[-_]|$)/i', trim($lowerLang))) {
+            return 'ru_RU';
+        }
         $langMap = [
             'zh_cn' => 'zh_CN', 'zh-cn' => 'zh_CN', 'zh' => 'zh_CN',
             'en_us' => 'en_US', 'en-us' => 'en_US', 'en' => 'en_US',

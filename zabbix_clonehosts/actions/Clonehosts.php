@@ -122,7 +122,7 @@ class Clonehosts extends CController {
 		}
 
 		$response = new CControllerResponseData($data);
-		$response->setTitle('Clone hosts');
+		$response->setTitle(LangHelper::t('page.clonehosts'));
 		$this->setResponse($response);
 	}
 }

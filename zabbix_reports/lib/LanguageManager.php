@@ -212,7 +212,192 @@ class LanguageManager {
             'rows' => 'rows',
             'of' => 'of',
             'The start date cannot be later than the end date.' => 'The start date cannot be later than the end date.'
-        ]
+        ],
+        'ru_RU' => [
+            'Zabbix Reports' => 'Отчёты Zabbix',
+            'Daily Report' => 'Дневной отчёт',
+            'Weekly Report' => 'Недельный отчёт',
+            'Monthly Report' => 'Месячный отчёт',
+            'Zabbix Daily Report' => 'Дневной отчёт Zabbix',
+            'Zabbix Weekly Report' => 'Недельный отчёт Zabbix',
+            'Zabbix Monthly Report' => 'Месячный отчёт Zabbix',
+            'Export PDF' => 'Экспортировать PDF',
+            'Send Email' => 'Отправить по почте (в разработке)',
+            'Preview Data' => 'Предпросмотр данных',
+            'Report Date' => 'Дата отчёта',
+            'Problem Count' => 'Количество проблем',
+            'Resolved Count' => 'Решено',
+            'Top Problem Hosts' => 'Узлы сети с наибольшим числом проблем',
+            'Top CPU Usage Hosts' => 'Узлы сети с максимальной загрузкой ЦП',
+            'Top Memory Usage Hosts' => 'Узлы сети с максимальным использованием памяти',
+            'Host Name' => 'Имя узла сети',
+            'Alert Name' => 'Название проблемы',
+            'Alert Time' => 'Время возникновения',
+            'Recovery Time' => 'Время восстановления',
+            'Host Group' => 'Группа узлов сети',
+            'CPU Usage' => 'Использование ЦП',
+            'CPU Total' => 'Всего ядер ЦП',
+            'Memory Usage' => 'Использование памяти',
+            'Memory Total' => 'Общий объём памяти',
+            'Memory Total (GB)' => 'Всего памяти (ГБ)',
+            'GB' => 'ГБ',
+            'No alerts found' => 'Проблемы не найдены',
+            'No host data available' => 'Нет данных об узлах сети',
+            'No data available' => 'Нет доступных данных',
+            'Statistics Period' => 'Период статистики',
+            'Alert Information' => 'Сведения о проблемах',
+            'Host Group Information' => 'Сведения о группах узлов сети',
+            'CPU Information (TOP 5)' => 'Топ-5 по загрузке ЦП',
+            'Memory Information (TOP 5)' => 'Топ-5 по использованию памяти',
+            'Problem Hosts' => 'Узлы сети с проблемами',
+            'Preview data (consistent with export format)' => 'Предпросмотр данных в формате экспорта',
+            'Part 1: Alert Information' => 'Часть 1. Сведения о проблемах',
+            'Part 2: Host Group Information' => 'Часть 2. Сведения о группах узлов сети',
+            'Showing first 50 alerts, total %d alerts' => '(Показаны первые 50 проблем. Всего: %d)',
+            'No alerts in this period' => 'За этот период проблем не было',
+            'Today' => 'Сегодня',
+            'This Week' => 'Эта неделя',
+            'This Month' => 'Этот месяц',
+            'In Development' => 'В разработке',
+            'problems' => 'проблем',
+            'Custom Report' => 'Отчёт за период',
+            'Zabbix Custom Report' => 'Отчёт Zabbix за период',
+            'Start Date' => 'Дата начала',
+            'End Date' => 'Дата окончания',
+            'Generate Report' => 'Сформировать отчёт',
+            'Report Period' => 'Отчётный период',
+            'Please select start and end dates to generate a custom report. Maximum date range is 90 days.' => 'Выберите даты начала и окончания отчёта. Максимальный период — 90 дней.',
+            'Invalid date format' => 'Недопустимый формат даты',
+            'Start date must be before end date' => 'Дата начала должна предшествовать дате окончания',
+            'The selected date range cannot exceed 90 days.' => 'Выбранный период не может превышать 90 дней.',
+            'Export HTML' => 'Экспортировать HTML',
+            'Summary' => 'Сводка',
+            'Problem Events' => 'События проблем',
+            'Resolved Events' => 'События восстановления',
+            'Total Alerts' => 'Всего проблем',
+            'Total Hosts' => 'Всего узлов сети',
+            'Alert Details' => 'Сведения о проблемах',
+            'Latest 50 alerts' => 'Последние 50 проблем',
+            'Time' => 'Время',
+            'Host' => 'Узел сети',
+            'Alert Description' => 'Описание проблемы',
+            'Top 10 Hosts with Most Alerts' => '10 узлов сети с наибольшим числом проблем',
+            'Alert Count' => 'Количество проблем',
+            'Top 10 Hosts by CPU Usage' => '10 узлов сети с наибольшей загрузкой ЦП',
+            'Top 10 Hosts by Memory Usage' => '10 узлов сети с наибольшим использованием памяти',
+            'CPU Information (TOP 10)' => 'Топ-10 по загрузке ЦП',
+            'Memory Information (TOP 10)' => 'Топ-10 по использованию памяти',
+            'No Group' => 'Без группы',
+            'Host Groups' => 'Группы узлов сети',
+            'Search...' => 'Поиск…',
+            'Severity' => 'Важность',
+            'Not classified' => 'Не классифицировано',
+            'Information' => 'Информация',
+            'Warning' => 'Предупреждение',
+            'Average' => 'Средняя',
+            'High' => 'Высокая',
+            'Disaster' => 'Чрезвычайная',
+            'Duration' => 'Длительность',
+            'Generated by Zabbix Reports Module' => 'Создано модулем отчётов Zabbix',
+            'Unknown Host' => 'Неизвестный узел сети',
+            'Disabled or Deleted' => 'Отключён или удалён',
+            'Severity Radar' => 'Диаграмма важности проблем',
+            'Host Group Problem Distribution' => 'Распределение проблем по группам узлов сети',
+            'Other Groups' => 'Другие группы',
+            'No Alert Data' => 'Нет данных о проблемах',
+            'All Groups' => 'Все группы',
+            'All Interface Types' => 'Все типы интерфейсов',
+            'Interface Type' => 'Тип интерфейса',
+            'Apply Filter' => 'Применить фильтр',
+            'rows' => 'строк',
+            'of' => 'из',
+            'The start date cannot be later than the end date.' => 'Дата начала не может быть позже даты окончания.',
+            '=== Zabbix 监控项调试信息 ===' => '=== Диагностика элементов данных Zabbix ===',
+            '时间范围: %s 到 %s' => 'Период: с %s по %s',
+            '主机: %s (ID: %s)' => 'Узел сети: %s (ID: %s)',
+            '总监控项数: %d' => 'Всего элементов данных: %d',
+            'CPU相关监控项:' => 'Элементы данных ЦП:',
+            '没有找到CPU相关监控项' => 'Элементы данных ЦП не найдены',
+            '- 名称: %s' => '- Имя: %s',
+            '键值: %s' => 'Ключ: %s',
+            '内存相关监控项:' => 'Элементы данных памяти:',
+            '没有找到内存相关监控项' => 'Элементы данных памяти не найдены',
+            'ItemFinder 测试结果:' => 'Результаты проверки ItemFinder:',
+            '找到 - 名称: %s, 键值: %s, 值: ' => 'Найден элемент с именем %s, ключом %s и значением ',
+            '未找到' => 'Не найдено',
+            '=== 监控项搜索建议 ===' => '=== Рекомендации по поиску элементов данных ===',
+            '根据以上输出，您可以看到实际的监控项名称和键值。' => 'Выше показаны имена и ключи элементов данных.',
+            '请查找包含以下关键词的监控项:' => 'Ищите элементы данных по следующим ключевым словам:',
+            '- CPU使用率: \'utilization\', \'usage\', \'util\'' => '- Использование ЦП: \'utilization\', \'usage\', \'util\'',
+            '- CPU总数: \'number\', \'cores\', \'count\'' => '- Число ядер ЦП: \'number\', \'cores\', \'count\'',
+            '- 内存使用率: \'utilization\', \'usage\', \'util\'' => '- Использование памяти: \'utilization\', \'usage\', \'util\'',
+            '- 内存总量: \'total\', \'size\'' => '- Общий объём памяти: \'total\', \'size\'',
+            '没有找到监控的主机。' => 'Узлы сети под мониторингом не найдены.',
+            '=== Zabbix 监控项扫描工具 ===' => '=== Поиск элементов данных Zabbix ===',
+            '正在扫描前5个主机的所有监控项...' => 'Проверка всех элементов данных первых пяти узлов сети…',
+            '%s (%d 项):' => '%s (элементов: %d):',
+            '单位: %s' => 'Единицы: %s',
+            '类型: ' => 'Тип: ',
+            '=== 搜索模式建议 ===' => '=== Рекомендуемые поисковые запросы ===',
+            '基于扫描结果，建议以下搜索模式:' => 'По результатам проверки попробуйте следующие запросы:',
+            'CPU使用率可能的名称:' => 'Возможные имена элементов использования ЦП:',
+            'CPU数量可能的名称:' => 'Возможные имена элементов числа ядер ЦП:',
+            '内存使用率可能的名称:' => 'Возможные имена элементов использования памяти:',
+            '内存总量可能的名称:' => 'Возможные имена элементов общего объёма памяти:',
+            'CPU相关' => 'ЦП',
+            '内存相关' => 'Память',
+            '网络相关' => 'Сеть',
+            '磁盘相关' => 'Диски',
+            '系统相关' => 'Система',
+            '其他' => 'Прочее',
+            'Float' => 'С плавающей точкой',
+            'Character' => 'Символьный',
+            'Log' => 'Журнал',
+            'Unsigned integer' => 'Целое без знака',
+            'Text' => 'Текст',
+            '=== 监控项Key测试工具 ===' => '=== Проверка ключей элементов данных ===',
+            '测试指定的监控项Key:' => 'Проверяются следующие ключи элементов данных:',
+            '- system.cpu.num (CPU内核总数)' => '- system.cpu.num (число ядер ЦП)',
+            '- system.cpu.util (CPU使用率)' => '- system.cpu.util (использование ЦП)',
+            '- vm.memory.size[total] (内存总量)' => '- vm.memory.size[total] (общий объём памяти)',
+            '- vm.memory.utilization (内存使用率)' => '- vm.memory.utilization (использование памяти)',
+            'CPU内核总数' => 'Число ядер ЦП',
+            'CPU使用率' => 'Использование ЦП',
+            '内存总量' => 'Общий объём памяти',
+            '内存使用率' => 'Использование памяти',
+            '=== 使用ItemFinder测试 ===' => '=== Проверка с помощью ItemFinder ===',
+            'CPU使用率: ' => 'Использование ЦП: ',
+            'CPU数量: ' => 'Число ядер ЦП: ',
+            '内存使用率: ' => 'Использование памяти: ',
+            '内存总量: ' => 'Общий объём памяти: ',
+            '找到项目 %s (key: %s) = ' => 'Найден элемент %s (ключ: %s) = ',
+            '测试 %s (key: %s):' => 'Проверка: %s (ключ: %s):',
+            '未找到精确匹配的监控项' => 'Точного совпадения не найдено',
+            '找到模糊匹配的监控项:' => 'Найдены элементы с частичным совпадением:',
+            '- %s (key: %s, 最后值: %s, 单位: %s)' => '- %s (ключ: %s, последнее значение: %s, единицы: %s)',
+            '未找到任何匹配的监控项' => 'Подходящих элементов данных не найдено',
+            '找到监控项: %s' => 'Найден элемент данных: %s',
+            '最后值: %s' => 'Последнее значение: %s',
+            '最后更新: ' => 'Последнее обновление: ',
+            '昨天的历史数据 (最近5条):' => 'История за вчера (последние пять записей):',
+            '没有找到昨天的历史数据' => 'Данные за вчера отсутствуют',
+            '=== 简单监控项测试 ===' => '=== Быстрая проверка элементов данных ===',
+            '测试主机: %s (ID: %s)' => 'Проверяемый узел сети: %s (ID: %s)',
+            '=== 搜索CPU相关监控项 ===' => '=== Поиск элементов данных ЦП ===',
+            '=== 搜索内存相关监控项 ===' => '=== Поиск элементов данных памяти ===',
+            '=== 使用通配符搜索 ===' => '=== Поиск по шаблону ===',
+            '=== 按键值搜索 ===' => '=== Поиск по ключам ===',
+            '搜索关键词: %s' => 'Поисковый запрос: %s',
+            '未找到匹配的监控项' => 'Подходящих элементов данных не найдено',
+            '- %s (键值: %s, 单位: %s)' => '- %s (ключ: %s, единицы: %s)',
+            '通配符搜索: *%s*' => 'Поиск по шаблону: *%s*',
+            '键值模式搜索: %s' => 'Поиск по шаблону ключа: %s',
+            'Report sent successfully' => 'Отчёт отправлен',
+            '%s to %s' => 'с %s по %s',
+            'Unknown' => 'Неизвестно',
+            'W%02d' => 'Неделя %02d',
+            '%s Week %s (%s ~ %s)' => '%s, неделя %s (%s — %s)',
+        ],
     ];
     
         /**
@@ -434,6 +619,10 @@ class LanguageManager {
     private static function mapZabbixLangToOurs($zabbixLang) {
         // 先转换为小写进行比较，以处理大小写不一致的情况
         $lowerLang = strtolower(trim($zabbixLang));
+
+        if (preg_match('/^ru(?:[-_]|$)/i', trim($lowerLang))) {
+            return 'ru_RU';
+        }
         
         $langMap = [
             // 中文的各种变体
@@ -486,7 +675,7 @@ class LanguageManager {
         if (self::isSupportedLocale($mapped)) {
             return $mapped;
         }
-        // 受支持语言有限，仅 zh_CN / en_US
+        // 支持 zh_CN、en_US 和 ru_RU
         return self::ZBX_DEFAULT_LANG;
     }
 
@@ -623,7 +812,7 @@ class LanguageManager {
      */
     public static function formatDateTime($timestamp, $format = null) {
         if ($format === null) {
-            $format = self::isChinese() ? 'Y年m月d日 H:i:s' : 'Y-m-d H:i:s';
+            return self::formatDate($timestamp) . date(' H:i:s', $timestamp);
         }
         
         return date($format, $timestamp);
@@ -634,7 +823,11 @@ class LanguageManager {
      */
     public static function formatDate($timestamp, $format = null) {
         if ($format === null) {
-            $format = self::isChinese() ? 'Y年m月d日' : 'Y-m-d';
+            if (self::getCurrentLanguage() === 'ru_RU') {
+                $format = 'd.m.Y';
+            } else {
+                $format = self::isChinese() ? 'Y年m月d日' : 'Y-m-d';
+            }
         }
         
         return date($format, $timestamp);
@@ -677,17 +870,18 @@ class LanguageManager {
             switch ($type) {
                 case 'day':
                 case 'daily':
-                    return date('Y-m-d', $timestamp);
+                    return self::formatDate($timestamp);
                 case 'week':
                 case 'weekly':
-                    $wkStart = date('Y-m-d', strtotime('last monday', strtotime('tomorrow', $timestamp)));
-                    $wkEnd = date('Y-m-d', strtotime('next sunday', strtotime('last monday', strtotime('tomorrow', $timestamp))));
-                    return date('Y', $timestamp) . ' Week ' . date('W', $timestamp) . ' (' . $wkStart . ' ~ ' . $wkEnd . ')';
+                    $monday = strtotime('last monday', strtotime('tomorrow', $timestamp));
+                    $wkStart = self::formatDate($monday);
+                    $wkEnd = self::formatDate(strtotime('next sunday', $monday));
+                    return self::tf('%s Week %s (%s ~ %s)', date('Y', $timestamp), date('W', $timestamp), $wkStart, $wkEnd);
                 case 'month':
                 case 'monthly':
-                    return date('Y-m', $timestamp);
+                    return date(self::getCurrentLanguage() === 'ru_RU' ? 'm.Y' : 'Y-m', $timestamp);
                 default:
-                    return date('Y-m-d', $timestamp);
+                    return self::formatDate($timestamp);
             }
         }
     }
