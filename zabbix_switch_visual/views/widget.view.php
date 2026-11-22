@@ -31,7 +31,7 @@ if ($brand_file !== null && \Modules\SwitchVisual\Includes\BrandLogos::exists($b
     $brand_alt = \Modules\SwitchVisual\Includes\BrandLogos::label($brand_file);
 }
 
-// Module-local translator (EN → zh_CN when the user language is Chinese)
+// Module-local translator using the current Zabbix user language.
 $t = static function (string $s): string  { return \Modules\SwitchVisual\Includes\Translation::t($s); };
 
 $sfx = static function(string $state): string {
@@ -969,7 +969,7 @@ if (!empty($data['standalone'])) {
     $form = (new CForm('get'))->addItem(new CVar('action', 'switchvisual.view'))
         ->addItem($select)->addItem(new CSubmit('apply', _('Apply')));
     $page = class_exists('CHtmlPage') ? new CHtmlPage() : new CWidget();
-    $page->setTitle('Switch visual')->addItem($form)
+    $page->setTitle($t('Switch visual'))->addItem($form)
         ->addItem(new CTag('style', true, $css))->addItem($outer)->show();
 } else {
     (new CWidgetView($data))->addItem(new CTag('style', true, $css))->addItem($outer)->show();

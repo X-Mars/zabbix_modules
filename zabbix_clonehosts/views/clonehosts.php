@@ -156,6 +156,7 @@ foreach ($data['host_groups'] as $group) {
 				<select id="csv-encoding-select" class="encoding-select">
 					<option value="UTF-8">UTF-8</option>
 					<option value="GBK">GBK (ANSI)</option>
+					<option value="windows-1251">Windows-1251</option>
 				</select>
 				<button type="button" id="parse-csv-btn" class="btn btn-secondary" disabled><?= LangHelper::t('csv.parse_btn') ?></button>
 				<button type="button" id="download-template-btn" class="btn btn-link"><?= LangHelper::t('csv.download_template') ?></button>
@@ -218,6 +219,7 @@ foreach ($data['host_groups'] as $group) {
 		ajaxUrl: 'zabbix.php?action=clonehosts.import',
 		sourceInfoUrl: 'zabbix.php?action=clonehosts.source',
 		lang: <?= json_encode($data['lang'] ?? LangHelper::getAllForJs()) ?>,
+		csvHostHeaders: <?= json_encode(LangHelper::getCsvHostHeaders()) ?>,
 		returnSourceHostid: <?= json_encode($data['return_source_hostid'] ?? '') ?>,
 		returnHostData: <?= json_encode($data['return_host_data'] ?? []) ?>
 	};

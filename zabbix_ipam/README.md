@@ -1,6 +1,6 @@
 # Zabbix IPAM 模块
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -34,7 +34,7 @@
 - **主机自动关联**：根据 Zabbix 主机接口 IPv4 地址自动匹配主机
 - **最新数据跳转**：列表主机名称和已关联的矩阵存活 IP 均可进入对应主机的最新数据页面
 - **列表分页**：所有列表均支持分页和每页显示数量选择
-- **国际化支持**：自动跟随 Zabbix 用户语言，支持简体中文和英文
+- **国际化支持**：自动跟随 Zabbix 用户语言，支持简体中文、英文和俄语
 - **响应式设计**：取消固定最大宽度，适配普通、宽屏和窄屏浏览器
 - **安全限制**：仅 Zabbix 管理员可访问，输入均经过 IPv4 和数值校验
 
@@ -107,7 +107,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_ipam/manifest
 - `lib/IpScanner.php`：ICMP、分片和多进程扫描核心
 - `lib/IpStorage.php`：JSON 数据读写
 - `lib/TaskManager.php`：后台任务和定时调度
-- `lib/LanguageManager.php`：中英文语言管理
+- `lib/LanguageManager.php`：中文、英文和俄语语言管理
 - `lib/ViewRenderer.php`：视图渲染
 - `lib/ZabbixVersion.php`：版本兼容检测
 - `assets/`：页面样式与交互脚本

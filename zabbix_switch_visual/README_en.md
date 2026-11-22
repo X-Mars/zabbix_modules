@@ -1,6 +1,6 @@
 # Zabbix Switch Visual
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -60,7 +60,7 @@ Keep the complete `zabbix_switch_visual` directory, including `manifest.json`, `
 - `actions/WidgetView.php`, `includes/DataFetcher.php`: Host and item data retrieval.
 - `views/widget.edit.php`, `views/widget.view.php`: Configuration form and port visualization.
 - `assets/js/class.widget.js`, `assets/css/switch_monitor.css`: Frontend interaction and styling.
-- `includes/Translation.php`: English and Chinese UI text.
+- `includes/Translation.php`: English, Chinese, and Russian UI text.
 
 See the [official Zabbix widget development documentation](https://www.zabbix.com/documentation/7.0/en/devel/modules/widgets) for the widget APIs.
 

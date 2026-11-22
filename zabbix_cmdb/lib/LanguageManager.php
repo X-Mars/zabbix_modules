@@ -200,7 +200,102 @@ class LanguageManager {
             'Maintenance' => 'Maintenance',
             'host' => 'host',
             'core' => 'core',
-        ]
+        ],
+        'ru_RU' => [
+            'CMDB' => 'CMDB',
+            'Configuration Management Database' => 'База данных управления конфигурациями',
+            'Search hosts...' => 'Поиск узлов сети…',
+            'Search by hostname or IP' => 'Поиск по имени узла или IP-адресу',
+            'All Groups' => 'Все группы',
+            'Select host group' => 'Выберите группу узлов сети',
+            'Host Name' => 'Имя узла сети',
+            'IP Address' => 'IP-адрес',
+            'Interface Type' => 'Тип интерфейса',
+            'All Interfaces' => 'Все интерфейсы',
+            'CPU Total' => 'Всего ядер ЦП',
+            'CPU Usage' => 'Использование ЦП',
+            'Memory Total' => 'Общий объём памяти',
+            'Memory Usage' => 'Использование памяти',
+            'Host Group' => 'Группа узлов сети',
+            'System Name' => 'Имя системы',
+            'Architecture' => 'Архитектура',
+            'Operating System' => 'Операционная система',
+            'Kernel Version' => 'Версия ядра',
+            'Agent' => 'Агент',
+            'SNMP' => 'SNMP',
+            'IPMI' => 'IPMI',
+            'JMX' => 'JMX',
+            'No hosts found' => 'Узлы сети не найдены',
+            'Loading...' => 'Загрузка…',
+            'Search' => 'Поиск',
+            'Clear' => 'Очистить',
+            'Total Hosts' => 'Всего узлов сети',
+            'Host Groups' => 'Группы узлов сети',
+            'Host List' => 'Список узлов сети',
+            'Search host groups...' => 'Поиск групп узлов сети…',
+            'Enter group name' => 'Введите имя группы',
+            'Group Name' => 'Имя группы',
+            'Host Count' => 'Число узлов сети',
+            'Active Hosts' => 'Активные узлы сети',
+            'Search by group name' => 'Поиск по имени группы',
+            'Search groups...' => 'Поиск групп…',
+            'Status' => 'Состояние',
+            'No groups found' => 'Группы не найдены',
+            'Empty Group' => 'Пустая группа',
+            'Active Group' => 'Активная группа',
+            'Basic Group' => 'Основная группа',
+            'hosts' => 'узлов сети',
+            'cores' => 'ядер',
+            'Invalid input parameters.' => 'Недопустимые входные параметры.',
+            'Showing %d to %d of %d hosts' => 'Узлы сети с %d по %d из %d',
+            'First' => 'Первая',
+            'Prev' => 'Предыдущая',
+            'Next' => 'Следующая',
+            'Last' => 'Последняя',
+            'Per page' => 'На странице',
+            'Current Page' => 'Текущая страница',
+            'Item Configuration' => 'Настройка элементов данных',
+            'Rules are evaluated from top to bottom; the first match wins. Item name and key rules can be mixed in any order.' => 'Правила проверяются сверху вниз до первого совпадения. Правила для имени и ключа можно располагать в любом порядке.',
+            'Fuzzy matching is case-insensitive and supports substrings and the * wildcard. Exact matching is case-sensitive. If multiple enabled items match one rule, the item with the lowest itemid is selected.' => 'Нечёткое совпадение игнорирует регистр и поддерживает подстроки и символ *. Точное совпадение учитывает регистр. Если правилу соответствует несколько включённых элементов, выбирается элемент с наименьшим itemid.',
+            'CPU total is measured in cores, memory total in bytes, and usage in %. For idle or available percentages, select “100 − value”. An empty rule list disables the metric.' => 'Число ядер ЦП задаётся в ядрах, объём памяти — в байтах, а использование — в %. Для доли простоя или свободного ресурса выберите «100 − значение». Если список правил пуст, метрика отключается.',
+            'Match Field' => 'Поле для сравнения',
+            'Match Type' => 'Тип совпадения',
+            'Item Name / Key' => 'Имя или ключ элемента данных',
+            'Value Conversion' => 'Преобразование значения',
+            'Order / Actions' => 'Порядок и действия',
+            'Add Rule' => 'Добавить правило',
+            'Save Configuration' => 'Сохранить конфигурацию',
+            'Back to Host List' => 'К списку узлов сети',
+            'Item Name' => 'Имя элемента данных',
+            'Exact Match' => 'Точное совпадение',
+            'Fuzzy Match' => 'Нечёткое совпадение',
+            'Item name or key' => 'Имя или ключ элемента данных',
+            'Original Value' => 'Исходное значение',
+            '100 − value' => '100 − значение',
+            'Move Up' => 'Переместить вверх',
+            'Move Down' => 'Переместить вниз',
+            'Delete' => 'Удалить',
+            'Rules' => 'правил',
+            'No rules configured' => 'Правила не настроены',
+            'Add the first rule to enable this metric.' => 'Добавьте первое правило, чтобы включить эту метрику.',
+            'Invalid security token. Refresh the page and try again.' => 'Недействительный токен безопасности. Обновите страницу и повторите попытку.',
+            'The configuration is too large.' => 'Превышен допустимый размер конфигурации.',
+            'The configuration must be a JSON object.' => 'Конфигурация должна быть объектом JSON.',
+            'Configuration saved. The host list and group statistics now use the new rules.' => 'Конфигурация сохранена. В списке узлов сети и статистике групп применяются новые правила.',
+            'Cannot read CMDB data/item_rules.json, or the JSON is invalid.' => 'Не удалось прочитать CMDB data/item_rules.json или файл содержит недопустимый JSON.',
+            'Each metric must have a rule list with at most 100 rules.' => 'Для каждой метрики укажите список из не более чем 100 правил.',
+            'Invalid rule: enter an item name or key of 1–255 bytes and select valid matching and conversion options.' => 'Недопустимое правило. Введите имя или ключ длиной от 1 до 255 байт и выберите допустимые параметры сопоставления и преобразования.',
+            'Cannot save: grant the web service user write access to the CMDB data directory.' => 'Не удалось сохранить. Предоставьте пользователю веб-сервера право записи в каталог данных CMDB.',
+            'Cannot save: check write permissions on the CMDB data directory.' => 'Не удалось сохранить. Проверьте права записи в каталог данных CMDB.',
+            'Invalid JSON configuration.' => 'Недопустимая конфигурация JSON.',
+            'Available' => 'Доступен',
+            'Unavailable' => 'Недоступен',
+            'Unknown' => 'Неизвестно',
+            'Disabled' => 'Отключено',
+            'Maintenance' => 'Обслуживание',
+            'host' => 'узел сети',
+            'core' => 'ядро',
+        ],
     ];
 
     /**
@@ -442,6 +537,10 @@ class LanguageManager {
         // 先转换为小写进行比较，以处理大小写不一致的情况
         $lowerLang = strtolower(trim($zabbixLang));
 
+        if (preg_match('/^ru(?:[-_]|$)/i', trim($lowerLang))) {
+            return 'ru_RU';
+        }
+
         $langMap = [
             // 中文的各种变体
             'zh_cn' => 'zh_CN',
@@ -493,7 +592,7 @@ class LanguageManager {
         if (self::isSupportedLocale($mapped)) {
             return $mapped;
         }
-        // 受支持语言有限，仅 zh_CN / en_US
+        // 支持 zh_CN、en_US 和 ru_RU
         return self::ZBX_DEFAULT_LANG;
     }
 

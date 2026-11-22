@@ -1,6 +1,6 @@
 # Zabbix Import/Export
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -107,7 +107,7 @@ Template transfer uses native Zabbix configuration export/import and preserves m
 
 #### Language selection
 
-The UI resolves the signed-in Zabbix user's language, falling back to the system default when the profile uses Default. Simplified Chinese and English catalogs live in `locales`; additional Zabbix locale catalogs can be added. Shared strings delegate to Zabbix gettext, with English fallback for untranslated module strings. Browser language is not used to override the profile.
+The UI resolves the signed-in Zabbix user's language, falling back to the system default when the profile uses Default. Simplified Chinese, English, and Russian catalogs live in `locales`; additional Zabbix locale catalogs can be added. Shared strings delegate to Zabbix gettext, with English fallback for untranslated module strings. Browser language is not used to override the profile.
 
 #### Format
 

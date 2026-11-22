@@ -1,6 +1,6 @@
 # Zabbix Modules 集合
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 <div>
   <img src="images/wechat.jpg" width="20%" alt="wechat">
@@ -14,6 +14,10 @@
 ## 描述
 
 这是一个包含多个Zabbix模块的项目集合，每个模块都是独立的，为Zabbix监控系统提供额外的功能。
+
+## 界面语言
+
+在 Zabbix 用户资料中选择 **Русский** 即可使用俄语界面。用户资料选择默认语言时，模块会继承 Zabbix 的系统默认语言（`default_lang`）。
 
 ## 模块列表
 
@@ -96,7 +100,7 @@
 - 支持通过主机名或IP地址进行搜索
 - 支持按主机分组进行筛选
 - 显示主机名、IP地址、接口方式、CPU总量、内存总量、主机分组等信息
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 - 响应式设计，适配不同屏幕尺寸
 
 ![1](zabbix_cmdb/images/1.jpg)
@@ -121,7 +125,7 @@
 - 图表放大全屏查看
 - 自动刷新功能（支持5/10/20/30/60秒间隔）
 - 多种时间范围选择（1小时至30天）
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 ![1](zabbix_graphtrees/images/1.png)
 ![2](zabbix_graphtrees/images/2.png)
@@ -141,7 +145,7 @@
 - 机柜可视化：42U机柜垂直布局，U位占用状态显示
 - 主机分配：将Zabbix主机分配到机柜指定U位
 - 搜索功能：按机柜或主机名称搜索
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 - 响应式设计，适配不同屏幕尺寸
 
 ![1](zabbix_rack/images/1.png)
@@ -163,7 +167,7 @@
 - 查看原数据、复制 snmpget 命令 / OID
 - 选中单条结果一键创建监控项（自动映射数据类型）
 - 勾选多条结果批量创建 SNMP 模板及监控项
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 ![1](zabbix_snmp/images/1.png)
 ![2](zabbix_snmp/images/2.png)
@@ -186,7 +190,7 @@
 - 告警状态列按严重度显示数量，行可展开查看全部告警明细
 - JumpServer 资产 ID 以标记形式写回 Zabbix 主机；已推送主机悬停可重新推送
 - 表格最后一列「连接」按钮，一键跳转到 JumpServer 主机连接页面
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 ![1](zabbix_jumpserver/images/1.png)
 
@@ -210,7 +214,7 @@
 - 用户同步：匹配或自动创建 Zabbix 用户并加入用户组；新用户密码自动生成（12 位）并在结果中展示一次
 - 钉钉用户：无手机号时自动将姓名转为拼音作为 Zabbix 用户名
 - 预览模式：同步前预览部门与用户匹配情况
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 **文档链接**：[zabbix_im/README.md](./zabbix_im/README.md)（[English](./zabbix_im/README_en.md)）
 
@@ -231,7 +235,7 @@
 - 返回编辑：预览页可一键带着数据返回在线表格录入页，方便对非就绪主机进行编辑，不会清空已录入数据
 - 导入进度反馈：逐台 AJAX 创建主机，实时进度条和成功/失败计数
 - 结果报告导出：导入完成后可下载 CSV 格式的结果报告（含主机名、IP、主机ID、结果、错误信息）
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 ![1](zabbix_clonehosts/images/image.png)
 ![2](zabbix_clonehosts/images/image-1.png)
@@ -253,7 +257,7 @@
 - 大网段自动分片，PHP CLI 后台执行，支持 `pcntl` 多进程
 - 支持手动扫描与 crontab 定时扫描，并实时显示任务进度
 - IP 使用矩阵、地址明细、主机关联、筛选与分页
-- 支持中英文界面国际化
+- 支持中文、英文和俄语界面国际化
 
 ![1](zabbix_ipam/images/1.png)
 ![2](zabbix_ipam/images/2.png)
@@ -273,7 +277,7 @@
 - 展示端口状态、速率、入/出流量、错误和告警，点击端口查看相关历史图表
 - 支持自动检测端口、堆叠成员、端口布局、SNMP 索引偏移、排除规则和手动别名
 - 展示端口及整机流量趋势，按配置显示 CPU、内存、温度、PoE、风扇等信息
-- 自定义端口样式、颜色、缩放和汇总栏，支持中英文界面
+- 自定义端口样式、颜色、缩放和汇总栏，支持中文、英文和俄语界面
 
 ![Zabbix Switch Visual 交换机端口面板](zabbix_switch_visual/images/1.png)
 
@@ -294,7 +298,7 @@
 - 手动关联带宽及上行、下行流量监控项，支持多监控项求和与单位换算
 - 显示主机状态和问题，支持端口状态触发器匹配及报警连线变色
 - 预览画布每 60 秒刷新状态和指标，支持缩放、平移、适应窗口及原生主机菜单
-- 支持中英文界面国际化及深色、浅色主题
+- 支持中文、英文和俄语界面国际化及深色、浅色主题
 
 **文档链接**：[zabbix_auto_topology_map/README.md](./zabbix_auto_topology_map/README.md)（[English](./zabbix_auto_topology_map/README_en.md)）
 
@@ -309,7 +313,7 @@
 - 支持主机、模板和监控项的 CSV / JSON 导入导出，模板页还支持 Zabbix 原生 JSON 导入
 - 支持分组筛选、跨页全选与按筛选结果导出，文件名时间跟随 Zabbix 用户时区
 - 导入前预览差异，支持重复处理策略，默认拦截脚本等执行类配置
-- 界面自动跟随 Zabbix 用户语言，内置简体中文和英文
+- 界面自动跟随 Zabbix 用户语言，内置简体中文、英文和俄语
 
 ![Zabbix Import/Export 主机导入导出](zabbix_export_import/images/hosts.jpg)
 
@@ -325,7 +329,7 @@
 
 - 更换登录页标志、侧边栏标志、折叠侧边栏图标和浏览器图标
 - 支持原位预览、图片裁剪及登录页标志 4:1 尺寸调整
-- 自定义服务器名称、页脚文本和帮助链接，支持中英文界面
+- 自定义服务器名称、页脚文本和帮助链接，支持中文、英文和俄语界面
 
 ![Zabbix Rebrand Logo（品牌 logo 设置）](zabbix_rebrand_logo/images/1.png)
 
@@ -340,7 +344,7 @@ Zabbix 超级管理员可在「管理 → 数据库导出」将当前 Zabbix 的
 - 查看各表的预估大小，按表名筛选并批量选择。
 - 支持导出表结构和数据、仅结构或仅数据。未选中的表保留建表语句，可勾选排除 `history` 开头的表数据。
 - 支持浏览器下载和服务器保存。选择浏览器下载时，超过 500 MB 的 SQL 文件自动保存到指定目录，默认为 `/tmp/zabbix`。
-- 支持中英文界面，文件名使用当前用户的时区，并包含数据库类型。
+- 支持中文、英文和俄语界面，文件名使用当前用户的时区，并包含数据库类型。
   
 文件名分别为 `zabbix_database_backup_mysql_yyyy-mm-dd_hh-mm-ss.sql`、`zabbix_database_backup_mariadb_yyyy-mm-dd_hh-mm-ss.sql` 和 `zabbix_database_backup_postgresql_yyyy-mm-dd_hh-mm-ss.sql`。
 

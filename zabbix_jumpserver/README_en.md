@@ -1,6 +1,6 @@
 # Zabbix JumpServer Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -35,7 +35,7 @@ When pushing hosts, it automatically:
 - **Expandable alarm details**: Click the expand toggle at the start of each row to view all active alarms for that host (severity, name, time)
 - **One-click connect**: Pushed hosts show a "Connect" button in the last column linking to the JumpServer connect page for that host
 - **Asset ID persistence**: The JumpServer asset ID is stored as a Zabbix host tag (`jumpserver_asset_id`)
-- **Internationalization**: Supports Chinese and English interfaces
+- **Internationalization**: Supports Chinese, English, and Russian interfaces
 
 ## Installation
 

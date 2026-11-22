@@ -1,6 +1,6 @@
 # Zabbix LLDP Topology Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -25,7 +25,7 @@ The module adds **LLDP Topology** under the **Monitoring** menu in Zabbix Web.
 - **Hover details**: Local/remote device names, ports, and last update time
 - **Statistics**: Host, link, and device counts plus skipped item count
 - **Extensible**: Node JSON includes a reserved `image` field for future device icons
-- **Bilingual UI**: Chinese and English
+- **Localization**: Chinese, English, and Russian
 
 ## Installation
 

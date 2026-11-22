@@ -1,6 +1,6 @@
 # Zabbix Backup and Restore
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 

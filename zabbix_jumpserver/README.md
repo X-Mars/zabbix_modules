@@ -1,6 +1,6 @@
 # Zabbix JumpServer 模块
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -35,7 +35,7 @@
 - **告警明细展开**：点击行首展开按钮，查看该主机当前所有告警（严重度、告警名称、时间）
 - **一键连接**：已推送的主机在表格最后一列显示「连接」按钮，点击跳转到 JumpServer 该主机的连接页面
 - **资产 ID 持久化**：JumpServer 资产 ID 以 Zabbix 主机标记（`jumpserver_asset_id`）形式保存
-- **国际化支持**：支持中英文界面
+- **国际化支持**：支持中文、英文和俄语界面
 
 ## 安装步骤
 

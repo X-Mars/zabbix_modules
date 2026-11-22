@@ -1,6 +1,6 @@
 # Zabbix Database Export Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -22,7 +22,7 @@ This frontend module exports database backups from Zabbix Web. It reuses the fro
 - **Table selection**. View table names, storage engines, and estimated sizes including data and indexes. Filter by name and select tables in bulk.
 - **Export modes**. Export structure and data, structure only, or data only. Unselected tables always retain their `CREATE TABLE` statements, including columns, indexes, and constraints.
 - **Output destination**. Download in the browser or save on the server. When browser download is selected, files up to 500 MB (500,000,000 bytes) download directly. Larger files are saved automatically to the specified directory.
-- **Time zone and language**. Filenames include the database type and use the current user's time zone. The interface follows the frontend language setting and supports English and Chinese.
+- **Time zone and language**. Filenames include the database type and use the current user's time zone. The interface follows the frontend language setting and supports English, Chinese, and Russian.
 - **Interface**. Local CSS and JavaScript provide a responsive layout styled after Element Plus.
 
 ![1](images/1.png)

@@ -1,6 +1,6 @@
 # Zabbix 备份与还原
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 

@@ -7,6 +7,10 @@ use CController,
     CControllerResponseFatal,
     API;
 
+use Modules\ZabbixReports\Lib\LanguageManager;
+
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+
 class DailyReportSimpleTest extends CController {
 
     public function init(): void {
@@ -37,27 +41,27 @@ class DailyReportSimpleTest extends CController {
         
         if (empty($hosts)) {
             header('Content-Type: text/plain; charset=UTF-8');
-            echo "没有找到监控的主机。\n";
+            echo LanguageManager::t('没有找到监控的主机。') . "\n";
             exit;
         }
         
         $host = $hosts[0];
         
         header('Content-Type: text/plain; charset=UTF-8');
-        echo "=== 简单监控项测试 ===\n\n";
-        echo "测试主机: {$host['name']} (ID: {$host['hostid']})\n\n";
+        echo LanguageManager::t('=== 简单监控项测试 ===') . "\n\n";
+        echo LanguageManager::tf('测试主机: %s (ID: %s)', $host['name'], $host['hostid']) . "\n\n";
         
         // 搜索所有可能的CPU和内存相关监控项
-        echo "=== 搜索CPU相关监控项 ===\n";
+        echo LanguageManager::t('=== 搜索CPU相关监控项 ===') . "\n";
         $this->searchItems($host['hostid'], ['cpu', 'processor', 'core']);
         
-        echo "\n=== 搜索内存相关监控项 ===\n";
+        echo "\n" . LanguageManager::t('=== 搜索内存相关监控项 ===') . "\n";
         $this->searchItems($host['hostid'], ['memory', 'mem', 'ram']);
         
-        echo "\n=== 使用通配符搜索 ===\n";
+        echo "\n" . LanguageManager::t('=== 使用通配符搜索 ===') . "\n";
         $this->wildcardSearch($host['hostid'], 'util');
         
-        echo "\n=== 按键值搜索 ===\n";
+        echo "\n" . LanguageManager::t('=== 按键值搜索 ===') . "\n";
         $this->keySearch($host['hostid'], ['system.cpu', 'vm.memory']);
         
         exit;
@@ -65,7 +69,7 @@ class DailyReportSimpleTest extends CController {
     
     private function searchItems($hostid, $keywords) {
         foreach ($keywords as $keyword) {
-            echo "搜索关键词: {$keyword}\n";
+            echo LanguageManager::tf('搜索关键词: %s', $keyword) . "\n";
             
             $items = API::Item()->get([
                 'output' => ['itemid', 'name', 'key_', 'units'],
@@ -77,10 +81,10 @@ class DailyReportSimpleTest extends CController {
             ]);
             
             if (empty($items)) {
-                echo "  未找到匹配的监控项\n";
+                echo "  " . LanguageManager::t('未找到匹配的监控项') . "\n";
             } else {
                 foreach ($items as $item) {
-                    echo "  - {$item['name']} (键值: {$item['key_']}, 单位: {$item['units']})\n";
+                    echo "  " . LanguageManager::tf('- %s (键值: %s, 单位: %s)', $item['name'], $item['key_'], $item['units']) . "\n";
                 }
             }
             echo "\n";
@@ -88,7 +92,7 @@ class DailyReportSimpleTest extends CController {
     }
     
     private function wildcardSearch($hostid, $keyword) {
-        echo "通配符搜索: *{$keyword}*\n";
+        echo LanguageManager::tf('通配符搜索: *%s*', $keyword) . "\n";
         
         $items = API::Item()->get([
             'output' => ['itemid', 'name', 'key_', 'units'],
@@ -100,10 +104,10 @@ class DailyReportSimpleTest extends CController {
         ]);
         
         if (empty($items)) {
-            echo "  未找到匹配的监控项\n";
+            echo "  " . LanguageManager::t('未找到匹配的监控项') . "\n";
         } else {
             foreach ($items as $item) {
-                echo "  - {$item['name']} (键值: {$item['key_']}, 单位: {$item['units']})\n";
+                echo "  " . LanguageManager::tf('- %s (键值: %s, 单位: %s)', $item['name'], $item['key_'], $item['units']) . "\n";
             }
         }
         echo "\n";
@@ -111,7 +115,7 @@ class DailyReportSimpleTest extends CController {
     
     private function keySearch($hostid, $keyPatterns) {
         foreach ($keyPatterns as $pattern) {
-            echo "键值模式搜索: {$pattern}\n";
+            echo LanguageManager::tf('键值模式搜索: %s', $pattern) . "\n";
             
             $items = API::Item()->get([
                 'output' => ['itemid', 'name', 'key_', 'units'],
@@ -123,10 +127,10 @@ class DailyReportSimpleTest extends CController {
             ]);
             
             if (empty($items)) {
-                echo "  未找到匹配的监控项\n";
+                echo "  " . LanguageManager::t('未找到匹配的监控项') . "\n";
             } else {
                 foreach ($items as $item) {
-                    echo "  - {$item['name']} (键值: {$item['key_']}, 单位: {$item['units']})\n";
+                    echo "  " . LanguageManager::tf('- %s (键值: %s, 单位: %s)', $item['name'], $item['key_'], $item['units']) . "\n";
                 }
             }
             echo "\n";

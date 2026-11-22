@@ -12,7 +12,7 @@
 	'use strict';
 
 	// ---------------------------------------------------------------
-	// 中英文支持：词典由 PHP 侧 LanguageManager::jsMap() 注入
+	// 多语言词典由 PHP 侧 LanguageManager::jsMap() 注入
 	// （window.TOPOMAP_I18N）。中文环境词典为空，T() 直接返回原文；
 	// 英文环境查不到译文时同样回退原文，保证任何情况下都有文案。
 	// ---------------------------------------------------------------
@@ -40,7 +40,7 @@
 	}
 
 	function locale() {
-		return window.TOPOMAP_LANG === 'zh_CN' ? 'zh-CN' : 'en-US';
+		return (window.TOPOMAP_LANG || 'en_US').replace('_', '-');
 	}
 
 

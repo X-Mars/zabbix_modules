@@ -1,6 +1,6 @@
 # Zabbix Switch Visual
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -12,7 +12,7 @@
 
 ## 描述
 
-Zabbix Switch Visual 是一个交换机端口监控仪表盘组件。它根据 Zabbix 监控项生成交换机机箱、RJ45/SFP 端口、状态、流量和汇总信息的可视化面板。界面支持中文和英文。
+Zabbix Switch Visual 是一个交换机端口监控仪表盘组件。它根据 Zabbix 监控项生成交换机机箱、RJ45/SFP 端口、状态、流量和汇总信息的可视化面板。界面支持中文、英文和俄语。
 
 ![Zabbix Switch Visual 仪表盘示例](images/1.png)
 
@@ -23,7 +23,7 @@ Zabbix Switch Visual 是一个交换机端口监控仪表盘组件。它根据 Z
 - **端口布局**：支持手动配置或自动检测端口数量、堆叠成员、端口行序、SNMP 索引偏移、排除规则和手动别名。
 - **趋势与汇总**：展示端口和整机流量微型趋势图，以及运行时间、型号、序列号、CPU、内存、温度、PoE 和风扇信息；可选指标仅在配置了对应监控项后显示。
 - **外观设置**：可调整端口样式、颜色、缩放比例和汇总栏显示。
-- **中英文界面**：根据 Zabbix 用户语言显示简体中文或英文。
+- **中文、英文和俄语界面**：根据 Zabbix 用户语言显示简体中文、英文或俄语。
 
 ## 安装步骤
 
@@ -60,7 +60,7 @@ python3 tools/compatibility/prepare.py /usr/share/zabbix
 - `actions/WidgetView.php`、`includes/DataFetcher.php`：主机与监控项数据获取。
 - `views/widget.edit.php`、`views/widget.view.php`：配置表单和端口可视化视图。
 - `assets/js/class.widget.js`、`assets/css/switch_monitor.css`：前端交互和样式。
-- `includes/Translation.php`：中英文文案。
+- `includes/Translation.php`：中文、英文和俄语文案。
 
 组件开发接口可参考 [Zabbix 官方文档](https://www.zabbix.com/documentation/7.0/en/devel/modules/widgets)。
 

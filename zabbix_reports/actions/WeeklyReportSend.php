@@ -3,6 +3,7 @@
 namespace Modules\ZabbixReports\Actions;
 
 use CController,
+    CControllerResponseData,
     API;
 
 require_once dirname(__DIR__) . '/lib/LanguageManager.php';
@@ -125,22 +126,22 @@ class WeeklyReportSend extends CController {
         $topMemHosts = array_slice($memUsage, 0, 10, true);
 
         $to = 'admin@example.com';
-        $subject = LanguageManager::t('Zabbix Weekly Report') . ' - ' . date('Y-m-d', $weekStart) . ' to ' . date('Y-m-d', $weekEnd);
+        $subject = LanguageManager::t('Zabbix Weekly Report') . ' - ' . LanguageManager::tf('%s to %s', date('Y-m-d', $weekStart), date('Y-m-d', $weekEnd));
         $message = "
         <h1>" . LanguageManager::t('Zabbix Weekly Report') . "</h1>
-        <p>Problem Count: $problemCount</p>
-        <p>Resolved Count: $resolvedCount</p>
-        <p>Top Problem Hosts: " . implode(', ', array_keys($topHosts)) . "</p>
-        <p>Top CPU Usage Hosts: " . implode(', ', array_keys($topCpuHosts)) . "</p>
-        <p>Top Memory Usage Hosts: " . implode(', ', array_keys($topMemHosts)) . "</p>
+        <p>" . LanguageManager::t('Problem Count') . ": $problemCount</p>
+        <p>" . LanguageManager::t('Resolved Count') . ": $resolvedCount</p>
+        <p>" . LanguageManager::t('Top Problem Hosts') . ": " . implode(', ', array_keys($topHosts)) . "</p>
+        <p>" . LanguageManager::t('Top CPU Usage Hosts') . ": " . implode(', ', array_keys($topCpuHosts)) . "</p>
+        <p>" . LanguageManager::t('Top Memory Usage Hosts') . ": " . implode(', ', array_keys($topMemHosts)) . "</p>
         ";
         $headers = "MIME-Version: 1.0" . "\r\n";
         $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
         $headers .= 'From: zabbix@example.com' . "\r\n";
 
-        mail($to, $subject, $message, $headers);
+        mail($to, mb_encode_mimeheader($subject, 'UTF-8', 'B', "\r\n", 9), $message, $headers);
 
-        $data = ['message' => 'Report sent successfully'];
+        $data = ['message' => LanguageManager::t('Report sent successfully')];
         $response = new CControllerResponseData($data);
         $this->setResponse($response);
     }

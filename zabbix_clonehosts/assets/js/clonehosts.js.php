@@ -761,13 +761,14 @@
 			var lines = text.split(/\r\n|\r|\n/);
 			var startIdx = 0;
 
-			// Detect and skip header row
-			if (lines.length > 0) {
-				var firstLine = lines[0].toLowerCase().replace(/\s/g, '');
-				if (firstLine.indexOf('hostname') >= 0 || firstLine.indexOf('host_name') >= 0 ||
-					firstLine.indexOf('host') >= 0 || firstLine.indexOf('主机名称') >= 0) {
-					startIdx = 1;
-				}
+			// Match the first column against headers from any supported locale.
+			function normalizeHeader(value) {
+				return (value || '').toLowerCase().replace(/\s|\(\*\)/g, '');
+			}
+			var hostHeaders = ['host', 'hostname', 'host_name'].concat(data.csvHostHeaders || []);
+			var firstField = normalizeHeader(parseCSVLine(lines[0])[0]);
+			if (hostHeaders.some(function(header) { return normalizeHeader(header) === firstField; })) {
+				startIdx = 1;
 			}
 
 			for (var i = startIdx; i < lines.length; i++) {

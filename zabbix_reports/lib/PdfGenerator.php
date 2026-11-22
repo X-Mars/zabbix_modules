@@ -3,6 +3,7 @@
 namespace Modules\ZabbixReports\Lib;
 
 require_once __DIR__ . '/ReportViewHelper.php';
+require_once __DIR__ . '/LanguageManager.php';
 
 /**
  * PDF / HTML 导出生成器
@@ -24,15 +25,16 @@ class PdfGenerator {
     }
     
     public function generate() {
-        // 检查是否有可用的PDF库
         if (class_exists('TCPDF')) {
             return $this->generateTCPDF();
-        } elseif (class_exists('FPDF')) {
-            return $this->generateFPDF();
-        } else {
-            // 如果没有PDF库，使用简单的HTML转PDF方案
-            return $this->generateHTML();
         }
+
+        // FPDF's built-in Arial font cannot display Cyrillic.
+        if (class_exists('FPDF') && LanguageManager::getCurrentLanguage() !== 'ru_RU') {
+            return $this->generateFPDF();
+        }
+
+        return $this->generateHTML();
     }
     
     private function generateTCPDF() {
@@ -48,6 +50,10 @@ class PdfGenerator {
         $pdf->SetFooterMargin(10);
         $pdf->SetAutoPageBreak(TRUE, 25);
         $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+        if (LanguageManager::getCurrentLanguage() === 'ru_RU') {
+            $pdf->SetFont('dejavusans', '', 10);
+        }
         
         $pdf->AddPage();
         
@@ -115,7 +121,8 @@ class PdfGenerator {
         $viewData = $this->normalizeData();
 
         // ===== HTML 文档头部 =====
-        $html = '<!DOCTYPE html><html><head>';
+        $language = str_replace('_', '-', LanguageManager::getCurrentLanguage());
+        $html = '<!DOCTYPE html><html lang="' . $language . '"><head>';
         $html .= '<meta charset="UTF-8">';
         $html .= '<title>' . htmlspecialchars($this->title) . '</title>';
 

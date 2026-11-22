@@ -1,6 +1,6 @@
 # Zabbix Graph Trees Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -32,7 +32,7 @@ This is a Zabbix frontend module that provides tree-structured resource browsing
   - Auto-refresh (30/60/120/300 second intervals)
   - Quick time ranges from the last 10 minutes to 30 days, plus manual start and end times
   - An export icon at the top right of each chart downloads a high-resolution PNG (2400×600 plot area)
-- **Internationalization**: Support for Chinese and English interfaces
+- **Internationalization**: Support for Chinese, English, and Russian interfaces
 - **Responsive Design**: Adapts to different screen sizes
 - **Modern Interface**: Clean and concise design style
 

@@ -110,6 +110,58 @@ final class LanguageManager {
             'The backup options are invalid.' => 'The backup options are invalid.',
             'Could not create a temporary backup file.' => 'Could not create a temporary backup file.',
         ],
+        'ru_RU' => [
+            'Install a pg_dump client compatible with the PostgreSQL server version.' => 'Установите клиент pg_dump, совместимый с версией сервера PostgreSQL.',
+            'Database export' => 'Экспорт базы данных',
+            'Database type' => 'Тип базы данных',
+            'Database version' => 'Версия базы данных',
+            'MySQL, MariaDB or PostgreSQL is required.' => 'Требуется MySQL, MariaDB или PostgreSQL.',
+            'The PostgreSQL export failed.' => 'Не удалось выполнить экспорт PostgreSQL.',
+            'PostgreSQL export requires proc_open and a compatible pg_dump client.' => 'Для экспорта PostgreSQL требуются proc_open и совместимый клиент pg_dump.',
+            'PostgreSQL password files cannot contain line breaks.' => 'Файлы паролей PostgreSQL не могут содержать переводы строк.',
+            'pg_dump failed. Check its version, database access and server logs.' => 'Ошибка pg_dump. Проверьте его версию, доступ к базе данных и журнал сервера.',
+            'Database tables' => 'Таблицы базы данных',
+            'Table name' => 'Имя таблицы',
+            'Engine' => 'Движок',
+            'Estimated size' => 'Приблизительный размер',
+            'Search tables' => 'Поиск таблиц',
+            'Exclude history records' => 'Исключить данные истории',
+            'Select all filtered tables' => 'Выбрать все таблицы по фильтру',
+            'Selected tables: %d / %d' => 'Выбрано таблиц: %d из %d',
+            'Table sizes include data and indexes.' => 'Размеры таблиц включают данные и индексы.',
+            'No matching tables.' => 'Подходящие таблицы не найдены.',
+            'No tables are available to export.' => 'Нет таблиц для экспорта.',
+            'Export options' => 'Параметры экспорта',
+            'Table scope' => 'Область экспорта',
+            'All tables' => 'Все таблицы',
+            'Selected tables' => 'Выбранные таблицы',
+            'Unselected tables are exported as structure only.' => 'Для остальных таблиц экспортируется только структура.',
+            'Contents' => 'Содержимое',
+            'Structure and data' => 'Структура и данные',
+            'Structure only' => 'Только структура',
+            'Data only' => 'Только данные',
+            'Destination' => 'Назначение',
+            'Download in browser' => 'Скачать через браузер',
+            'Save on server' => 'Сохранить на сервере',
+            'Server directory' => 'Каталог на сервере',
+            'SQL files over 500 MB are saved to this directory automatically.' => 'Файлы SQL размером более 500 МБ автоматически сохраняются в этом каталоге.',
+            'Export SQL' => 'Экспортировать SQL',
+            'Backup saved on the server' => 'Резервная копия сохранена на сервере',
+            'Backup exceeded 500 MB and was saved on the server' => 'Размер копии превысил 500 МБ, и она сохранена на сервере',
+            'The database export failed.' => 'Не удалось экспортировать базу данных.',
+            'The database export failed (MySQL error %d).' => 'Не удалось экспортировать базу данных (ошибка MySQL %d).',
+            'Choose an export mode.' => 'Выберите режим экспорта.',
+            'Select at least one table.' => 'Выберите хотя бы одну таблицу.',
+            'The table selection is invalid. Refresh the page and retry.' => 'Недопустимый выбор таблиц. Обновите страницу и повторите попытку.',
+            'Could not write the backup. Check available disk space.' => 'Не удалось записать резервную копию. Проверьте свободное место на диске.',
+            'Could not create a private backup file.' => 'Не удалось создать закрытый файл резервной копии.',
+            'Could not save the backup. Check permissions or retry in a second.' => 'Не удалось сохранить резервную копию. Проверьте права доступа или повторите попытку через секунду.',
+            'The server backup directory configuration is invalid.' => 'Недопустимая настройка каталога резервных копий на сервере.',
+            'Choose a private backup directory outside the web root.' => 'Выберите закрытый каталог резервных копий вне корневого каталога сайта.',
+            'Choose a private, writable directory configured for backups.' => 'Выберите закрытый каталог резервных копий с правом записи.',
+            'The backup options are invalid.' => 'Недопустимые параметры резервного копирования.',
+            'Could not create a temporary backup file.' => 'Не удалось создать временный файл резервной копии.',
+        ],
     ];
 
     private static $currentLanguage;
@@ -121,7 +173,11 @@ final class LanguageManager {
                 $locale = self::normalize(\CSettingsHelper::getPublic(\CSettingsHelper::DEFAULT_LANG));
             }
 
-            self::$currentLanguage = preg_match('/^zh(?:_|$)/', $locale) ? 'zh_CN' : self::DEFAULT_LANGUAGE;
+            if (preg_match('/^ru(?:_|$)/', $locale)) {
+                self::$currentLanguage = 'ru_RU';
+            } else {
+                self::$currentLanguage = preg_match('/^zh(?:_|$)/', $locale) ? 'zh_CN' : self::DEFAULT_LANGUAGE;
+            }
         }
 
         return self::$currentLanguage;

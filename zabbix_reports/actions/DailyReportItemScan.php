@@ -7,6 +7,10 @@ use CController,
     CControllerResponseFatal,
     API;
 
+use Modules\ZabbixReports\Lib\LanguageManager;
+
+require_once dirname(__DIR__) . '/lib/LanguageManager.php';
+
 require_once dirname(__DIR__) . '/lib/ItemFinder.php';
 use Modules\ZabbixReports\Lib\ItemFinder;
 
@@ -40,16 +44,16 @@ class DailyReportItemScan extends CController {
         
         if (empty($hosts)) {
             header('Content-Type: text/plain; charset=UTF-8');
-            echo "没有找到监控的主机。\n";
+            echo LanguageManager::t('没有找到监控的主机。') . "\n";
             exit;
         }
         
         header('Content-Type: text/plain; charset=UTF-8');
-        echo "=== Zabbix 监控项扫描工具 ===\n\n";
-        echo "正在扫描前5个主机的所有监控项...\n\n";
+        echo LanguageManager::t('=== Zabbix 监控项扫描工具 ===') . "\n\n";
+        echo LanguageManager::t('正在扫描前5个主机的所有监控项...') . "\n\n";
         
         foreach ($hosts as $host) {
-            echo "主机: {$host['name']} (ID: {$host['hostid']})\n";
+            echo LanguageManager::tf('主机: %s (ID: %s)', $host['name'], $host['hostid']) . "\n";
             echo str_repeat("=", 60) . "\n";
             
             // 获取所有监控项
@@ -60,7 +64,7 @@ class DailyReportItemScan extends CController {
                 'sortfield' => 'name'
             ]);
             
-            echo "总监控项数: " . count($allItems) . "\n\n";
+            echo LanguageManager::tf('总监控项数: %d', count($allItems)) . "\n\n";
             
             // 分类监控项
             $categories = [
@@ -97,12 +101,12 @@ class DailyReportItemScan extends CController {
             // 输出每个分类
             foreach ($categories as $categoryName => $items) {
                 if (!empty($items)) {
-                    echo "{$categoryName} (" . count($items) . " 项):\n";
+                    echo LanguageManager::tf('%s (%d 项):', LanguageManager::t($categoryName), count($items)) . "\n";
                     foreach ($items as $item) {
                         echo "  - {$item['name']}\n";
-                        echo "    键值: {$item['key_']}\n";
-                        echo "    单位: {$item['units']}\n";
-                        echo "    类型: " . $this->getValueTypeName($item['value_type']) . "\n\n";
+                        echo "    " . LanguageManager::tf('键值: %s', $item['key_']) . "\n";
+                        echo "    " . LanguageManager::tf('单位: %s', $item['units']) . "\n";
+                        echo "    " . LanguageManager::t('类型: ') . $this->getValueTypeName($item['value_type']) . "\n\n";
                     }
                 }
             }
@@ -110,25 +114,25 @@ class DailyReportItemScan extends CController {
             echo str_repeat("=", 80) . "\n\n";
         }
         
-        echo "=== 搜索模式建议 ===\n";
-        echo "基于扫描结果，建议以下搜索模式:\n\n";
-        echo "CPU使用率可能的名称:\n";
+        echo LanguageManager::t('=== 搜索模式建议 ===') . "\n";
+        echo LanguageManager::t('基于扫描结果，建议以下搜索模式:') . "\n\n";
+        echo LanguageManager::t('CPU使用率可能的名称:') . "\n";
         echo "- CPU utilization\n";
         echo "- CPU usage\n";
         echo "- Processor time\n";
         echo "- CPU idle time\n\n";
         
-        echo "CPU数量可能的名称:\n";
+        echo LanguageManager::t('CPU数量可能的名称:') . "\n";
         echo "- Number of CPUs\n";
         echo "- CPU cores\n";
         echo "- Processors\n\n";
         
-        echo "内存使用率可能的名称:\n";
+        echo LanguageManager::t('内存使用率可能的名称:') . "\n";
         echo "- Memory utilization\n";
         echo "- Memory usage\n";
         echo "- Available memory\n\n";
         
-        echo "内存总量可能的名称:\n";
+        echo LanguageManager::t('内存总量可能的名称:') . "\n";
         echo "- Total memory\n";
         echo "- Physical memory\n";
         echo "- Memory size\n";
@@ -145,6 +149,6 @@ class DailyReportItemScan extends CController {
             ITEM_VALUE_TYPE_TEXT => 'Text'
         ];
         
-        return isset($types[$valueType]) ? $types[$valueType] : 'Unknown';
+        return LanguageManager::t($types[$valueType] ?? 'Unknown');
     }
 }

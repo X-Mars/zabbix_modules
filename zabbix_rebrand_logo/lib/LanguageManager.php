@@ -2,8 +2,63 @@
 namespace Modules\ZabbixRebrandLogo\Lib;
 require_once __DIR__.'/ModuleNotice.php';
 class LanguageManager {
+    private const RUSSIAN = [
+        'Default is the Zabbix server name, which is not set (ZBX_SERVER_NAME in Docker, $ZBX_SERVER_NAME in zabbix.conf.php).' => 'По умолчанию используется имя сервера Zabbix. Сейчас оно не задано (ZBX_SERVER_NAME в Docker, $ZBX_SERVER_NAME в zabbix.conf.php).',
+        'Zabbix Rebrand Logo' => 'Оформление Zabbix',
+        'Login page logo' => 'Логотип на странице входа',
+        'Sidebar logo' => 'Логотип боковой панели',
+        'Compact sidebar icon' => 'Значок свёрнутой боковой панели',
+        'Browser favicon' => 'Значок вкладки браузера',
+        'Remove current logo' => 'Удалить текущий логотип',
+        'Remove current favicon' => 'Удалить текущий значок вкладки',
+        'Recommended: 120 x 30 pixels. Formats: PNG, JPG, GIF.' => 'Рекомендуемый размер: 120 × 30 пикселей. Форматы: PNG, JPG, GIF.',
+        'Recommended: 91 x 24 pixels. Formats: PNG, JPG, GIF.' => 'Рекомендуемый размер: 91 × 24 пикселя. Форматы: PNG, JPG, GIF.',
+        'Recommended: 24 x 24 pixels. Formats: PNG, JPG, GIF, ICO.' => 'Рекомендуемый размер: 24 × 24 пикселя. Форматы: PNG, JPG, GIF, ICO.',
+        'Saved to assets/logos/favicon.ico. Requires a one-time symlink from /usr/share/zabbix/favicon.ico to that file — see the module README. Recommended: 32 x 32 pixels. Formats: ICO, PNG, GIF, JPG.' => 'Файл сохраняется в assets/logos/favicon.ico. Один раз создайте символическую ссылку на этот файл из /usr/share/zabbix/favicon.ico по инструкции в README модуля. Рекомендуемый размер: 32 × 32 пикселя. Форматы: ICO, PNG, GIF, JPG.',
+        'Default' => 'По умолчанию',
+        'Custom' => 'Пользовательский',
+        'Hidden' => 'Скрыто',
+        'e.g. Production monitoring' => 'Например, мониторинг рабочей среды',
+        'Shown under the sidebar logo and before the page title in the browser tab.' => 'Отображается под логотипом боковой панели и перед названием страницы на вкладке браузера.',
+        'The sign-in page always shows the default, because Zabbix loads modules only after sign-in.' => 'На странице входа отображается имя по умолчанию: Zabbix загружает модули после входа в систему.',
+        'Server name' => 'Имя сервера',
+        'Footer text' => 'Текст внизу страницы',
+        'e.g. My Company' => 'Например, моя компания',
+        'Help URL' => 'Ссылка на справку',
+        'e.g. https://github.com/X-Mars/zabbix_modules' => 'Например, https://github.com/X-Mars/zabbix_modules',
+        'Logo settings' => 'Настройки логотипа',
+        'General settings' => 'Общие настройки',
+        'Update' => 'Обновить',
+        'Invalid input.' => 'Недопустимые данные.',
+        'Cannot update branding.' => 'Не удалось обновить оформление.',
+        'Branding updated successfully. Clear your browser cache to see the changes.' => 'Оформление обновлено. Очистите кэш браузера, чтобы увидеть изменения.',
+        'Branding update failed.' => 'Ошибка обновления оформления.',
+        'Check write access for local/conf and review the web server error log.' => 'Проверьте права на запись в local/conf и журнал ошибок веб-сервера.',
+        'Preview' => 'Предпросмотр',
+        'Image scale' => 'Масштаб изображения',
+        'Image scaled for upload.' => 'Масштаб изображения изменён для загрузки.',
+        'Crop image' => 'Обрезать изображение',
+        'Apply crop' => 'Применить обрезку',
+        'Zoom' => 'Масштаб',
+        'Horizontal position' => 'Положение по горизонтали',
+        'Vertical position' => 'Положение по вертикали',
+        'Unable to load image.' => 'Не удалось загрузить изображение.',
+        'Crop applied.' => 'Изображение обрезано.',
+        'Logo size (4:1, %s)' => 'Размер логотипа (4:1, %s)',
+        'Install the local login view described in the module README to enable custom dimensions.' => 'Чтобы задать свои размеры, установите локальное представление страницы входа по инструкции в README модуля.',
+        'The cropped image exceeds the upload limit.' => 'Обрезанное изображение превышает допустимый размер загрузки.',
+        'Image resized for upload.' => 'Размер изображения уменьшен для загрузки.',
+        'Preparing image for upload…' => 'Подготовка изображения к загрузке…',
+        'Check the selected images and try again.' => 'Проверьте выбранные изображения и повторите попытку.',
+        'e.g. https://example.com/help' => 'Например, https://example.com/help',
+    ];
+
     public static function t(string $text): string {
-        if (\ZabbixModuleNotice::language() !== 'zh_CN') { return $text; }
+        $language = \ZabbixModuleNotice::language();
+        if ($language === 'ru_RU') {
+            return self::RUSSIAN[$text] ?? $text;
+        }
+        if ($language !== 'zh_CN') { return $text; }
         $translations = [
             'Default is the Zabbix server name, which is not set (ZBX_SERVER_NAME in Docker, $ZBX_SERVER_NAME in zabbix.conf.php).' => '默认使用 Zabbix 服务器名称，目前未设置（Docker 中为 ZBX_SERVER_NAME，zabbix.conf.php 中为 $ZBX_SERVER_NAME）。',
             "Zabbix Rebrand Logo" => "品牌 logo 设置",

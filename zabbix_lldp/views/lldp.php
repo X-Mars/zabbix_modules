@@ -446,6 +446,7 @@ $content->addItem(new CJsScript('<script>
     "use strict";
 
     var labels = ' . $jsLabels . ';
+    var locale = ' . json_encode(str_replace('_', '-', LanguageManager::detectLanguage())) . ';
     var NODE_R = 10;
     var LABEL_LINE_HEIGHT = 13;
     var LABEL_MAX_CHARS = 12;
@@ -520,7 +521,7 @@ $content->addItem(new CJsScript('<script>
         if (!ts) { return "-"; }
         var d = new Date(ts * 1000);
         if (isNaN(d.getTime())) { return "-"; }
-        return d.toLocaleString();
+        return locale === "ru-RU" ? d.toLocaleString(locale) : d.toLocaleString();
     }
 
     function hideTooltip() {

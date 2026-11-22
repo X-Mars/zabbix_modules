@@ -1,6 +1,6 @@
 # Zabbix Clonehosts Module
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 ## ✨ Version Compatibility
 
@@ -32,7 +32,7 @@ Zabbix Clonehosts is a frontend module for Zabbix that batch-clones and imports 
 - **Back to edit**: From the preview page you can return to the online table page with all data preserved, so non-ready hosts can be edited without losing what was already entered.
 - **Import progress feedback**: Hosts are created one by one via AJAX, with a real-time progress bar and success/fail counters.
 - **Result report export**: After import finishes, you can download a CSV report (host name, IP, host ID, result, error message).
-- **Bilingual UI**: The interface follows the Zabbix system language (`zh_CN` / `en_GB`), no gettext dependency.
+- **Localization**: The interface follows the Zabbix user or system language, no gettext dependency.
 - **Responsive design**: Adapts to different screen sizes.
 - **Modern UI**: Follows the native Zabbix design language.
 
@@ -83,7 +83,7 @@ The module is built on the Zabbix module framework. Key files:
 - `manifest.json` — module configuration, routes and asset declarations
 - `Module.php` — menu registration (compatible with both `Zabbix\Core\CModule` and `Core\CModule`)
 - `CompatHelper.php` — Zabbix 6.0/6.4/7.x/8.x API compatibility helper
-- `LangHelper.php` — Chinese/English i18n (pure PHP array, no gettext)
+- `LangHelper.php` — Chinese, English, and Russian localization (pure PHP array, no gettext)
 - `actions/Clonehosts.php` — main page controller (source host selection, CSV upload, table entry)
 - `actions/ClonehostsSource.php` — AJAX endpoint for loading source host config
 - `actions/ClonehostsPreview.php` — preview page controller (conflict detection, field status)

@@ -1,6 +1,6 @@
 # Zabbix 自动拓扑图模块
 
-[English](README_en.md)
+[English](README_en.md) · [Русский](README_ru.md)
 
 ## ✨ 版本兼容性
 
@@ -34,7 +34,7 @@
 - **自动刷新**：预览画布每 60 秒刷新状态和指标；编辑期间或页面隐藏时暂停刷新。
 - **原生主机菜单**：预览时点击主机，可打开 Zabbix 原生主机菜单，访问问题、最新数据、图形等页面。
 - **视图记忆**：记住用户上次查看的列表或拓扑图，支持缩放、平移和适应窗口。
-- **国际化与主题**：界面跟随 Zabbix 用户语言显示中文或英文，并适配深色、浅色主题。
+- **国际化与主题**：界面跟随 Zabbix 用户语言显示中文、英文或俄语，并适配深色、浅色主题。
 
 ## 安装步骤
 
@@ -97,7 +97,7 @@ sed -i 's/"manifest_version": 2.0/"manifest_version": 1.0/' zabbix_auto_topology
 - `actions/TopomapData.php`：拓扑图管理、自动发现结果保存、指标与走线配置等数据接口
 - `views/topomap.view.php`：页面视图与弹窗结构
 - `services/LldpDiscovery.php`：SNMP 邻居发现、端口解析与设备匹配
-- `lib/LanguageManager.php`：中英文语言管理
+- `lib/LanguageManager.php`：中文、英文和俄语语言管理
 - `assets/js/topomap.js`：列表、画布、编辑交互、自动发现与状态刷新
 - `assets/css/topomap.css`：页面样式与主题适配
 

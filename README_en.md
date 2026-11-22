@@ -1,6 +1,6 @@
 # Zabbix Modules Collection
 
-[中文](README.md)
+[中文](README.md) · [Русский](README_ru.md)
 
 <div>
   <img src="images/wechat.jpg" width="20%" alt="wechat">
@@ -14,6 +14,10 @@
 ## Description
 
 This collection contains independent modules that extend the Zabbix monitoring system.
+
+## Interface language
+
+Choose **Русский** in your Zabbix user profile to use the modules in Russian. If your profile uses the default language, the modules inherit the Zabbix system default (`default_lang`).
 
 ## Modules
 
@@ -96,7 +100,7 @@ A configuration management database (CMDB) frontend module for viewing and manag
 - Search by host name or IP address.
 - Filter by host group.
 - View host names, IP addresses, interface types, CPU and memory totals, host groups, and other details.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 - Use the responsive layout on different screen sizes.
 
 ![1](zabbix_cmdb/images/1.jpg)
@@ -121,7 +125,7 @@ A Zabbix frontend module for browsing monitoring data through a host-group tree,
 - Expand charts to full screen.
 - Refresh automatically at intervals of 5, 10, 20, 30, or 60 seconds.
 - Select time ranges from 1 hour to 30 days.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 ![1](zabbix_graphtrees/images/1.png)
 ![2](zabbix_graphtrees/images/2.png)
@@ -141,7 +145,7 @@ A Zabbix frontend module for visualizing data center racks and tracking host loc
 - View occupied rack units in a vertical 42U rack layout.
 - Assign Zabbix hosts to specific rack units.
 - Search by rack or host name.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 - Use the responsive layout on different screen sizes.
 
 ![1](zabbix_rack/images/1.png)
@@ -163,7 +167,7 @@ An SNMP assistant for the Zabbix frontend. Browse MIBs, run SNMP walks, resolve 
 - View raw results and copy `snmpget` commands or OIDs.
 - Create an item from a single result with automatic data-type mapping.
 - Select multiple results to create SNMP templates and items in bulk.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 ![1](zabbix_snmp/images/1.png)
 ![2](zabbix_snmp/images/2.png)
@@ -186,7 +190,7 @@ A Zabbix frontend module for synchronizing hosts and host groups with the JumpSe
 - View alert counts by severity and expand a row for full alert details.
 - Store JumpServer asset IDs as tags on Zabbix hosts. Hover over an already-pushed host to push it again.
 - Use **Connect** in the last column to open the host's JumpServer connection page.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 ![1](zabbix_jumpserver/images/1.png)
 
@@ -210,7 +214,7 @@ A Zabbix frontend module that synchronizes the organizational structures of **We
 - Match or create Zabbix users and add them to the corresponding groups. New users receive automatically generated 12-character passwords, shown once in the results.
 - For DingTalk users without a phone number, convert their names to Pinyin for their Zabbix usernames.
 - Preview department and user matches before synchronization.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 [Chinese documentation](./zabbix_im/README.md) · [English documentation](./zabbix_im/README_en.md)
 
@@ -231,7 +235,7 @@ A Zabbix frontend module for creating hosts in bulk by cloning an existing monit
 - Return from the preview to the table editor with the entered data intact to correct hosts that are not ready.
 - Create hosts individually through AJAX and show live progress with success and failure counts.
 - Download a CSV report with host name, IP address, host ID, result, and error details.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 ![1](zabbix_clonehosts/images/image.png)
 ![2](zabbix_clonehosts/images/image-1.png)
@@ -253,7 +257,7 @@ A Zabbix frontend module for managing IPv4 address ranges and running asynchrono
 - Split large networks into batches and run scans in the background through PHP CLI, with support for `pcntl` multiprocessing.
 - Start scans manually or schedule them through crontab and view progress as they run.
 - View an IP usage matrix, address details, and host associations, with filtering and pagination.
-- Use the interface in Chinese or English.
+- Use the interface in Chinese, English, or Russian.
 
 ![1](zabbix_ipam/images/1.png)
 ![2](zabbix_ipam/images/2.png)
@@ -273,7 +277,7 @@ A switch-port monitoring dashboard widget that presents Zabbix items as switch c
 - View port status, speed, inbound and outbound traffic, errors, and alerts. Click a port to open its history graphs.
 - Detect ports automatically and configure stack members, port layout, SNMP index offsets, exclusions, and manual aliases.
 - View per-port and switch-wide traffic trends, with configurable CPU, memory, temperature, PoE, and fan metrics.
-- Customize port styles, colors, zoom, and the summary bar, with Chinese and English interfaces.
+- Customize port styles, colors, zoom, and the summary bar, with Chinese, English, and Russian interfaces.
 
 ![Zabbix Switch Visual switch-port panel](zabbix_switch_visual/images/1.png)
 
@@ -294,7 +298,7 @@ A Zabbix frontend module that discovers network connections through LLDP, CDP, a
 - Assign bandwidth, upstream traffic, and downstream traffic items manually, with summation across items and unit conversion.
 - Display host status and problems, match port status triggers, and change link colors when alerts occur.
 - Refresh status and metrics every 60 seconds in the preview, with zoom, pan, fit to window, and native host menus.
-- Use the interface in Chinese or English with light or dark themes.
+- Use the interface in Chinese, English, or Russian with light or dark themes.
 
 [Chinese documentation](./zabbix_auto_topology_map/README.md) · [English documentation](./zabbix_auto_topology_map/README_en.md)
 
@@ -309,7 +313,7 @@ A frontend module for migrating hosts, monitoring templates, and host-level item
 - Import and export hosts, templates, and items as CSV or JSON. The template page also supports native Zabbix JSON imports.
 - Filter by group, select across pages, and export filtered results. Filename timestamps use the Zabbix user's time zone.
 - Preview differences before importing and choose how to handle duplicates. Scripts and other executable configuration are blocked by default.
-- Follow the Zabbix user's language setting with built-in Simplified Chinese and English translations.
+- Follow the Zabbix user's language setting with built-in Simplified Chinese, English, and Russian translations.
 
 ![Zabbix Import/Export host transfer](zabbix_export_import/images/hosts.jpg)
 
@@ -325,7 +329,7 @@ Customize the Zabbix frontend's branding under **Administration → Zabbix Rebra
 
 - Replace the login logo, sidebar logo, collapsed sidebar icon, and browser favicon.
 - Preview and crop images in place and resize the login logo to a 4:1 aspect ratio.
-- Customize the server name, footer text, and Help link, with Chinese and English interfaces.
+- Customize the server name, footer text, and Help link, with Chinese, English, and Russian interfaces.
 
 ![Zabbix Rebrand Logo settings](zabbix_rebrand_logo/images/1.png)
 
@@ -340,7 +344,7 @@ Zabbix Super admins can export the current Zabbix MySQL, MariaDB, or PostgreSQL 
 - View estimated table sizes, filter by name, and select tables in bulk.
 - Export table structure and data, structure only, or data only. Unselected tables retain their creation statements. An option excludes data from tables whose names start with `history`.
 - Download in the browser or save on the server. When browser download is selected, SQL files over 500 MB are saved automatically to the specified directory, which defaults to `/tmp/zabbix`.
-- Use the interface in Chinese or English. Filenames use the current user's time zone and include the database type.
+- Use the interface in Chinese, English, or Russian. Filenames use the current user's time zone and include the database type.
 
 Filename formats are `zabbix_database_backup_mysql_yyyy-mm-dd_hh-mm-ss.sql`, `zabbix_database_backup_mariadb_yyyy-mm-dd_hh-mm-ss.sql`, and `zabbix_database_backup_postgresql_yyyy-mm-dd_hh-mm-ss.sql`.
 

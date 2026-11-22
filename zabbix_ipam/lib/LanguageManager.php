@@ -107,6 +107,108 @@ class LanguageManager {
         'Data directory is not writable.' => '数据目录不可写。'
     ];
 
+    private const RUSSIAN = [
+        'IPAM' => 'IPAM',
+        'IP Management' => 'Управление IP-адресами',
+        'IP Details' => 'Сведения об IP-адресах',
+        'Report' => 'Отчёт',
+        'IP matrix' => 'Матрица IP-адресов',
+        'Task Management' => 'Управление задачами',
+        'Manage IPv4 ranges and run ICMP-only availability scans.' => 'Управляйте диапазонами IPv4 и проверяйте их доступность по ICMP.',
+        'Track ICMP scan progress and review completed background tasks.' => 'Следите за проверками ICMP и просматривайте результаты фоновых задач.',
+        'Browse every address, its latest ICMP status, and its matched Zabbix host.' => 'Просматривайте адреса, их последнее состояние по ICMP и связанные узлы Zabbix.',
+        'Quick guide' => 'Краткая инструкция',
+        'Add a range, start an ICMP scan, then click the IP count to view the availability matrix. Green means alive; gray means unreachable or not scanned.' => 'Добавьте диапазон и запустите сканирование ICMP. Нажмите на количество адресов, чтобы открыть матрицу доступности. Зелёный цвет обозначает доступный адрес, серый — недоступный или ещё не проверенный.',
+        'Association rules' => 'Правила связывания',
+        'A host is associated automatically when one of its Zabbix interfaces uses the same IPv4 address. Click the host name to open its latest data page.' => 'Связь создаётся автоматически, если IPv4-адрес совпадает с адресом одного из интерфейсов узла Zabbix. Нажмите на имя узла, чтобы открыть его последние данные.',
+        'Add IP range' => 'Добавить диапазон IP',
+        'Edit IP range' => 'Изменить диапазон IP',
+        'All IP ranges' => 'Все диапазоны IP',
+        'IP' => 'IP',
+        'IP range' => 'Диапазон IP',
+        'IP range name' => 'Имя диапазона IP',
+        'No.' => '№',
+        'Task ID' => 'ID задачи',
+        'IP status' => 'Состояние IP-адреса',
+        'Status last updated' => 'Последнее обновление состояния',
+        'Name' => 'Имя',
+        'Example: Office network' => 'Например, офисная сеть',
+        'Search' => 'Поиск',
+        'Search name or CIDR' => 'Поиск по имени или CIDR',
+        'Search task ID or range name' => 'Поиск по ID задачи или имени диапазона',
+        'Search IP, range, or host name' => 'Поиск по IP-адресу, диапазону или имени узла сети',
+        'Status' => 'Состояние',
+        'Enabled status' => 'Состояние включения',
+        'Scan status' => 'Состояние сканирования',
+        'Last scan time' => 'Время последнего сканирования',
+        'Filter' => 'Фильтр',
+        'Reset' => 'Сбросить',
+        'All statuses' => 'Все состояния',
+        'All enabled statuses' => 'Включённые и отключённые',
+        'All scan statuses' => 'Все состояния сканирования',
+        'All IP statuses' => 'Все состояния IP-адресов',
+        'Enabled' => 'Включено',
+        'Disabled' => 'Отключено',
+        'Pending' => 'Ожидает',
+        'Running' => 'Выполняется',
+        'Completed' => 'Завершено',
+        'Failed' => 'Ошибка',
+        'Stopped' => 'Остановлено',
+        'Never' => 'Ни разу',
+        'Alive' => 'Доступен',
+        'Unreachable' => 'Недоступен',
+        'Not scanned' => 'Не проверялся',
+        'Alive IPs / Total' => 'Доступных IP / всего',
+        'Host association' => 'Связь с узлом сети',
+        'Associated host' => 'Связанный узел сети',
+        'All associations' => 'Все состояния связи',
+        'Associated' => 'Связан',
+        'Unassociated' => 'Не связан',
+        'No associated host' => 'Нет связанного узла сети',
+        'Actions' => 'Действия',
+        'Start scan' => 'Начать сканирование',
+        'View task' => 'Открыть задачу',
+        'Edit' => 'Изменить',
+        'Delete' => 'Удалить',
+        'No IP ranges found.' => 'Диапазоны IP не найдены.',
+        'No IP addresses found.' => 'IP-адреса не найдены.',
+        'Scan schedule' => 'Расписание сканирования',
+        'The scan interval is controlled by crontab. Each enabled IP range is scanned whenever the cron job runs.' => 'Интервал сканирования задаётся в crontab. При каждом запуске задачи cron сканируются все включённые диапазоны.',
+        'Enable scheduled scans' => 'Включить сканирование по расписанию',
+        'When enabled, this range is scanned each time the IPAM cron job runs.' => 'Сканировать этот диапазон при каждом запуске задачи IPAM в cron.',
+        'Cancel' => 'Отмена',
+        'Save' => 'Сохранить',
+        'Close' => 'Закрыть',
+        'IP availability matrix' => 'Матрица доступности IP-адресов',
+        'Unreachable / not scanned' => 'Недоступен или не проверялся',
+        'Loading...' => 'Загрузка…',
+        'Request failed.' => 'Запрос не выполнен.',
+        'Delete this IP range?' => 'Удалить этот диапазон IP?',
+        'Tasks' => 'Задачи',
+        'Task / IP range' => 'Задача / диапазон IP',
+        'Progress' => 'Ход выполнения',
+        'Shards' => 'Части задачи',
+        'Created' => 'Создано',
+        'Stop' => 'Остановить',
+        'View range' => 'Открыть диапазон',
+        'No scan tasks found.' => 'Задачи сканирования не найдены.',
+        'Previous' => 'Предыдущая',
+        'Next' => 'Следующая',
+        'Items per page' => 'Записей на странице',
+        'Page %1$d of %2$d' => 'Страница %1$d из %2$d',
+        '%1$d items in total' => 'Всего записей: %1$d',
+        '%1$d IPs in total' => 'Всего IP-адресов: %1$d',
+        'Range saved.' => 'Диапазон сохранён.',
+        'Range deleted.' => 'Диапазон удалён.',
+        'Task started.' => 'Задача запущена.',
+        'Task stopped.' => 'Задача остановлена.',
+        'Task not found.' => 'Задача не найдена.',
+        'Range not found.' => 'Диапазон не найден.',
+        'Failed to start task.' => 'Не удалось запустить задачу.',
+        'Stop active tasks before deleting this range.' => 'Остановите выполняемые задачи перед удалением диапазона.',
+        'Data directory is not writable.' => 'Нет прав записи в каталог данных.',
+    ];
+
     public static function detectLanguage(): string {
         if (self::$language !== null) {
             return self::$language;
@@ -125,28 +227,42 @@ class LanguageManager {
             elseif (class_exists('CWebUser') && method_exists('CWebUser', 'get')) {
                 $language = \CWebUser::get('lang') ?: $language;
             }
+            elseif (isset(\CWebUser::$data['lang'])) {
+                $language = \CWebUser::$data['lang'] ?: $language;
+            }
         }
         catch (\Throwable $exception) {
         }
 
         if ($language === 'default') {
             try {
-                if (class_exists('CSettingsHelper') && method_exists('CSettingsHelper', 'get')) {
-                    $key = defined('CSettingsHelper::DEFAULT_LANG')
-                        ? \CSettingsHelper::DEFAULT_LANG
-                        : 'default_lang';
-                    $language = \CSettingsHelper::get($key) ?: $language;
+                if (class_exists('CSettingsHelper')) {
+                    $default = method_exists('CSettingsHelper', 'getPublic')
+                        ? \CSettingsHelper::getPublic('default_lang')
+                        : \CSettingsHelper::get('default_lang');
+                    $language = $default ?: $language;
                 }
             }
             catch (\Throwable $exception) {
             }
-            $language = $GLOBALS['ZBX_LOCALES']['selected'] ?? $language;
+            if ($language === 'default') {
+                $language = $GLOBALS['ZBX_LOCALES']['selected'] ?? $language;
+            }
+        }
+
+        if (preg_match('/^ru(?:[-_]|$)/i', trim((string) $language))) {
+            return self::$language = 'ru_RU';
         }
 
         return self::$language = strpos((string) $language, 'zh') === 0 ? 'zh_CN' : 'en_US';
     }
 
     public static function t(string $text): string {
-        return self::detectLanguage() === 'zh_CN' ? (self::$zh[$text] ?? $text) : $text;
+        $language = self::detectLanguage();
+        if ($language === 'ru_RU') {
+            return self::RUSSIAN[$text] ?? $text;
+        }
+
+        return $language === 'zh_CN' ? (self::$zh[$text] ?? $text) : $text;
     }
 }
