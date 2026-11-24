@@ -84,6 +84,9 @@ $css = <<<'CSS'
 .sw-rj-block{display:flex;flex-direction:column;gap:4px;}
 .sw-sfp-block{display:flex;flex-direction:column;gap:4px;
     border-left:2px solid #3d4d5a;padding-left:12px;}
+/* All-optical switch (no RJ45 ports): the SFP block is the only block, so the
+   separator border would float at the panel edge — drop it. */
+.sw-port-area.sw-no-rj .sw-sfp-block{border-left:none;padding-left:0;}
 .sw-row{display:flex;flex-direction:row;gap:3px;align-items:flex-start;}
 .sw-pw{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;width:32px;overflow:hidden;}
 .sw-p{width:18px;height:16px;border-radius:2px 2px 3px 3px;border:2px solid #2d3340;
@@ -835,6 +838,7 @@ if ($error !== null) {
             $all = array_merge($all, $glist);
         }
         [$rj_map, $sfp_map] = $split_member($all);
+        if ($rj_map === []) $port_area->addClass('sw-no-rj');
         foreach ($block_order as [$is_sfp, $key]) {
             $map = ($key === 'rj') ? $rj_map : $sfp_map;
             if ($map !== []) $port_area->addItem($build_block($map, $is_sfp));
@@ -856,6 +860,7 @@ if ($error !== null) {
             $m_hdr->addItem((new CDiv($t('up') . ' ' . $m_up . ' / ' . $t('dn') . ' ' . $m_dn . ' / ' . $t('total') . ' ' . count($glist)))->addClass('sw-member-stats'));
 
             $m_area = (new CDiv())->addClass('sw-port-area');
+            if ($rj_map === []) $m_area->addClass('sw-no-rj');
             foreach ($block_order as [$is_sfp, $key]) {
                 $map = ($key === 'rj') ? $rj_map : $sfp_map;
                 if ($map !== []) $m_area->addItem($build_block($map, $is_sfp));
