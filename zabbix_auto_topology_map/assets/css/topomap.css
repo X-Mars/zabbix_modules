@@ -1488,3 +1488,29 @@
 	color: var(--tm-fg-dim);
 	white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------- 8.0 页面宽度
+ *
+ * 8.0 的 body 是 grid：
+ *   grid-template-areas: "sidebar header" / "sidebar content"
+ *   grid-template-columns: auto minmax(0, 1fr)
+ * 原生页面把内容包在 body > .wrapper 里（grid-area: content），
+ * 而 layout.htmlpage 不产出 .wrapper，模块内容成了 body 的直接子元素，
+ * 且没有 grid-area，于是被自动排进第一列（侧边栏那一列）。
+ *
+ * 侧边栏展开时它在文档流里（175px），第一列就是 175px，看起来正常；
+ * 侧边栏收起后 aside 变成 position: fixed 脱离文档流，第一列没有在流元素，
+ * 本以为会塌成 0，但内容被排在那一列后按 auto 撑到 1200px，
+ * 留给内容区（1fr）的只剩 400px，画布因此短了一截、右侧留白。
+ *
+ * 下面两条只在 7.x 不生效：7.x 的模块页有原生 .wrapper，#topomap-root 不是 body 直接子元素。
+ */
+body > #topomap-root {
+	grid-area: content;
+	min-width: 0;
+	overflow: auto;
+}
+
+aside.is-compact ~ #topomap-root {
+	margin-left: 48px;
+}

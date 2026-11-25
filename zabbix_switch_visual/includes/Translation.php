@@ -48,9 +48,9 @@ class Translation {
 		'Style 1 (stepped)'                                => '样式 1（台阶式）',
 		'Style 2 (metal)'                                  => '样式 2（金属外观）',
 		'Style 3 (classic)'                                => '样式 3（经典）',
-		'RJ45 ports (per stack member; the rest are SFP)'  => 'RJ45 端口数（每个堆叠成员；其余端口为 SFP）',
-		'SFP ports (manual mode only — with auto-detect the ports beyond RJ45 count are SFP)'
-		                                                   => 'SFP 端口数（仅手动模式生效 — 自动检测时超出 RJ45 数量的端口均为 SFP）',
+		'RJ45 ports (per stack member; 0 = all-optical, all SFP)' => 'RJ45 端口数（每个堆叠成员；0=全光交换机，全部为 SFP）',
+		'SFP ports (manual mode only — total ports = RJ45 + SFP; auto-detect uses all ports beyond RJ45)'
+		                                                   => 'SFP 端口数（仅手动模式 — 总端口数 = RJ45 + SFP；自动检测时超出 RJ45 数量的端口均为 SFP）',
 		'Port rows (1 or 2)'                               => '端口行数（1 或 2）',
 		'Invert row order (even ports top — e.g. Huawei)'  => '反转行序（偶数端口在上 — 如华为）',
 		'Sequential rows (first half top, second half bottom — e.g. 1–24 / 25–48)'
@@ -208,8 +208,8 @@ class Translation {
 		'Style 1 (stepped)' => 'Стиль 1 (ступенчатый)',
 		'Style 2 (metal)' => 'Стиль 2 (металлический)',
 		'Style 3 (classic)' => 'Стиль 3 (классический)',
-		'RJ45 ports (per stack member; the rest are SFP)' => 'Порты RJ45 на каждом устройстве стека. Остальные порты — SFP.',
-		'SFP ports (manual mode only — with auto-detect the ports beyond RJ45 count are SFP)' => 'Порты SFP в ручном режиме. При автоопределении SFP считаются все порты сверх числа RJ45.',
+		'RJ45 ports (per stack member; 0 = all-optical, all SFP)' => 'Порты RJ45 на каждом устройстве стека; 0 — оптический коммутатор, все порты SFP.',
+		'SFP ports (manual mode only — total ports = RJ45 + SFP; auto-detect uses all ports beyond RJ45)' => 'Порты SFP только в ручном режиме: всего портов = RJ45 + SFP. При автоопределении SFP считаются все порты сверх числа RJ45.',
 		'Port rows (1 or 2)' => 'Ряды портов (1 или 2)',
 		'Invert row order (even ports top — e.g. Huawei)' => 'Поменять ряды местами (чётные порты сверху, например у Huawei)',
 		'Sequential rows (first half top, second half bottom — e.g. 1–24 / 25–48)' => 'Последовательные ряды (первая половина сверху, вторая снизу, например 1–24 / 25–48)',

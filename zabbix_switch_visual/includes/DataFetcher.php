@@ -63,8 +63,11 @@ class DataFetcher {
     private function fetchPorts(): array {
         $hostid    = (string) ($this->config['hostid']      ?? '');
         $bw_bits   = (bool)   ($this->config['bw_bits']    ?? true); // true = items deliver bits/sec, not bytes/sec
-        $num_ports = (int)    ($this->config['num_ports']   ?? 24);
-        $num_sfp   = (int)    ($this->config['num_sfp']     ?? 2);
+        // num_ports = 0 is valid: an all-optical switch has no RJ45 ports, so
+        // every port is SFP. A zero total (RJ45 = 0 and SFP unset in manual
+        // mode) falls back to every detected interface instead of an empty panel.
+        $num_ports = max(0, (int) ($this->config['num_ports']   ?? 24));
+        $num_sfp   = max(0, (int) ($this->config['num_sfp']     ?? 2));
         $total     = $num_ports + $num_sfp;
         $in_pat    = (string) ($this->config['bw_in_pattern']   ?? 'ifInOctets[*]');
         $out_pat   = (string) ($this->config['bw_out_pattern']  ?? 'ifOutOctets[*]');
@@ -128,7 +131,7 @@ class DataFetcher {
                 if (!ctype_digit($clean)) continue;
                 $pos = (int) $clean - $port_index_start + 1;
                 // Auto-detect: no upper bound; manual: clamp to configured total
-                if ($pos >= 1 && ($auto_detect || $pos <= $total)) {
+                if ($pos >= 1 && ($auto_detect || $total === 0 || $pos <= $total)) {
                     $this->iface_to_pos[$iface] = $pos;
                     $ifaces[] = $iface;
                 }
@@ -169,16 +172,21 @@ class DataFetcher {
                     }
                 }
             } else {
-                $ifaces = array_map('strval', array_slice(array_keys($by_iface), 0, $total));
+                // Manual mode with RJ45 = 0 and SFP unset (total 0) shows every
+                // detected interface rather than an empty panel.
+                $ifaces = ($total === 0)
+                    ? array_map('strval', array_keys($by_iface))
+                    : array_map('strval', array_slice(array_keys($by_iface), 0, $total));
                 foreach ($ifaces as $idx => $iface) {
                     $this->iface_to_pos[$iface] = $idx + 1;
                 }
             }
         }
 
-        // Auto-detect: show every detected port (after exclusions) — the
-        // RJ45/SFP split is positional per member, driven by num_ports only.
-        if ($auto_detect && $ifaces !== []) {
+        // Auto-detect (or a zero-total fallback): show every detected port
+        // (after exclusions) — the RJ45/SFP split is positional per member,
+        // driven by num_ports only.
+        if (($auto_detect || $total === 0) && $ifaces !== []) {
             $total = max(array_map(function ($i) { return $this->iface_to_pos[$i]; }, $ifaces));
         }
 

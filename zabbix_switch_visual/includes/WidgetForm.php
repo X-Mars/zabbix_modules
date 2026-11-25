@@ -75,7 +75,7 @@ class WidgetForm extends CWidgetForm {
 			]))->setDefault(3)
 		);
 		$this->addField(
-			(new CWidgetFieldIntegerBox('num_ports', Translation::t('RJ45 ports (per stack member; the rest are SFP)'), 1, 96))->setDefault(24)
+			(new CWidgetFieldIntegerBox('num_ports', Translation::t('RJ45 ports (per stack member; 0 = all-optical, all SFP)'), 0, 96))->setDefault(24)
 		);
 		$this->addField(
 			(new CWidgetFieldSelect('rj45_pos', Translation::t('RJ45 position'), [
@@ -84,7 +84,7 @@ class WidgetForm extends CWidgetForm {
 			]))->setDefault(0)
 		);
 		$this->addField(
-			(new CWidgetFieldIntegerBox('num_sfp', Translation::t('SFP ports (manual mode only — with auto-detect the ports beyond RJ45 count are SFP)'), 0, 96))->setDefault(0)
+			(new CWidgetFieldIntegerBox('num_sfp', Translation::t('SFP ports (manual mode only — total ports = RJ45 + SFP; auto-detect uses all ports beyond RJ45)'), 0, 96))->setDefault(0)
 		);
 		$this->addField(
 			(new CWidgetFieldIntegerBox('port_rows', Translation::t('Port rows (1 or 2)'), 1, 2))->setDefault(2)
